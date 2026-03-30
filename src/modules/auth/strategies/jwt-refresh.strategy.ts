@@ -8,18 +8,21 @@ import { Request } from 'express';
 export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
   constructor(private configService: ConfigService) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        (request: Request) => {
+          return request?.cookies?.refresh_token;
+        },
+      ]),
       secretOrKey: configService.get<string>('jwt.refreshSecret') || 'rt-secret',
       passReqToCallback: true,
     });
   }
 
   validate(req: Request, payload: any) {
-    const authHeader = req.get('Authorization');
-    if (!authHeader) {
+    const refreshToken = req?.cookies?.refresh_token;
+    if (!refreshToken) {
       throw new UnauthorizedException('Refresh token missing');
     }
-    const refreshToken = authHeader.replace('Bearer', '').trim();
     return { ...payload, refreshToken };
   }
 }

@@ -2,7 +2,11 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class AppService {
-  getHello(): string {
-    return 'Hello World!';
+  getHealth() {
+    return {
+      status: 'UP',
+      timestamp: new Date().toISOString(),
+      version: '1.0.0',
+    };
   }
 }

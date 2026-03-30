@@ -76,7 +76,8 @@ model Case {
 model Assignment {
   id           String           @id @default(uuid())
   caseId       String
-  userId       String
+  userId       String?
+  ownerEmail   String?
   
   // -- Dynamic Fields --
   status       AssignmentStatus @default(OPEN)
@@ -96,7 +97,7 @@ model Assignment {
 
 
   case         Case             @relation(fields: [caseId], references: [id])
-  user         User             @relation("UserAssignments", fields: [userId], references: [id])
+  user         User?            @relation("UserAssignments", fields: [userId], references: [id])
   assignedBy   User?            @relation("AssignedBy", fields: [assignedById], references: [id])
   caseLogs     CaseLog[]
 }

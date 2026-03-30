@@ -1,4 +1,5 @@
-import { Controller, Post, Body, ForbiddenException, HttpCode, HttpStatus, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Body, ForbiddenException, HttpCode, HttpStatus, UseGuards, Request, Res } from '@nestjs/common';
+import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { ConfigService } from '@nestjs/config';
 import { LoginDto } from './dto/login.dto';
@@ -20,8 +21,13 @@ export class AuthController {
   @ApiBody({ schema: { type: 'object', properties: { idToken: { type: 'string', example: 'google-id-token-here' } } } })
   @ApiResponse({ status: 200, description: 'Successfully authenticated' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async loginSso(@Body('idToken') idToken: string) {
-    return this.authService.validateGoogleSso(idToken);
+  async loginSso(
+    @Body('idToken') idToken: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const tokens = await this.authService.validateGoogleSso(idToken);
+    this.setCookies(res, tokens);
+    return { message: 'Successfully authenticated' };
   }
 
   @Post('login')
@@ -29,14 +35,18 @@ export class AuthController {
   @ApiOperation({ summary: 'Local Email/Password Login', description: 'Traditional login for administrative or emergency access.' })
   @ApiResponse({ status: 200, description: 'Successfully authenticated' })
   @ApiResponse({ status: 403, description: 'Forbidden (Local auth disabled)' })
-  async loginLocal(@Body() body: LoginDto) {
-    // Tech Lead architectural constraint: Gate local auth via env variable
+  async loginLocal(
+    @Body() body: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const isLocalAuthEnabled = this.configService.get<boolean>('enableLocalAuth');
     if (!isLocalAuthEnabled) {
       throw new ForbiddenException('Local authentication is completely disabled in this environment.');
     }
     
-    return this.authService.validateLocalAuth(body.email, body.password);
+    const tokens = await this.authService.validateLocalAuth(body.email, body.password);
+    this.setCookies(res, tokens);
+    return { message: 'Successfully authenticated' };
   }
 
   @UseGuards(JwtRefreshGuard)
@@ -45,10 +55,15 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Rotate Tokens', description: 'Exchange a Refresh Token for a new pair of Access & Refresh tokens.' })
   @ApiResponse({ status: 200, description: 'Tokens rotated successfully' })
-  async refresh(@Request() req: any) {
+  async refresh(
+    @Request() req: any,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const userId = req.user.sub;
     const refreshToken = req.user.refreshToken;
-    return this.authService.refreshTokens(userId, refreshToken);
+    const tokens = await this.authService.refreshTokens(userId, refreshToken);
+    this.setCookies(res, tokens);
+    return { message: 'Tokens rotated successfully' };
   }
 
   @UseGuards(JwtAuthGuard)
@@ -57,7 +72,28 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Logout', description: 'Invalidate current session and clear refresh token.' })
   @ApiResponse({ status: 200, description: 'Logout successful' })
-  async logout(@Request() req: any) {
-    return this.authService.logout(req.user.sub);
+  async logout(
+    @Request() req: any,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    await this.authService.logout(req.user.sub);
+    res.clearCookie('access_token');
+    res.clearCookie('refresh_token');
+    return { message: 'Logout successful' };
+  }
+
+  private setCookies(res: Response, tokens: { access_token: string; refresh_token: string }) {
+    res.cookie('access_token', tokens.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 1 * 60 * 60 * 1000, // 1 hour
+    });
+    res.cookie('refresh_token', tokens.refresh_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    });
   }
 }

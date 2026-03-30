@@ -21,10 +21,14 @@ This project follows a **Modular Monolith** pattern using a single NestJS server
 
 ### 🔑 Authentication Strategy
 TermHub uses a dual-token JWT strategy for maximum security:
+- **Cookie Storage**: Tokens are stored in **HttpOnly, Secure, SameSite: Lax** cookies. This prevents JavaScript from accessing the tokens, eliminating XSS steal risks.
 - **Access Token**: Valid for **1 hour** (configurable via `JWT_ACCESS_EXPIRES_IN`).
 - **Refresh Token**: Valid for **1 day** (configurable via `JWT_REFRESH_EXPIRES_IN`).
 - **Rotation**: Refresh tokens are hashed and stored in the database. Every refresh request rotates both tokens, invalidating the old refresh token to prevent reuse.
 - **Account Blocking**: Users with the `NEW_USER` role or with `isActive: false` are **blocked** from logging in. No JWTs are issued until an administrator activates the account or changes the role.
+
+> [!IMPORTANT]
+> **Frontend Requirement**: Clients must send requests with `withCredentials: true` (or equivalent) for the browser to include and accept cookies.
 
 ### 👤 User Activity Tracking
 The system monitors real-time activity for all agents and supervisors:
@@ -32,7 +36,10 @@ The system monitors real-time activity for all agents and supervisors:
 - **`lastActive`**: Timestamp updated on every API request or token refresh.
 
 ### 🔐 Webhook Security
-The Google Apps Script (GAS) integration is secured via an **API Key** (`x-api-key`). Only requests with a valid secret can ingest data into the system.
+The system uses independent API Keys for external integrations:
+- **Salesforce Webhook**: Secured via `x-sf-api-key` header.
+- **GAS Form Webhook**: Secured via `x-gas-api-key` header.
+Secrets are managed in the `.env` file via `SALESFORCE_WEBHOOK_SECRET` and `GAS_WEBHOOK_SECRET`.
 
 ---
 
@@ -62,7 +69,8 @@ Each time an agent submits the ETA form via **GAS**, a **new Assignment record**
 | `formType` | GAS | Form type as filled by the agent. |
 | `startTime` | GAS | When the agent started working on the case. |
 | `etaMinutes` | GAS | Estimated time to completion in minutes. |
-| `userId` | GAS | The agent who submitted the form. |
+| `userId` | GAS / SF | The registered agent assigned to the case (Optional). |
+| `ownerEmail` | Salesforce | The email of the case owner from Salesforce. |
 
 > [!NOTE]
 > **Historical Tracking**: Every GAS form submission creates a **new** Assignment record. If an agent re-opens a closed case, a fresh Assignment is created — preserving the full audit history.
@@ -97,11 +105,16 @@ Interactive API documentation is available at:
 | **Auth** | `POST` | `/auth/google-sso` | None | Google SSO login |
 | **Auth** | `POST` | `/auth/refresh` | Refresh Guard | Rotate tokens |
 | **Auth** | `POST` | `/auth/logout` | JWT | Logout and clear RT |
-| **Cases** | `POST` | `/cases/webhook/salesforce` | API Key | Ingest static case data from Salesforce |
-| **Cases** | `POST` | `/cases/webhook/gas` | API Key | Create new agent session/assignment from GAS |
-| **Cases** | `GET` | `/cases` | JWT | List all cases with assignments |
+| **System** | `GET` | `/` | None | System Health Check |
+| **Cases** | `POST` | `/cases/webhook/salesforce` | API Key | Ingest Case & Create Initial Assignment |
+| **Cases** | `POST` | `/cases/webhook/salesforce/close` | API Key | Close all OPEN assignments for a Case/Owner |
+| **Cases** | `POST` | `/cases/webhook/gas-form` | API Key | Update Case ETA/Session from GAS Form |
+| **Cases** | `GET` | `/cases/my-open` | JWT | Get OPEN assignments for current user |
+| **Cases** | `GET` | `/cases/my-history` | JWT | Get CLOSED assignments for current user |
+| **Cases** | `GET` | `/cases/all-open` | JWT + Roles | Get all system-wide OPEN assignments |
+| **Cases** | `GET` | `/cases/all-history` | JWT + Roles | Get all system-wide CLOSED assignments |
 | **Cases** | `GET` | `/cases/:id` | JWT | Get case with full assignment history |
-| **Cases** | `PATCH` | `/cases/assignments/:id/status` | JWT + RBAC | Open/Close an agent assignment |
+| **Cases** | `PATCH` | `/cases/assignments/:id` | JWT + RBAC | Manual Assignment Update (Admin/CMD Only) |
 | **Users** | `GET` | `/users/me` | JWT | Get own profile |
 | **Users** | `GET` | `/users` | JWT + RBAC (Rank-Filtered) | List users by visibility rules |
 | **Users** | `PATCH` | `/users/:id/status` | JWT + RBAC (Management Only) | Update role or isActive status |
@@ -146,6 +159,19 @@ Interactive API documentation is available at:
 ---
 
 ## 🕒 Recent Updates & Fixes
+
+### Phase 4 — Integrated Webhook Workflow (March 30, 2026)
+- **Manual Data Control**: Replaced simple status updates with a full `PATCH /cases/assignments/:id` endpoint for `ADMIN`/`CMD` to correct any assignment field.
+- **System Health Check**: Refactored the default route into a professional JSON health check.
+- **HttpOnly Cookie Auth**: Mirgrated from Header-based JWT to secure HttpOnly Cookies to prevent XSS attacks.
+- **Specialized Case Listings**: Added `GET /cases/my-open` and `GET /cases/all-open` for streamlined access to active work for agents and management.
+- **New Salesforce Closure Webhook**: Added `POST /cases/webhook/salesforce/close` to allow remote session termination.
+- **Independent Security**: Separated Salesforce and GAS security guards. Now uses `x-sf-api-key` and `x-gas-api-key` respectively.
+- **Renamed GAS Webhook**: Changed `POST /cases/webhook/gas` to `POST /cases/webhook/gas-form` for better clarity.
+- **Unified Assignment Creation**: Salesforce webhook now creates both the Case and the initial `OPEN` Assignment for the case owner.
+- **Conditional GAS Updates**: GAS Form now updates an existing `OPEN` assignment (or a closed one without an ETA) instead of always creating a new record.
+- **Unregistered Owner Support**: Made `userId` optional in Assignments and added `ownerEmail` to support case owners not yet registered in the system.
+- **Standardized Timeflows**: All webhooks now use ISO 8601 for `startTime` and `formSubmitTime`.
 
 ### Phase 3 — Session-Based Case Architecture (March 29, 2026)
 - **Dual Webhook Design**: Split the single `/cases/webhook` into two dedicated endpoints: `POST /cases/webhook/salesforce` and `POST /cases/webhook/gas`.

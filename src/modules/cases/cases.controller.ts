@@ -1,12 +1,16 @@
 import { Controller, Post, Body, Get, Patch, Param, Query, UseGuards, Request, SetMetadata } from '@nestjs/common';
 import { CasesService } from './cases.service';
 import { GasWebhookGuard } from './guards/gas-webhook.guard';
+import { SalesforceWebhookGuard } from './guards/salesforce-webhook.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Role, AssignmentStatus } from '@prisma/client';
 import { GetCasesDto } from './dto/get-cases.dto';
-import { UpdateAssignmentStatusDto } from './dto/update-case-status.dto';
+import { UpdateAssignmentDto } from './dto/update-assignment.dto';
+import { SalesforceWebhookDto } from './dto/salesforce-webhook.dto';
+import { GasFormWebhookDto } from './dto/gas-form-webhook.dto';
+import { CloseCaseWebhookDto } from './dto/close-case-webhook.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiSecurity, ApiParam } from '@nestjs/swagger';
 
 @ApiTags('Cases')
@@ -22,6 +26,54 @@ export class CasesController {
     return this.casesService.findAll(query);
   }
 
+  @Get('my-open')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get My Open Cases', description: 'Retrieve all OPEN assignments for the current user.' })
+  async getMyOpenCases(@Request() req: any, @Query() query: GetCasesDto) {
+    return this.casesService.findAll({
+      ...query,
+      status: AssignmentStatus.OPEN,
+      agentId: req.user.sub,
+    });
+  }
+
+  @Get('all-open')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_USER, Role.ADMIN, Role.SUPERVISOR, Role.CMD, Role.LEADER, Role.SUPPORT)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get All Open Cases', description: 'Retrieve all OPEN assignments across the system (Management/Support only).' })
+  async getAllOpenCases(@Query() query: GetCasesDto) {
+    return this.casesService.findAll({
+      ...query,
+      status: AssignmentStatus.OPEN,
+    });
+  }
+
+  @Get('my-history')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get My Case History', description: 'Retrieve all CLOSED assignments for the current user.' })
+  async getMyHistoryCases(@Request() req: any, @Query() query: GetCasesDto) {
+    return this.casesService.findAll({
+      ...query,
+      status: AssignmentStatus.CLOSED,
+      agentId: req.user.sub,
+    });
+  }
+
+  @Get('all-history')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_USER, Role.ADMIN, Role.SUPERVISOR, Role.CMD, Role.LEADER, Role.SUPPORT)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get All Case History', description: 'Retrieve all CLOSED assignments across the system (Management/Support only).' })
+  async getAllHistoryCases(@Query() query: GetCasesDto) {
+    return this.casesService.findAll({
+      ...query,
+      status: AssignmentStatus.CLOSED,
+    });
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -30,33 +82,41 @@ export class CasesController {
     return this.casesService.findById(id);
   }
 
-  @Patch('assignments/:assignmentId/status')
+  @Patch('assignments/:assignmentId')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.SUPER_USER, Role.ADMIN, Role.SUPERVISOR, Role.CMD)
+  @Roles(Role.SUPER_USER, Role.ADMIN, Role.CMD)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update Assignment Status', description: 'Open/Close a specific agent session.' })
-  async updateAssignmentStatus(
+  @ApiOperation({ summary: 'Manual Assignment Update', description: 'Manually update any field for a specific agent session (Admin/CMD only).' })
+  async updateAssignment(
     @Param('assignmentId') assignmentId: string,
-    @Body() dto: UpdateAssignmentStatusDto,
+    @Body() dto: UpdateAssignmentDto,
     @Request() req: any,
   ) {
-    return this.casesService.updateAssignmentStatus(assignmentId, dto.status, req.user?.sub);
+    return this.casesService.updateAssignment(assignmentId, dto, req.user?.sub);
   }
 
   @Post('webhook/salesforce')
-  @UseGuards(GasWebhookGuard) // Reusing the same API key logic for now
-  @ApiSecurity('GasApiKey')
+  @UseGuards(SalesforceWebhookGuard)
+  @ApiSecurity('SfApiKey')
   @ApiOperation({ summary: 'Salesforce Webhook', description: 'Ingest static case data from Salesforce.' })
-  async handleSalesforceWebhook(@Body() payload: any) {
+  async handleSalesforceWebhook(@Body() payload: SalesforceWebhookDto) {
     return this.casesService.handleSalesforceWebhook(payload);
   }
 
-  @Post('webhook/gas')
+  @Post('webhook/salesforce/close')
+  @UseGuards(SalesforceWebhookGuard)
+  @ApiSecurity('SfApiKey')
+  @ApiOperation({ summary: 'Salesforce Case Closure', description: 'Close all open assignments for a specific case and owner.' })
+  async handleSalesforceCloseWebhook(@Body() payload: CloseCaseWebhookDto) {
+    return this.casesService.handleSalesforceCloseWebhook(payload);
+  }
+
+  @Post('webhook/gas-form')
   @UseGuards(GasWebhookGuard)
   @ApiSecurity('GasApiKey')
-  @ApiOperation({ summary: 'GAS Webhook', description: 'Create new agent assignments/sessions based on form fills.' })
-  async handleGasWebhook(@Body() payload: any) {
-    return this.casesService.handleGasWebhook(payload);
+  @ApiOperation({ summary: 'GAS Form Webhook', description: 'Create or update agent assignments/sessions based on form fills.' })
+  async handleGasFormWebhook(@Body() payload: GasFormWebhookDto) {
+    return this.casesService.handleGasFormWebhook(payload);
   }
 }
 
