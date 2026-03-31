@@ -105,6 +105,13 @@ export class CasesService {
         },
       });
 
+      // Broadcast update
+      this.broadcastCaseEvent('case_updated', {
+        caseId: updatedAssignment.caseId,
+        assignmentId: updatedAssignment.id,
+        ...data,
+      }, updatedAssignment.userId || undefined);
+
       return updatedAssignment;
     });
   }
@@ -159,6 +166,14 @@ export class CasesService {
           changes: { caseNumber, caseOwner },
         },
       });
+
+      // Broadcast to management and the specific user
+      this.broadcastCaseEvent('case_assigned', {
+        caseId: caseRecord.id,
+        assignmentId: assignment.id,
+        status: assignment.status,
+        caseNumber: caseRecord.caseNumber,
+      }, user?.id);
 
       return assignment;
     });
@@ -243,13 +258,13 @@ export class CasesService {
         });
       }
 
-      // Broadcast to clients
-      this.realtimeGateway.server.emit('eta_updated', {
+      // Broadcast to management and the specific user
+      this.broadcastCaseEvent('eta_updated', {
         caseId: caseRecord.id,
         assignmentId: assignment.id,
         etaMinutes: caseETA,
         updatedAt: assignment.etaSetAt,
-      });
+      }, user.id);
 
       return assignment;
     });
@@ -290,7 +305,7 @@ export class CasesService {
         },
       });
 
-      // Create logs for each closed assignment
+      // RESTORED AUDIT LOG LOOP: Create logs for each closed assignment
       for (const assignment of openAssignments) {
         await prisma.caseLog.create({
           data: {
@@ -302,10 +317,30 @@ export class CasesService {
         });
       }
 
+      // Broadcast update to rooms
+      this.broadcastCaseEvent('case_closed', {
+        caseId: caseRecord.id,
+        caseNumber,
+        closedCount: openAssignments.length,
+      }, user.id);
+
       return { 
         message: `Successfully closed ${openAssignments.length} assignment(s)`, 
         count: openAssignments.length 
       };
     });
+  }
+
+  /**
+   * Helper to broadcast events to both the management dashboard and a specific user room
+   */
+  private broadcastCaseEvent(eventName: string, payload: any, userId?: string) {
+    // Always broadcast to management
+    this.realtimeGateway.server.to('management_dashboard').emit(eventName, payload);
+
+    // If userId provided, broadcast to their specific room
+    if (userId) {
+      this.realtimeGateway.server.to(`user:${userId}`).emit(eventName, payload);
+    }
   }
 }

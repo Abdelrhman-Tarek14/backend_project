@@ -12,4 +12,7 @@ export default () => ({
   enableLocalAuth: process.env.ENABLE_LOCAL_AUTH?.trim() === 'true',
   gasWebhookSecret: process.env.GAS_WEBHOOK_SECRET || 'fallback-secret-for-dev',
   salesforceWebhookSecret: process.env.SALESFORCE_WEBHOOK_SECRET || 'sf-fallback-secret-for-dev',
+  webhookSecret: process.env.WEBHOOK_SECRET || 'unified-super-secure-webhook-secret-key',
+  allowedWebhookIps: (process.env.ALLOWED_WEBHOOK_IPS || '127.0.0.1,::1').split(','),
 });
+

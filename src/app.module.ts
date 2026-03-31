@@ -1,5 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { BullModule } from '@nestjs/bullmq';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { PrismaModule } from './database/prisma.module';
 import { UsersModule } from './modules/users/users.module';
 import { CasesModule } from './modules/cases/cases.module';
@@ -7,6 +10,7 @@ import { RealtimeModule } from './modules/realtime/realtime.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import configuration from './config/configuration';
 
 @Module({
@@ -15,6 +19,19 @@ import configuration from './config/configuration';
       isGlobal: true,
       load: [configuration],
     }),
+    BullModule.forRoot({
+      connection: {
+        host: 'localhost',
+        port: 6379,
+      },
+    }),
+    ThrottlerModule.forRoot([
+
+      {
+        ttl: 180000, // 3 minutes in milliseconds
+        limit: 5,   // 5 requests per ttl
+      },
+    ]),
     PrismaModule,
     UsersModule,
     CasesModule,
@@ -22,6 +39,16 @@ import configuration from './config/configuration';
     RealtimeModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
+    },
+  ],
 })
 export class AppModule {}

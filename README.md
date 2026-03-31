@@ -35,11 +35,21 @@ The system monitors real-time activity for all agents and supervisors:
 - **`isOnline`**: Boolean flag toggled during login/logout.
 - **`lastActive`**: Timestamp updated on every API request or token refresh.
 
-### 🔐 Webhook Security
-The system uses independent API Keys for external integrations:
-- **Salesforce Webhook**: Secured via `x-sf-api-key` header.
-- **GAS Form Webhook**: Secured via `x-gas-api-key` header.
-Secrets are managed in the `.env` file via `SALESFORCE_WEBHOOK_SECRET` and `GAS_WEBHOOK_SECRET`.
+### 🔐 Webhook Security (Zero-Trust Architecture)
+The system uses a highly secure, zero-trust approach for system-to-system integrations (Salesforce & GAS):
+- **IP Allowlisting**: Requests are strictly filtered by IP via `ALLOWED_WEBHOOK_IPS`.
+- **HMAC SHA256 Signatures**: Payloads must be signed using `WEBHOOK_SECRET`. The guard computes the hash of the raw request payload to ensure data integrity and authenticity.
+- **Asynchronous Processing (BullMQ)**: Webhooks instantly return a `202 Accepted` status to prevent timeouts. The heavy processing is seamlessly offloaded to a Redis-backed background queue (`webhook-processing-queue`) with automatic exponential backoff retries.
+
+### 🛑 Security & Rate Limiting
+- **Throttling**: The global application is protected against brute-force attacks via `@nestjs/throttler` (e.g., max 5 requests per 3 minutes for Auth). Webhooks are exempt from this limit due to their intrinsic Zero-Trust signature requirements and high-volume nature.
+
+---
+
+## 📋 System Logging & Monitoring
+- **Winston Logger**: The application uses Winston for professional log management.
+- **File Rotation**: Logs are automatically stored in the `/logs/` directory, separated into `error` and `combined` streams, and retained for 30 days with daily rotation.
+- **HTTP Interceptors**: A global `LoggingInterceptor` tracks every request's method, URL, status code, and latency in milliseconds.
 
 ---
 
@@ -133,37 +143,43 @@ Interactive API documentation is available at:
    - `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_SECRET`, `JWT_REFRESH_EXPIRES_IN`, `GAS_WEBHOOK_SECRET`.
 
 3. **Database Synchronization:**
-   ```bash
-   npx prisma db push
-   npx prisma generate
-   ```
+### 👤 User Activity & Real-time Presence
+TermHub monitors user activity in real-time using WebSockets:
+- **`isOnline`**: Toggled via WebSocket connection/disconnection. 
+- **Single Session Rule**: A user can only have **one active session**. If a user connects from a new device, the old session is automatically terminated with a `force_logout` event.
+- **`isOnline` Database Sync**: The system updates the `User` table and logs every `CONNECTED`, `DISCONNECTED`, and `SESSION_OVERRIDDEN` event in `UserLog`.
 
-4. **Run Application:**
-   ```bash
-   # Development
-   npm run start:dev
-   
-   # Production Build
-   npm run build
-   npm run start:prod
-   ```
+### 📡 WebSocket Architecture
+The system uses **Socket.io** with room-based isolation:
+- **`user:{userId}`**: Agents join their own room to receive private case updates.
+- **`management_dashboard`**: Supervisors and Admins receive all system-wide updates.
+- **Security**: The gateway manually parses **HttpOnly cookies** during the handshake for secure JWT verification.
 
----
-
-## 📡 WebSocket Events
 | Event | Payload | Description |
 | :--- | :--- | :--- |
-| `eta_updated` | `{ caseId, assignmentId, etaMinutes, updatedAt }` | Broadcast when a new GAS assignment is created. |
-| `user_state_changed` | `{ userId, state }` | Broadcast when a user logs in or out. |
+| `case_assigned` | `{ caseId, assignmentId, status, caseNumber }` | Broadcast to management and the assigned agent. |
+| `eta_updated` | `{ caseId, assignmentId, etaMinutes, updatedAt }` | Broadcast when a case ETA is set via GAS. |
+| `case_closed` | `{ caseId, caseNumber, closedCount }` | Broadcast when a case is closed via webhook. |
+| `case_updated` | `{ caseId, assignmentId, ...changes }` | Broadcast when a case is manually updated by Admin. |
+| `user_status_changed` | `{ userId, isOnline }` | Broadcast system-wide when a user connects/disconnects. |
+| `force_logout` | `{ message }` | Sent to a socket when a newer session override occurs. |
 
 ---
 
 ## 🕒 Recent Updates & Fixes
 
+### Phase 5 — Production Polish & Zero-Trust Webhooks (March 31, 2026)
+- **Zero-Trust Webhooks**: Replaced basic API keys with robust HMAC SHA256 signature validation and strict IP allowlisting (`WebhookSecurityGuard`).
+- **Asynchronous Queues**: Integrated `BullMQ` and Redis to decouple webhook reception from processing. Webhooks now return `202 Accepted` instantly, preventing Salesforce/GAS timeouts during bulk updates.
+- **Professional Logging**: Replaced default Nest logger with `winston` and `winston-daily-rotate-file`. Logs are neatly separated and kept for 30 days.
+- **Global Monitoring**: Introduced a `LoggingInterceptor` to track all incoming HTTP traffic and latencies.
+- **Brute-Force Protection**: Added structural rate limiting (`ThrottlerModule`) capping authentication endpoints at 5 attempts per 3 minutes.
+
 ### Phase 4 — Integrated Webhook Workflow (March 30, 2026)
+- **Advanced Real-time Security**: Implemented room-based isolation and manual cookie parsing for WebSockets.
+- **Single-Session Enforcement**: In-memory tracking ensures agents only have one active session at a time.
 - **Manual Data Control**: Replaced simple status updates with a full `PATCH /cases/assignments/:id` endpoint for `ADMIN`/`CMD` to correct any assignment field.
 - **System Health Check**: Refactored the default route into a professional JSON health check.
-- **HttpOnly Cookie Auth**: Mirgrated from Header-based JWT to secure HttpOnly Cookies to prevent XSS attacks.
 - **Specialized Case Listings**: Added `GET /cases/my-open` and `GET /cases/all-open` for streamlined access to active work for agents and management.
 - **New Salesforce Closure Webhook**: Added `POST /cases/webhook/salesforce/close` to allow remote session termination.
 - **Independent Security**: Separated Salesforce and GAS security guards. Now uses `x-sf-api-key` and `x-gas-api-key` respectively.

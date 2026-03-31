@@ -5,9 +5,13 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
+import { winstonConfig } from './common/logger/winston.config';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: winstonConfig,
+    rawBody: true,
+  });
 
   // Cookie Parsing for HTTP-only tokens
   app.use(cookieParser());
@@ -35,11 +39,16 @@ async function bootstrap() {
   // Swagger Documentation
   const config = new DocumentBuilder()
     .setTitle('TermHub API')
-    .setDescription('The TermHub Internal ETA Management System API')
+    .setDescription(`
+      The TermHub Internal ETA Management System API.
+      
+      For real-time data streaming and event documentation, please refer to the Realtime (WebSockets) section at the bottom of this page.
+    `)
     .setVersion('1.0')
     .addTag('Auth')
     .addTag('Cases')
     .addTag('Users')
+    .addTag('System')
     .addBearerAuth()
     .addApiKey({ type: 'apiKey', name: 'x-sf-api-key', in: 'header' }, 'SfApiKey')
     .addApiKey({ type: 'apiKey', name: 'x-gas-api-key', in: 'header' }, 'GasApiKey')
