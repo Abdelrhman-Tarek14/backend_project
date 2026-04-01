@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
-import { AssignmentStatus } from '@prisma/client';
+import { AssignmentStatus, Prisma } from '@prisma/client';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { GetCasesDto } from './dto/get-cases.dto';
 import { SalesforceWebhookDto } from './dto/salesforce-webhook.dto';
@@ -10,22 +10,25 @@ import { UpdateAssignmentDto } from './dto/update-assignment.dto';
 
 @Injectable()
 export class CasesService {
+  private readonly logger = new Logger(CasesService.name);
+
   constructor(
     private prisma: PrismaService,
     private realtimeGateway: RealtimeGateway,
-  ) {}
+  ) { }
 
   async findAll(query: GetCasesDto) {
     const { page = 1, limit = 10, status, date, agentId } = query;
     const skip = (page - 1) * limit;
 
-    const whereClause: any = {};
+    const whereClause: Prisma.CaseWhereInput = {};
+
     if (status) {
       whereClause.assignments = {
         some: { status: status as AssignmentStatus },
       };
     }
-    
+
     if (date) {
       const startOfDay = new Date(date);
       startOfDay.setUTCHours(0, 0, 0, 0);
@@ -36,10 +39,7 @@ export class CasesService {
 
     if (agentId) {
       whereClause.assignments = {
-        some: { 
-          ...whereClause.assignments?.some,
-          userId: agentId 
-        },
+        some: { userId: agentId },
       };
     }
 
@@ -49,33 +49,32 @@ export class CasesService {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
-        include: { assignments: { include: { user: true } } },
+        include: {
+          assignments: {
+            include: { user: { select: { id: true, name: true, email: true, role: true } } }
+          }
+        },
       }),
       this.prisma.case.count({ where: whereClause }),
     ]);
 
     return {
       data: cases,
-      meta: {
-        totalCount,
-        page,
-        limit,
-        totalPages: Math.ceil(totalCount / limit),
-      },
+      meta: { totalCount, page, limit, totalPages: Math.ceil(totalCount / limit) },
     };
   }
 
   async findById(id: string) {
     const caseRecord = await this.prisma.case.findUnique({
       where: { id },
-      include: { 
-        assignments: { 
-          include: { 
-            user: true, 
-            caseLogs: { orderBy: { createdAt: 'desc' } } 
-          }, 
-          orderBy: { assignedAt: 'desc' } 
-        } 
+      include: {
+        assignments: {
+          include: {
+            user: { select: { id: true, name: true, email: true, role: true } },
+            caseLogs: { orderBy: { createdAt: 'desc' } }
+          },
+          orderBy: { assignedAt: 'desc' }
+        }
       },
     });
     if (!caseRecord) throw new NotFoundException('Case not found');
@@ -83,11 +82,12 @@ export class CasesService {
   }
 
   async updateAssignment(assignmentId: string, data: UpdateAssignmentDto, adminId?: string) {
+    // التحقق من وجود المهمة قبل التحديث
     const assignment = await this.prisma.assignment.findUnique({ where: { id: assignmentId } });
     if (!assignment) throw new NotFoundException('Assignment not found');
 
-    return this.prisma.$transaction(async (prisma) => {
-      const updatedAssignment = await prisma.assignment.update({
+    return this.prisma.$transaction(async (tx) => {
+      const updatedAssignment = await tx.assignment.update({
         where: { id: assignmentId },
         data: {
           ...data,
@@ -96,16 +96,15 @@ export class CasesService {
         },
       });
 
-      await prisma.caseLog.create({
+      await tx.caseLog.create({
         data: {
           assignmentId,
           action: 'MANUAL_ASSIGNMENT_UPDATE',
           userId: adminId,
-          changes: { ...data },
+          changes: data as any,
         },
       });
 
-      // Broadcast update
       this.broadcastCaseEvent('case_updated', {
         caseId: updatedAssignment.caseId,
         assignmentId: updatedAssignment.id,
@@ -117,48 +116,33 @@ export class CasesService {
   }
 
   async handleSalesforceWebhook(payload: SalesforceWebhookDto) {
-    const { 
-      caseNumber, 
-      caseAccountName, 
-      caseCountry, 
-      caseType, 
-      caseOwner, // email
-      caseStartTime 
-    } = payload;
-    
+    const { caseNumber, caseAccountName, caseCountry, caseType, caseOwner, caseStartTime } = payload;
     if (!caseNumber) throw new BadRequestException('caseNumber is required');
 
-    // 1. Upsert Case
-    const caseRecord = await this.prisma.case.upsert({
-      where: { caseNumber },
-      create: { 
-        caseNumber, 
-        accountName: caseAccountName, 
-        country: caseCountry 
-      },
-      update: { 
-        accountName: caseAccountName, 
-        country: caseCountry 
-      },
-    });
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Upsert Case داخل الترانزاكشن لضمان الذرية (Atomicity)
+      const caseRecord = await tx.case.upsert({
+        where: { caseNumber },
+        create: { caseNumber, accountName: caseAccountName, country: caseCountry },
+        update: { accountName: caseAccountName, country: caseCountry },
+      });
 
-    // 2. Resolve Agent (caseOwner is email)
-    const user = caseOwner ? await this.prisma.user.findUnique({ where: { email: caseOwner } }) : null;
+      // 2. البحث عن الموظف
+      const user = caseOwner ? await tx.user.findUnique({ where: { email: caseOwner } }) : null;
 
-    // 3. Create NEW Assignment
-    return this.prisma.$transaction(async (prisma) => {
-      const assignment = await prisma.assignment.create({
+      // 3. إنشاء التعيين الجديد
+      const assignment = await tx.assignment.create({
         data: {
           caseId: caseRecord.id,
-          userId: user?.id || undefined,
-          ownerEmail: caseOwner || undefined,
+          userId: user?.id,
+          ownerEmail: caseOwner,
           status: AssignmentStatus.OPEN,
           caseType,
           startTime: caseStartTime ? new Date(caseStartTime) : new Date(),
         },
       });
 
-      await prisma.caseLog.create({
+      await tx.caseLog.create({
         data: {
           assignmentId: assignment.id,
           action: 'SALESFORCE_CASE_CREATED',
@@ -167,7 +151,6 @@ export class CasesService {
         },
       });
 
-      // Broadcast to management and the specific user
       this.broadcastCaseEvent('case_assigned', {
         caseId: caseRecord.id,
         assignmentId: assignment.id,
@@ -181,62 +164,45 @@ export class CasesService {
 
   async handleGasFormWebhook(payload: GasFormWebhookDto) {
     const { caseNumber, caseOwner, formType, caseETA, formSubmitTime } = payload;
-    if (!caseNumber || !caseOwner) throw new BadRequestException('caseNumber and caseOwner (email) are required');
+    if (!caseNumber || !caseOwner) throw new BadRequestException('caseNumber and caseOwner are required');
 
-    // 1. Ensure Case exists
-    let caseRecord = await this.prisma.case.findUnique({ where: { caseNumber } });
-    if (!caseRecord) {
-      caseRecord = await this.prisma.case.create({ data: { caseNumber } });
-    }
+    return this.prisma.$transaction(async (tx) => {
+      // 1. التأكد من وجود الحالة
+      let caseRecord = await tx.case.findUnique({ where: { caseNumber } });
+      if (!caseRecord) {
+        this.logger.warn(`Case ${caseNumber} received from GAS before Salesforce. Creating stub...`);
+        caseRecord = await tx.case.create({ data: { caseNumber } });
+      }
 
-    // 2. Resolve Agent
-    const user = await this.prisma.user.findUnique({ where: { email: caseOwner } });
-    if (!user) throw new NotFoundException(`User with email ${caseOwner} not found`);
+      // 2. البحث عن الموظف
+      const user = await tx.user.findUnique({ where: { email: caseOwner } });
+      if (!user) throw new NotFoundException(`Agent with email ${caseOwner} not found`);
 
-    // 3. Logic to update existing assignment or create new one
-    // Scenario: 
-    // - Update if status is OPEN
-    // - Update if status is NOT OPEN but ETA is null
-    // - Else Create NEW
-    return this.prisma.$transaction(async (prisma) => {
-      // Find the latest assignment for this case and user
-      let assignment = await prisma.assignment.findFirst({
-        where: {
-          caseId: caseRecord.id,
-          userId: user.id,
-        },
+      // 3. منطق التحديث أو الإنشاء (Latest Assignment)
+      let assignment = await tx.assignment.findFirst({
+        where: { caseId: caseRecord.id, userId: user.id },
         orderBy: { assignedAt: 'desc' },
       });
 
       const shouldUpdate = assignment && (
-        assignment.status === AssignmentStatus.OPEN || 
-        assignment.etaMinutes === null
+        assignment.status === AssignmentStatus.OPEN || assignment.etaMinutes === null
       );
 
       if (assignment && shouldUpdate) {
-        // UPDATE existing
-        const currentAssignment = assignment; // Narrowing for TS
-        assignment = await prisma.assignment.update({
-          where: { id: currentAssignment.id },
+        assignment = await tx.assignment.update({
+          where: { id: assignment.id },
           data: {
             formType,
-            etaMinutes: caseETA || currentAssignment.etaMinutes,
-            startTime: formSubmitTime ? new Date(formSubmitTime) : currentAssignment.startTime,
+            etaMinutes: caseETA ?? assignment.etaMinutes,
+            startTime: formSubmitTime ? new Date(formSubmitTime) : assignment.startTime,
             etaSetAt: new Date(),
           },
         });
-
-        await prisma.caseLog.create({
-          data: {
-            assignmentId: assignment.id,
-            action: 'GAS_FORM_UPDATED',
-            userId: user.id,
-            changes: { formType, caseETA },
-          },
+        await tx.caseLog.create({
+          data: { assignmentId: assignment.id, action: 'GAS_FORM_UPDATED', userId: user.id, changes: { formType, caseETA } },
         });
       } else {
-        // CREATE new
-        assignment = await prisma.assignment.create({
+        assignment = await tx.assignment.create({
           data: {
             caseId: caseRecord.id,
             userId: user.id,
@@ -247,18 +213,11 @@ export class CasesService {
             etaSetAt: new Date(),
           },
         });
-
-        await prisma.caseLog.create({
-          data: {
-            assignmentId: assignment.id,
-            action: 'GAS_FORM_SUBMITTED',
-            userId: user.id,
-            changes: { assignmentId: assignment.id, formType, caseETA },
-          },
+        await tx.caseLog.create({
+          data: { assignmentId: assignment.id, action: 'GAS_FORM_SUBMITTED', userId: user.id, changes: { formType, caseETA } },
         });
       }
 
-      // Broadcast to management and the specific user
       this.broadcastCaseEvent('eta_updated', {
         caseId: caseRecord.id,
         assignmentId: assignment.id,
@@ -272,73 +231,38 @@ export class CasesService {
 
   async handleSalesforceCloseWebhook(payload: CloseCaseWebhookDto) {
     const { caseNumber, caseOwner } = payload;
-    
-    // 1. Resolve Case
-    const caseRecord = await this.prisma.case.findUnique({ where: { caseNumber } });
-    if (!caseRecord) throw new NotFoundException(`Case with number ${caseNumber} not found`);
 
-    // 2. Resolve User
-    const user = await this.prisma.user.findUnique({ where: { email: caseOwner } });
-    if (!user) throw new NotFoundException(`User with email ${caseOwner} not found`);
+    return this.prisma.$transaction(async (tx) => {
+      const caseRecord = await tx.case.findUnique({ where: { caseNumber } });
+      if (!caseRecord) throw new NotFoundException(`Case ${caseNumber} not found`);
 
-    // 3. Update all OPEN assignments for this case and user
-    return this.prisma.$transaction(async (prisma) => {
-      const openAssignments = await prisma.assignment.findMany({
-        where: {
-          caseId: caseRecord.id,
-          userId: user.id,
-          status: AssignmentStatus.OPEN,
-        },
+      const user = await tx.user.findUnique({ where: { email: caseOwner } });
+      if (!user) throw new NotFoundException(`User ${caseOwner} not found`);
+
+      const openAssignments = await tx.assignment.findMany({
+        where: { caseId: caseRecord.id, userId: user.id, status: AssignmentStatus.OPEN },
       });
 
-      if (openAssignments.length === 0) {
-        return { message: 'No open assignments found for this case and user', count: 0 };
-      }
+      if (openAssignments.length === 0) return { count: 0 };
 
-      await prisma.assignment.updateMany({
-        where: {
-          id: { in: openAssignments.map(a => a.id) },
-        },
-        data: {
-          status: AssignmentStatus.CLOSED,
-          closedAt: new Date(),
-        },
+      await tx.assignment.updateMany({
+        where: { id: { in: openAssignments.map(a => a.id) } },
+        data: { status: AssignmentStatus.CLOSED, closedAt: new Date() },
       });
 
-      // RESTORED AUDIT LOG LOOP: Create logs for each closed assignment
-      for (const assignment of openAssignments) {
-        await prisma.caseLog.create({
-          data: {
-            assignmentId: assignment.id,
-            action: 'SALESFORCE_CASE_CLOSED',
-            userId: user.id,
-            changes: { oldStatus: assignment.status, newStatus: AssignmentStatus.CLOSED },
-          },
+      for (const a of openAssignments) {
+        await tx.caseLog.create({
+          data: { assignmentId: a.id, action: 'SALESFORCE_CASE_CLOSED', userId: user.id, changes: { oldStatus: a.status, newStatus: 'CLOSED' } },
         });
       }
 
-      // Broadcast update to rooms
-      this.broadcastCaseEvent('case_closed', {
-        caseId: caseRecord.id,
-        caseNumber,
-        closedCount: openAssignments.length,
-      }, user.id);
-
-      return { 
-        message: `Successfully closed ${openAssignments.length} assignment(s)`, 
-        count: openAssignments.length 
-      };
+      this.broadcastCaseEvent('case_closed', { caseId: caseRecord.id, caseNumber, closedCount: openAssignments.length }, user.id);
+      return { count: openAssignments.length };
     });
   }
 
-  /**
-   * Helper to broadcast events to both the management dashboard and a specific user room
-   */
   private broadcastCaseEvent(eventName: string, payload: any, userId?: string) {
-    // Always broadcast to management
     this.realtimeGateway.server.to('management_dashboard').emit(eventName, payload);
-
-    // If userId provided, broadcast to their specific room
     if (userId) {
       this.realtimeGateway.server.to(`user:${userId}`).emit(eventName, payload);
     }

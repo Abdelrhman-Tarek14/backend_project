@@ -2,10 +2,14 @@ import { Controller, Get, Patch, Body, Param, UseGuards, Request, Query, ParseIn
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
+
+interface RequestWithUser extends Request {
+  user: { id: string; email: string; role: Role };
+}
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -17,7 +21,7 @@ export class UsersController {
   @Get('me')
   @ApiOperation({ summary: 'Get Current Profile', description: 'Retrieve the profile of the currently authenticated user.' })
   @ApiResponse({ status: 200, description: 'Return user profile' })
-  getProfile(@Request() req: any) {
+  getProfile(@Request() req: RequestWithUser) {
     return req.user;
   }
 
@@ -31,7 +35,7 @@ export class UsersController {
   async getAllUsers(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
-    @Request() req: any,
+    @Request() req: RequestWithUser,
   ) {
     return this.usersService.findAll(page, limit, req.user.role);
   }
@@ -46,8 +50,11 @@ export class UsersController {
   async updateStatus(
     @Param('id') id: string,
     @Body() dto: UpdateUserStatusDto,
-    @Request() req: any,
+    @Request() req: RequestWithUser,
   ) {
-    return this.usersService.updateStatus(id, dto, req.user);
+    return this.usersService.updateStatus(id, dto, { 
+      sub: req.user.id, 
+      role: req.user.role 
+    });
   }
 }

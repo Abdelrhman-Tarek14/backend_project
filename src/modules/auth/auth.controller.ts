@@ -8,6 +8,10 @@ import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 
+interface RequestWithUser extends Request {
+  user: { sub: string; email: string; role: string; refreshToken: string };
+}
+
 @ApiTags('Auth')
 @Throttle({ default: { limit: 5, ttl: 180000 } }) // 5 attempts per 3 minutes
 @Controller('auth')
@@ -15,7 +19,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   @Post('sso')
   @HttpCode(HttpStatus.OK)
@@ -45,7 +49,7 @@ export class AuthController {
     if (!isLocalAuthEnabled) {
       throw new ForbiddenException('Local authentication is completely disabled in this environment.');
     }
-    
+
     const tokens = await this.authService.validateLocalAuth(body.email, body.password);
     this.setCookies(res, tokens);
     return { message: 'Successfully authenticated' };
@@ -58,7 +62,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Rotate Tokens', description: 'Exchange a Refresh Token for a new pair of Access & Refresh tokens.' })
   @ApiResponse({ status: 200, description: 'Tokens rotated successfully' })
   async refresh(
-    @Request() req: any,
+    @Request() req: RequestWithUser,
     @Res({ passthrough: true }) res: Response,
   ) {
     const userId = req.user.sub;
@@ -75,12 +79,17 @@ export class AuthController {
   @ApiOperation({ summary: 'Logout', description: 'Invalidate current session and clear refresh token.' })
   @ApiResponse({ status: 200, description: 'Logout successful' })
   async logout(
-    @Request() req: any,
+    @Request() req: RequestWithUser,
     @Res({ passthrough: true }) res: Response,
   ) {
     await this.authService.logout(req.user.sub);
-    res.clearCookie('access_token');
-    res.clearCookie('refresh_token');
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax' as const,
+    };
+    res.clearCookie('access_token', cookieOptions);
+    res.clearCookie('refresh_token', cookieOptions);
     return { message: 'Logout successful' };
   }
 

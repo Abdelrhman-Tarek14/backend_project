@@ -1,7 +1,5 @@
 import { Controller, Post, Body, Get, Patch, Param, Query, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
-import { Throttle, SkipThrottle } from '@nestjs/throttler';
-// import { Queue } from 'bullmq';
-// import { InjectQueue } from '@nestjs/bullmq';
+import { Throttle } from '@nestjs/throttler';
 import { CasesService } from './cases.service';
 import { WebhookSecurityGuard } from './guards/webhook-security.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -15,13 +13,16 @@ import { GasFormWebhookDto } from './dto/gas-form-webhook.dto';
 import { CloseCaseWebhookDto } from './dto/close-case-webhook.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
 
+interface RequestWithUser extends Request {
+  user: { id: string; email: string; role: Role };
+}
+
 @ApiTags('Cases')
 @Controller('cases')
 export class CasesController {
   constructor(
     private readonly casesService: CasesService,
-    // @InjectQueue('webhook-processing-queue') private readonly webhookQueue: Queue,
-  ) {}
+  ) { }
 
   @Get()
   @UseGuards(JwtAuthGuard)
@@ -35,11 +36,11 @@ export class CasesController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get My Open Cases', description: 'Retrieve all OPEN assignments for the current user.' })
-  async getMyOpenCases(@Request() req: any, @Query() query: GetCasesDto) {
+  async getMyOpenCases(@Request() req: RequestWithUser, @Query() query: GetCasesDto) {
     return this.casesService.findAll({
       ...query,
       status: AssignmentStatus.OPEN,
-      agentId: req.user.sub,
+      agentId: req.user.id,
     });
   }
 
@@ -59,11 +60,11 @@ export class CasesController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get My Case History', description: 'Retrieve all CLOSED assignments for the current user.' })
-  async getMyHistoryCases(@Request() req: any, @Query() query: GetCasesDto) {
+  async getMyHistoryCases(@Request() req: RequestWithUser, @Query() query: GetCasesDto) {
     return this.casesService.findAll({
       ...query,
       status: AssignmentStatus.CLOSED,
-      agentId: req.user.sub,
+      agentId: req.user.id,
     });
   }
 
@@ -95,9 +96,9 @@ export class CasesController {
   async updateAssignment(
     @Param('assignmentId') assignmentId: string,
     @Body() dto: UpdateAssignmentDto,
-    @Request() req: any,
+    @Request() req: RequestWithUser,
   ) {
-    return this.casesService.updateAssignment(assignmentId, dto, req.user?.sub);
+    return this.casesService.updateAssignment(assignmentId, dto, req.user?.id);
   }
 
   @Post('webhook/salesforce')
@@ -105,7 +106,7 @@ export class CasesController {
   @UseGuards(WebhookSecurityGuard)
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiHeader({ name: 'x-webhook-signature', description: 'HMAC SHA256 Signature of the raw payload', required: true })
-  @ApiOperation({ summary: 'Salesforce Webhook', description: 'Synchronous ingestion of static case data from Salesforce.' })
+  @ApiOperation({ summary: 'Salesforce Webhook' })
   @ApiResponse({ status: 202, description: 'Webhook received and processed successfully.' })
   async handleSalesforceWebhook(@Body() payload: SalesforceWebhookDto) {
     await this.casesService.handleSalesforceWebhook(payload);
@@ -117,7 +118,7 @@ export class CasesController {
   @UseGuards(WebhookSecurityGuard)
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiHeader({ name: 'x-webhook-signature', description: 'HMAC SHA256 Signature of the raw payload', required: true })
-  @ApiOperation({ summary: 'Salesforce Case Closure', description: 'Synchronous closure of all open assignments for a specific case and owner.' })
+  @ApiOperation({ summary: 'Salesforce Case Closure' })
   @ApiResponse({ status: 202, description: 'Webhook received and processed successfully.' })
   async handleSalesforceCloseWebhook(@Body() payload: CloseCaseWebhookDto) {
     await this.casesService.handleSalesforceCloseWebhook(payload);
@@ -129,12 +130,10 @@ export class CasesController {
   @UseGuards(WebhookSecurityGuard)
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiHeader({ name: 'x-webhook-signature', description: 'HMAC SHA256 Signature of the raw payload', required: true })
-  @ApiOperation({ summary: 'GAS Form Webhook', description: 'Synchronous update of agent assignments/sessions based on form fills.' })
+  @ApiOperation({ summary: 'GAS Form Webhook' })
   @ApiResponse({ status: 202, description: 'Webhook received and processed successfully.' })
   async handleGasFormWebhook(@Body() payload: GasFormWebhookDto) {
     await this.casesService.handleGasFormWebhook(payload);
     return { status: 'processed', message: 'Webhook received and processed synchronously' };
   }
 }
-
-

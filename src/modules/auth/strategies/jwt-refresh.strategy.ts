@@ -6,7 +6,7 @@ import { Request } from 'express';
 
 @Injectable()
 export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
-  constructor(private configService: ConfigService) {
+  constructor(configService: ConfigService) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         (request: Request) => {
@@ -20,9 +20,16 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
 
   validate(req: Request, payload: any) {
     const refreshToken = req?.cookies?.refresh_token;
+
     if (!refreshToken) {
       throw new UnauthorizedException('Refresh token missing');
     }
-    return { ...payload, refreshToken };
+
+    return {
+      id: payload.sub,
+      email: payload.email,
+      role: payload.role,
+      refreshToken
+    };
   }
 }

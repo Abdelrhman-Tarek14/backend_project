@@ -4,7 +4,7 @@ import { OAuth2Client } from 'google-auth-library';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
-import { User } from '@prisma/client';
+import { User, Role } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -33,51 +33,51 @@ export class AuthService {
       }
       const email = payload.email;
 
-      // Ensure user exists in our DB (no self-registration allowed)
       const user = await this.usersService.findByEmail(email);
       if (!user) {
         throw new UnauthorizedException('User not authorized in this system.');
       }
 
-      // Block NEW_USER or Inactive users from getting JWT
-      if (user.role === 'NEW_USER' || !user.isActive) {
+      if (user.role === Role.NEW_USER || !user.isActive) {
         throw new UnauthorizedException('Your account is pending approval or has been deactivated.');
       }
 
       await this.usersService.logUserActivity(user.id, 'LOGGED_IN');
-      
+
       const tokens = await this.getTokens(user.id, user.email, user.role);
-      
-      // Update activity and RT
+
       await this.usersService.update(user.id, {
         isOnline: true,
         lastActive: new Date(),
         hashedRefreshToken: await bcrypt.hash(tokens.refresh_token, 10),
       });
-      
+
       return tokens;
     } catch (e) {
       throw new UnauthorizedException('Invalid Google Token');
     }
   }
 
-  async validateLocalAuth(email: string, passwordHash: string) {
+  async validateLocalAuth(email: string, passwordPlain: string) {
     const user = await this.usersService.findByEmail(email);
-    // In a real environment, use bcrypt.compare here
-    if (!user || user.passwordHash !== passwordHash) {
+
+    if (!user || !user.passwordHash) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Block NEW_USER or Inactive users from getting JWT
-    if (user.role === 'NEW_USER' || !user.isActive) {
+    const isPasswordValid = await bcrypt.compare(passwordPlain, user.passwordHash);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (user.role === Role.NEW_USER || !user.isActive) {
       throw new UnauthorizedException('Your account is pending approval or has been deactivated.');
     }
 
     await this.usersService.logUserActivity(user.id, 'LOGGED_IN');
-    
+
     const tokens = await this.getTokens(user.id, user.email, user.role);
-    
-    // Update activity and RT
+
     await this.usersService.update(user.id, {
       isOnline: true,
       lastActive: new Date(),
@@ -106,15 +106,9 @@ export class AuthService {
     };
   }
 
-  async updateRefreshTokenHash(userId: string, refreshToken: string) {
-    const hash = await bcrypt.hash(refreshToken, 10);
-    await this.usersService.update(userId, {
-      hashedRefreshToken: hash,
-    });
-  }
-
   async refreshTokens(userId: string, rt: string) {
-    const user = await this.usersService.findById(userId) as (User | null);
+    const user = await this.usersService.findById(userId);
+
     if (!user || !user.hashedRefreshToken) {
       throw new UnauthorizedException('Access Denied');
     }
@@ -124,14 +118,12 @@ export class AuthService {
       throw new UnauthorizedException('Access Denied');
     }
 
-    // Block NEW_USER or Inactive users from refreshing tokens
-    if (user.role === 'NEW_USER' || !user.isActive) {
+    if (user.role === Role.NEW_USER || !user.isActive) {
       throw new UnauthorizedException('Your account is pending approval or has been deactivated.');
     }
 
     const tokens = await this.getTokens(user.id, user.email, user.role);
-    
-    // Update activity and RT on refresh as well
+
     await this.usersService.update(user.id, {
       lastActive: new Date(),
       hashedRefreshToken: await bcrypt.hash(tokens.refresh_token, 10),
