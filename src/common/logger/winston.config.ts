@@ -10,7 +10,7 @@ export const winstonConfig = WinstonModule.createLogger({
         winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
         winston.format.colorize(),
         winston.format.printf(({ timestamp, level, message, context, trace }) => {
-          return `[${timestamp}] ${level} [${context || 'Application'}]: ${message}${trace ? \`\n\${trace}\` : ''}`;
+          return `[${timestamp}] ${level} [${context || 'Application'}]: ${message}${trace ? `\n${trace}` : ''}`;
         }),
       ),
     }),

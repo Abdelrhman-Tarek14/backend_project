@@ -13,6 +13,7 @@ const testUser: User = {
   lastActive: new Date(),
   createdAt: new Date(),
   updatedAt: new Date(),
+  leaderId: null, // Added: Team Leader FK (null = no leader assigned)
 };
 
 console.log('User type verified successfully!');

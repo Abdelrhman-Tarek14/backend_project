@@ -13,6 +13,9 @@ async function bootstrap() {
     rawBody: true,
   });
 
+  // Enable trust proxy for accurate client IP identification (behind Nginx, Cloudflare, etc.)
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
+
   // Cookie Parsing for HTTP-only tokens
   app.use(cookieParser());
 

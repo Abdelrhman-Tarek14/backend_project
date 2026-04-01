@@ -1,6 +1,7 @@
 import { Controller, Post, Body, Get, Patch, Param, Query, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
-import { Queue } from 'bullmq';
-import { InjectQueue } from '@nestjs/bullmq';
+import { Throttle, SkipThrottle } from '@nestjs/throttler';
+// import { Queue } from 'bullmq';
+// import { InjectQueue } from '@nestjs/bullmq';
 import { CasesService } from './cases.service';
 import { WebhookSecurityGuard } from './guards/webhook-security.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -13,14 +14,13 @@ import { SalesforceWebhookDto } from './dto/salesforce-webhook.dto';
 import { GasFormWebhookDto } from './dto/gas-form-webhook.dto';
 import { CloseCaseWebhookDto } from './dto/close-case-webhook.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
-import { SkipThrottle } from '@nestjs/throttler';
 
 @ApiTags('Cases')
 @Controller('cases')
 export class CasesController {
   constructor(
     private readonly casesService: CasesService,
-    @InjectQueue('webhook-processing-queue') private readonly webhookQueue: Queue,
+    // @InjectQueue('webhook-processing-queue') private readonly webhookQueue: Queue,
   ) {}
 
   @Get()
@@ -101,39 +101,39 @@ export class CasesController {
   }
 
   @Post('webhook/salesforce')
-  @SkipThrottle()
+  @Throttle({ webhook: { limit: 200, ttl: 60000 } })
   @UseGuards(WebhookSecurityGuard)
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiHeader({ name: 'x-webhook-signature', description: 'HMAC SHA256 Signature of the raw payload', required: true })
-  @ApiOperation({ summary: 'Salesforce Webhook', description: 'Ingest static case data from Salesforce (Asynchronous).' })
-  @ApiResponse({ status: 202, description: 'Webhook received and queued securely.' })
+  @ApiOperation({ summary: 'Salesforce Webhook', description: 'Synchronous ingestion of static case data from Salesforce.' })
+  @ApiResponse({ status: 202, description: 'Webhook received and processed successfully.' })
   async handleSalesforceWebhook(@Body() payload: SalesforceWebhookDto) {
-    await this.webhookQueue.add('handleSalesforceWebhook', payload);
-    return { status: 'queued', message: 'Webhook received and is being processed asynchronously' };
+    await this.casesService.handleSalesforceWebhook(payload);
+    return { status: 'processed', message: 'Webhook received and processed synchronously' };
   }
 
   @Post('webhook/salesforce/close')
-  @SkipThrottle()
+  @Throttle({ webhook: { limit: 200, ttl: 60000 } })
   @UseGuards(WebhookSecurityGuard)
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiHeader({ name: 'x-webhook-signature', description: 'HMAC SHA256 Signature of the raw payload', required: true })
-  @ApiOperation({ summary: 'Salesforce Case Closure', description: 'Close all open assignments for a specific case and owner (Asynchronous).' })
-  @ApiResponse({ status: 202, description: 'Webhook received and queued securely.' })
+  @ApiOperation({ summary: 'Salesforce Case Closure', description: 'Synchronous closure of all open assignments for a specific case and owner.' })
+  @ApiResponse({ status: 202, description: 'Webhook received and processed successfully.' })
   async handleSalesforceCloseWebhook(@Body() payload: CloseCaseWebhookDto) {
-    await this.webhookQueue.add('handleSalesforceCloseWebhook', payload);
-    return { status: 'queued', message: 'Webhook received and is being processed asynchronously' };
+    await this.casesService.handleSalesforceCloseWebhook(payload);
+    return { status: 'processed', message: 'Webhook received and processed synchronously' };
   }
 
   @Post('webhook/gas-form')
-  @SkipThrottle()
+  @Throttle({ webhook: { limit: 200, ttl: 60000 } })
   @UseGuards(WebhookSecurityGuard)
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiHeader({ name: 'x-webhook-signature', description: 'HMAC SHA256 Signature of the raw payload', required: true })
-  @ApiOperation({ summary: 'GAS Form Webhook', description: 'Create or update agent assignments/sessions based on form fills (Asynchronous).' })
-  @ApiResponse({ status: 202, description: 'Webhook received and queued securely.' })
+  @ApiOperation({ summary: 'GAS Form Webhook', description: 'Synchronous update of agent assignments/sessions based on form fills.' })
+  @ApiResponse({ status: 202, description: 'Webhook received and processed successfully.' })
   async handleGasFormWebhook(@Body() payload: GasFormWebhookDto) {
-    await this.webhookQueue.add('handleGasFormWebhook', payload);
-    return { status: 'queued', message: 'Webhook received and is being processed asynchronously' };
+    await this.casesService.handleGasFormWebhook(payload);
+    return { status: 'processed', message: 'Webhook received and processed synchronously' };
   }
 }
 

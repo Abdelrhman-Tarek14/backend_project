@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { BullModule } from '@nestjs/bullmq';
+// import { BullModule } from '@nestjs/bullmq';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { PrismaModule } from './database/prisma.module';
 import { UsersModule } from './modules/users/users.module';
@@ -19,17 +19,22 @@ import configuration from './config/configuration';
       isGlobal: true,
       load: [configuration],
     }),
-    BullModule.forRoot({
-      connection: {
-        host: 'localhost',
-        port: 6379,
-      },
-    }),
+    // BullModule.forRoot({
+    //   connection: {
+    //     host: 'localhost',
+    //     port: 6379,
+    //   },
+    // }),
     ThrottlerModule.forRoot([
-
       {
-        ttl: 180000, // 3 minutes in milliseconds
-        limit: 5,   // 5 requests per ttl
+        name: 'default', // Global policy
+        ttl: 60000,      // 1 minute
+        limit: 120,      // 120 requests
+      },
+      {
+        name: 'webhook', // Specific policy for external webhooks
+        ttl: 60000,      // 1 minute
+        limit: 200,      // 200 requests
       },
     ]),
     PrismaModule,
@@ -51,4 +56,4 @@ import configuration from './config/configuration';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }

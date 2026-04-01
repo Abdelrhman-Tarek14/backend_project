@@ -46,6 +46,11 @@ model User {
   updatedAt          DateTime     @updatedAt
 
 
+  // -- Team Hierarchy (Self-Referencing) --
+  leaderId           String?
+  leader             User?        @relation("TeamHierarchy", fields: [leaderId], references: [id])
+  team               User[]       @relation("TeamHierarchy")
+
   assignments        Assignment[] @relation("UserAssignments")
   assignedOthers     Assignment[] @relation("AssignedBy")
   userLogs           UserLog[]

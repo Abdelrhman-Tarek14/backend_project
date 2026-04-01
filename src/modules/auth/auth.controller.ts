@@ -1,4 +1,5 @@
 import { Controller, Post, Body, ForbiddenException, HttpCode, HttpStatus, UseGuards, Request, Res } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { ConfigService } from '@nestjs/config';
@@ -8,6 +9,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 
 @ApiTags('Auth')
+@Throttle({ default: { limit: 5, ttl: 180000 } }) // 5 attempts per 3 minutes
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -17,7 +19,7 @@ export class AuthController {
 
   @Post('sso')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Login via Google SSO', description: 'Exchange a Google ID Token for TermHub Access & Refresh tokens.' })
+  @ApiOperation({ summary: 'Login via Google SSO', description: 'Exchange a Google ID Token for TermHub access/refresh tokens. [Rate Limit: 5 attempts / 3 mins]' })
   @ApiBody({ schema: { type: 'object', properties: { idToken: { type: 'string', example: 'google-id-token-here' } } } })
   @ApiResponse({ status: 200, description: 'Successfully authenticated' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -32,7 +34,7 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Local Email/Password Login', description: 'Traditional login for administrative or emergency access.' })
+  @ApiOperation({ summary: 'Local Email/Password Login', description: 'Traditional login for administrative access. [Rate Limit: 5 attempts / 3 mins]' })
   @ApiResponse({ status: 200, description: 'Successfully authenticated' })
   @ApiResponse({ status: 403, description: 'Forbidden (Local auth disabled)' })
   async loginLocal(

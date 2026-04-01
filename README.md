@@ -39,10 +39,13 @@ The system monitors real-time activity for all agents and supervisors:
 The system uses a highly secure, zero-trust approach for system-to-system integrations (Salesforce & GAS):
 - **IP Allowlisting**: Requests are strictly filtered by IP via `ALLOWED_WEBHOOK_IPS`.
 - **HMAC SHA256 Signatures**: Payloads must be signed using `WEBHOOK_SECRET`. The guard computes the hash of the raw request payload to ensure data integrity and authenticity.
-- **Asynchronous Processing (BullMQ)**: Webhooks instantly return a `202 Accepted` status to prevent timeouts. The heavy processing is seamlessly offloaded to a Redis-backed background queue (`webhook-processing-queue`) with automatic exponential backoff retries.
+- **Synchronous Processing**: Webhooks are processed immediately to ensure atomic database updates. High-performance indexing and efficient service logic keep response times minimal.
 
 ### 🛑 Security & Rate Limiting
-- **Throttling**: The global application is protected against brute-force attacks via `@nestjs/throttler` (e.g., max 5 requests per 3 minutes for Auth). Webhooks are exempt from this limit due to their intrinsic Zero-Trust signature requirements and high-volume nature.
+The application uses a tiered rate-limiting strategy via `@nestjs/throttler`:
+- **Global Policy**: 120 requests/minute for general API usage.
+- **Auth Protection**: Strict **5 attempts per 3 minutes** on login/SSO endpoints to prevent brute-force attacks.
+- **Webhook Policy**: 200 requests/minute for Salesforce and GAS integrations to handle peak synchronization loads.
 
 ---
 
@@ -102,6 +105,24 @@ The system implements a strict hierarchical visibility model for its users:
 
 ---
 
+### 👥 Team Hierarchy (Self-Referencing)
+The `User` model supports a **one-to-many self-referencing hierarchy**, allowing Agents and Supporters to be linked to a single Team Leader.
+
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `leaderId` | `String?` | Optional FK referencing another `User.id` — the direct Team Leader. |
+| `leader` | `User?` | Relation field: the Team Leader this user reports to. |
+| `team` | `User[]` | Relation field: the list of users managed by this Leader. |
+
+> [!NOTE]
+> **Single Leader Rule**: Each user can only be assigned to **one** Team Leader at a time, enforced at the database level via a simple Foreign Key (not a junction table).
+
+> [!TIP]
+> **No Leader**: Users with no `leaderId` (e.g., `SUPER_USER`, `ADMIN`, `SUPERVISOR`) operate independently at the top of the hierarchy. Their `leader` field is `null`.
+
+
+---
+
 ## 🌐 API Documentation
 
 ### 📘 Swagger UI
@@ -140,7 +161,8 @@ Interactive API documentation is available at:
 
 2. **Setup Environment:**
    Create a `.env` file with the following:
-   - `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_SECRET`, `JWT_REFRESH_EXPIRES_IN`, `GAS_WEBHOOK_SECRET`.
+    - `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_SECRET`, `JWT_REFRESH_EXPIRES_IN`.
+    - `ALLOWED_WEBHOOK_IPS` (comma-separated), `WEBHOOK_SECRET`.
 
 3. **Database Synchronization:**
 ### 👤 User Activity & Real-time Presence
@@ -168,12 +190,19 @@ The system uses **Socket.io** with room-based isolation:
 
 ## 🕒 Recent Updates & Fixes
 
-### Phase 5 — Production Polish & Zero-Trust Webhooks (March 31, 2026)
-- **Zero-Trust Webhooks**: Replaced basic API keys with robust HMAC SHA256 signature validation and strict IP allowlisting (`WebhookSecurityGuard`).
-- **Asynchronous Queues**: Integrated `BullMQ` and Redis to decouple webhook reception from processing. Webhooks now return `202 Accepted` instantly, preventing Salesforce/GAS timeouts during bulk updates.
+### Phase 6 — Team Hierarchy & Schema Hardening (April 1, 2026)
+- **Self-Referencing Team Structure**: Added `leaderId`, `leader`, and `team` fields to the `User` model, enabling a one-to-many hierarchical structure where each agent/supporter belongs to exactly one Team Leader.
+- **Database Migration**: Applied Prisma migration `20260331230610_add_team_hierarchy` to introduce the `leader_id` column and FK constraint in PostgreSQL.
+
+### Phase 5 — Production Polish & Security Suite (April 1, 2026)
+- **Zero-Trust Webhooks**: Replaced basic API keys with robust HMAC SHA256 signature validation and strict IP allowlisting (`WebhookSecurityGuard`) backed by `trust proxy` configuration.
+- **Tiered Rate Limiting**: Implemented a comprehensive throttling strategy:
+    - **Auth**: 5 attempts / 3 mins (Anti-Brute Force).
+    - **Global**: 120 reqs / min (Platform Stability).
+    - **Webhooks**: 200 reqs / min (Sync Readiness).
+- **Synchronous Reliability**: Refactored webhook processing to be synchronous and atomic, ensuring immediate consistency across Case and Assignment records.
 - **Professional Logging**: Replaced default Nest logger with `winston` and `winston-daily-rotate-file`. Logs are neatly separated and kept for 30 days.
 - **Global Monitoring**: Introduced a `LoggingInterceptor` to track all incoming HTTP traffic and latencies.
-- **Brute-Force Protection**: Added structural rate limiting (`ThrottlerModule`) capping authentication endpoints at 5 attempts per 3 minutes.
 
 ### Phase 4 — Integrated Webhook Workflow (March 30, 2026)
 - **Advanced Real-time Security**: Implemented room-based isolation and manual cookie parsing for WebSockets.
