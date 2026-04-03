@@ -28,8 +28,18 @@ export class GetCasesDto {
   @IsString()
   date?: string;
 
-  @ApiPropertyOptional({ example: 'uuid-agent-123', description: 'Filter by assigned agent ID' })
+  @ApiPropertyOptional({ example: 'uuid-agent-123', description: 'Filter by assigned agent ID. (Management only, Agents are forced to their own ID)' })
   @IsOptional()
   @IsString()
   agentId?: string;
+
+  @ApiPropertyOptional({ example: 'agent@test.com', description: 'Filter by agent email. (Management only, Agents are forced to their own ID)' })
+  @IsOptional()
+  @IsString()
+  agentEmail?: string;
+
+  @ApiPropertyOptional({ example: 'Ahmed', description: 'Filter by agent name. (Management only, Agents are forced to their own ID)' })
+  @IsOptional()
+  @IsString()
+  agentName?: string;
 }

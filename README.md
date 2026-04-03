@@ -70,6 +70,8 @@ Holds immutable data that does not change per agent or over time. Populated by *
 | `caseNumber` | Salesforce | Unique identifier for the case. |
 | `accountName` | Salesforce | Customer account name. |
 | `country` | Salesforce | Country of the account. |
+| `receiveCount` | Salesforce | Number of times the webhook created/updated the case. |
+| `lastClosedAt` | Salesforce | Tracking timestamp for when the case was closed by webhook. |
 | `createdAt` | System | Auto-generated creation timestamp. |
 
 #### 📋 `Assignment` Table — Dynamic Session
@@ -79,9 +81,11 @@ Each time an agent submits the ETA form via **GAS**, a **new Assignment record**
 | :--- | :--- | :--- |
 | `status` | System / Admin | `OPEN` or `CLOSED` — tracks the agent's work session. |
 | `caseType` | Salesforce | Type of case (e.g., "Menu Typing"). Can change per session. |
-| `formType` | GAS | Form type as filled by the agent. |
-| `startTime` | GAS | When the agent started working on the case. |
-| `etaMinutes` | GAS | Estimated time to completion in minutes. |
+| `formType` | GAS (Form) | Form type as filled by the agent. |
+| `formSubmitTime` | GAS (Form) | Exact time the GAS form was submitted, defining the session identity. |
+| `startTime` | Salesforce | When the agent started working on the case. |
+| `etaMinutes` | GAS (Form) | Estimated time to completion in minutes. |
+| `items`, `choices`, `description`, `images`, `tmpAreas`, `isValid`, `isOnTime` | GAS (Validated) | Evaluation metrics received from the final GAS validation phase. |
 | `userId` | GAS / SF | The registered agent assigned to the case (Optional). |
 | `ownerEmail` | Salesforce | The email of the case owner from Salesforce. |
 
@@ -140,15 +144,15 @@ Interactive API documentation is available at:
 | **Cases** | `POST` | `/cases/webhook/salesforce` | API Key | Ingest Case & Create Initial Assignment |
 | **Cases** | `POST` | `/cases/webhook/salesforce/close` | API Key | Close all OPEN assignments for a Case/Owner |
 | **Cases** | `POST` | `/cases/webhook/gas-form` | API Key | Update Case ETA/Session from GAS Form |
-| **Cases** | `GET` | `/cases/my-open` | JWT | Get OPEN assignments for current user |
-| **Cases** | `GET` | `/cases/my-history` | JWT | Get CLOSED assignments for current user |
-| **Cases** | `GET` | `/cases/all-open` | JWT + Roles | Get all system-wide OPEN assignments |
-| **Cases** | `GET` | `/cases/all-history` | JWT + Roles | Get all system-wide CLOSED assignments |
+| **Cases** | `POST` | `/cases/webhook/gas-validated` | API Key | Receive form validation details from GAS |
+| **Cases** | `POST` | `/cases/webhook/gas-evaluation` | API Key | Receive quality & final check boolean scores from GAS |
+| **Cases** | `GET` | `/cases` | JWT | Get cases with dynamic filters (`status`, `agentEmail`, `agentName`, `date`). Agents only see their own work. |
 | **Cases** | `GET` | `/cases/:id` | JWT | Get case with full assignment history |
 | **Cases** | `PATCH` | `/cases/assignments/:id` | JWT + RBAC | Manual Assignment Update (Admin/CMD Only) |
 | **Users** | `GET` | `/users/me` | JWT | Get own profile |
-| **Users** | `GET` | `/users` | JWT + RBAC (Rank-Filtered) | List users by visibility rules |
+| **Users** | `GET` | `/users/:id` | JWT + RBAC | Get specific user by ID |
 | **Users** | `PATCH` | `/users/:id/status` | JWT + RBAC (Management Only) | Update role or isActive status |
+| Leaderboard | GET | /leaderboard | JWT (Agents+) | Get performance metrics & percentages with dynamic filters (`name`, `email`, `leaderName`, `leaderId`) |
 
 ---
 
@@ -164,7 +168,11 @@ Interactive API documentation is available at:
     - `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_SECRET`, `JWT_REFRESH_EXPIRES_IN`.
     - `ALLOWED_WEBHOOK_IPS` (comma-separated), `WEBHOOK_SECRET`.
 
-3. **Database Synchronization:**
+4. **Password Hashing Utility:**
+   If you need to generate a hashed password for manual database entry:
+   ```bash
+   npx ts-node scripts/hash-password.ts "your_password_here"
+   ```
 ### 👤 User Activity & Real-time Presence
 TermHub monitors user activity in real-time using WebSockets:
 - **`isOnline`**: Toggled via WebSocket connection/disconnection. 
@@ -189,6 +197,22 @@ The system uses **Socket.io** with room-based isolation:
 ---
 
 ## 🕒 Recent Updates & Fixes
+
+### Phase 9 — Dynamic Leaderboard Filtering (April 3, 2026)
+- **Advanced Filtering**: Enhanced the `GET /leaderboard` and `GET /cases` (History/Open) endpoints to support real-time filtering by `name`, `email`, `leaderName`, and `leaderId`.
+- **Search Logic**: Implemented case-insensitive partial matching (ILIKE for DB, Prisma `contains` for ORM) for name and email searches, providing a more user-friendly search experience.
+- **Deep Filtering**: Optimized `CasesService.findAll` to not only filter cases but also filter the nested assignments to ensure only relevant work history is returned for the searched agent.
+- **Team-Specific Views**: Added the ability to fetch entire team leaderboards by searching for a leader's name or ID.
+
+### Phase 8 — Live Leaderboard & Aggregation (April 2, 2026)
+- **Leaderboard Module**: Created a highly efficient, standalone module (`GET /leaderboard`) powered by raw PostgreSQL queries ensuring zero performance degradation.
+- **Dynamic Percentages**: Agents' success rates are derived dynamically in milliseconds calculating percentages metrics for `qualityScore` and `finalCheckScore` against monthly data. Users with 0 cases natively hidden.
+- **Evaluation Webhook**: Added a new discrete entry point (`POST /cases/webhook/gas-evaluation`) explicitly structured to map delayed boolean outcomes directly back onto the most recent assignment for seamless correlation.
+
+### Phase 7 — Webhook Extensions & Evaluation Metric Collection (April 2, 2026)
+- **Database Expansion**: Added tracking columns (`receiveCount`, `lastClosedAt`) to `Case` and new validation dimensions (`items`, `choices`, `description`, `images`, `tmpAreas`, `isValid`, `isOnTime`) along with a dedicated `formSubmitTime` field to `Assignment`.
+- **GAS Validated Webhook**: Added `POST /cases/webhook/gas-validated` endpoint to ingest precise validation and evaluation details for agent assignments dynamically. Included fallback matching ordering to prevent random row alterations.
+- **Improved Field Segregation**: Directed the GAS Form Webhook payload into `formSubmitTime` and explicitly preserved `startTime` purely for Salesforce initialization.
 
 ### Phase 6 — Team Hierarchy & Schema Hardening (April 1, 2026)
 - **Self-Referencing Team Structure**: Added `leaderId`, `leader`, and `team` fields to the `User` model, enabling a one-to-many hierarchical structure where each agent/supporter belongs to exactly one Team Leader.

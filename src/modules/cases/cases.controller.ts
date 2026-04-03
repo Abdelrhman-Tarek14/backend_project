@@ -11,6 +11,8 @@ import { UpdateAssignmentDto } from './dto/update-assignment.dto';
 import { SalesforceWebhookDto } from './dto/salesforce-webhook.dto';
 import { GasFormWebhookDto } from './dto/gas-form-webhook.dto';
 import { CloseCaseWebhookDto } from './dto/close-case-webhook.dto';
+import { GasValidatedWebhookDto } from './dto/gas-validated-webhook.dto';
+import { GasEvaluationWebhookDto } from './dto/gas-evaluation-webhook.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
 
 interface RequestWithUser extends Request {
@@ -27,57 +29,22 @@ export class CasesController {
   @Get()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get All Cases', description: 'Retrieve a paginated list of cases with session-aware filtering.' })
-  async getAllCases(@Query() query: GetCasesDto) {
+  @ApiOperation({ 
+    summary: 'Get All Cases (Unified)', 
+    description: 'Retrieve cases with dynamic filtering. Agents are restricted to their own assignments, while Management can use all filters.' 
+  })
+  async getAllCases(@Request() req: RequestWithUser, @Query() query: GetCasesDto) {
+    const managementRoles: Role[] = [Role.SUPER_USER, Role.ADMIN, Role.SUPERVISOR, Role.CMD, Role.LEADER, Role.SUPPORT];
+    const isManagement = managementRoles.includes(req.user.role);
+
+    if (!isManagement) {
+      // Security Override: Force regular users to see only their own assignments
+      query.agentId = req.user.id;
+      delete query.agentEmail;
+      delete query.agentName;
+    }
+
     return this.casesService.findAll(query);
-  }
-
-  @Get('my-open')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get My Open Cases', description: 'Retrieve all OPEN assignments for the current user.' })
-  async getMyOpenCases(@Request() req: RequestWithUser, @Query() query: GetCasesDto) {
-    return this.casesService.findAll({
-      ...query,
-      status: AssignmentStatus.OPEN,
-      agentId: req.user.id,
-    });
-  }
-
-  @Get('all-open')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.SUPER_USER, Role.ADMIN, Role.SUPERVISOR, Role.CMD, Role.LEADER, Role.SUPPORT)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get All Open Cases', description: 'Retrieve all OPEN assignments across the system (Management/Support only).' })
-  async getAllOpenCases(@Query() query: GetCasesDto) {
-    return this.casesService.findAll({
-      ...query,
-      status: AssignmentStatus.OPEN,
-    });
-  }
-
-  @Get('my-history')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get My Case History', description: 'Retrieve all CLOSED assignments for the current user.' })
-  async getMyHistoryCases(@Request() req: RequestWithUser, @Query() query: GetCasesDto) {
-    return this.casesService.findAll({
-      ...query,
-      status: AssignmentStatus.CLOSED,
-      agentId: req.user.id,
-    });
-  }
-
-  @Get('all-history')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.SUPER_USER, Role.ADMIN, Role.SUPERVISOR, Role.CMD, Role.LEADER, Role.SUPPORT)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get All Case History', description: 'Retrieve all CLOSED assignments across the system (Management/Support only).' })
-  async getAllHistoryCases(@Query() query: GetCasesDto) {
-    return this.casesService.findAll({
-      ...query,
-      status: AssignmentStatus.CLOSED,
-    });
   }
 
   @Get(':id')
@@ -134,6 +101,30 @@ export class CasesController {
   @ApiResponse({ status: 202, description: 'Webhook received and processed successfully.' })
   async handleGasFormWebhook(@Body() payload: GasFormWebhookDto) {
     await this.casesService.handleGasFormWebhook(payload);
+    return { status: 'processed', message: 'Webhook received and processed synchronously' };
+  }
+
+  @Post('webhook/gas-validated')
+  @Throttle({ webhook: { limit: 200, ttl: 60000 } })
+  @UseGuards(WebhookSecurityGuard)
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiHeader({ name: 'x-webhook-signature', description: 'HMAC SHA256 Signature of the raw payload', required: true })
+  @ApiOperation({ summary: 'GAS Validated Webhook' })
+  @ApiResponse({ status: 202, description: 'Webhook received and processed successfully.' })
+  async handleGasValidatedWebhook(@Body() payload: GasValidatedWebhookDto) {
+    await this.casesService.handleGasValidatedWebhook(payload);
+    return { status: 'processed', message: 'Webhook received and processed synchronously' };
+  }
+
+  @Post('webhook/gas-evaluation')
+  @Throttle({ webhook: { limit: 200, ttl: 60000 } })
+  @UseGuards(WebhookSecurityGuard)
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiHeader({ name: 'x-webhook-signature', description: 'HMAC SHA256 Signature of the raw payload', required: true })
+  @ApiOperation({ summary: 'GAS Evaluation Webhook' })
+  @ApiResponse({ status: 202, description: 'Webhook received and processed successfully.' })
+  async handleGasEvaluationWebhook(@Body() payload: GasEvaluationWebhookDto) {
+    await this.casesService.handleGasEvaluationWebhook(payload);
     return { status: 'processed', message: 'Webhook received and processed synchronously' };
   }
 }

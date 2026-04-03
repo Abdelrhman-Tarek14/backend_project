@@ -52,6 +52,7 @@ async function bootstrap() {
     .addTag('Cases')
     .addTag('Users')
     .addTag('System')
+    .addTag('Leaderboard')
     .addBearerAuth()
     .addApiKey({ type: 'apiKey', name: 'x-sf-api-key', in: 'header' }, 'SfApiKey')
     .addApiKey({ type: 'apiKey', name: 'x-gas-api-key', in: 'header' }, 'GasApiKey')

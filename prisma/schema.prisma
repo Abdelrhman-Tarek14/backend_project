@@ -68,6 +68,9 @@ model Case {
   accountName       String?
   country           String?      
   
+  receiveCount      Int          @default(1)
+  lastClosedAt      DateTime?    
+  
   createdAt         DateTime     @default(now())
 
 
@@ -88,6 +91,18 @@ model Assignment {
   status       AssignmentStatus @default(OPEN)
   caseType     String?          // from Salesforce (can change per session)
   formType     String?          // from GAS (agent input)
+  
+  // -- GAS Validation Fields --
+  items        Int?
+  choices      Int?
+  description  Int?
+  images       Int?
+  tmpAreas     Int?
+  isValid      Boolean?
+  isOnTime     Boolean?
+  formSubmitTime DateTime?
+  qualityScore Boolean?
+  finalCheckScore Boolean?
   
   startTime    DateTime?        // when the work started
   etaMinutes   Int?             // ETA provided by GAS

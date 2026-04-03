@@ -6,6 +6,8 @@ import { GetCasesDto } from './dto/get-cases.dto';
 import { SalesforceWebhookDto } from './dto/salesforce-webhook.dto';
 import { CloseCaseWebhookDto } from './dto/close-case-webhook.dto';
 import { GasFormWebhookDto } from './dto/gas-form-webhook.dto';
+import { GasValidatedWebhookDto } from './dto/gas-validated-webhook.dto';
+import { GasEvaluationWebhookDto } from './dto/gas-evaluation-webhook.dto';
 import { UpdateAssignmentDto } from './dto/update-assignment.dto';
 
 @Injectable()
@@ -18,15 +20,28 @@ export class CasesService {
   ) { }
 
   async findAll(query: GetCasesDto) {
-    const { page = 1, limit = 10, status, date, agentId } = query;
+    const { page = 1, limit = 10, status, date, agentId, agentEmail, agentName } = query;
     const skip = (page - 1) * limit;
 
     const whereClause: Prisma.CaseWhereInput = {};
 
-    if (status) {
-      whereClause.assignments = {
-        some: { status: status as AssignmentStatus },
+    // Base conditions for assignments
+    const assignmentFilters: Prisma.AssignmentWhereInput = {};
+    if (status) assignmentFilters.status = status;
+    if (agentId) assignmentFilters.userId = agentId;
+
+    if (agentEmail || agentName) {
+      assignmentFilters.user = {
+        is: {
+          ...(agentEmail ? { email: { contains: agentEmail, mode: 'insensitive' } } : {}),
+          ...(agentName ? { name: { contains: agentName, mode: 'insensitive' } } : {}),
+        },
       };
+    }
+
+    // Apply filters to Case whereClause
+    if (Object.keys(assignmentFilters).length > 0) {
+      whereClause.assignments = { some: assignmentFilters };
     }
 
     if (date) {
@@ -37,12 +52,6 @@ export class CasesService {
       whereClause.createdAt = { gte: startOfDay, lte: endOfDay };
     }
 
-    if (agentId) {
-      whereClause.assignments = {
-        some: { userId: agentId },
-      };
-    }
-
     const [cases, totalCount] = await Promise.all([
       this.prisma.case.findMany({
         where: whereClause,
@@ -51,6 +60,7 @@ export class CasesService {
         orderBy: { createdAt: 'desc' },
         include: {
           assignments: {
+            where: assignmentFilters, // Only return relevant assignments for this history view
             include: { user: { select: { id: true, name: true, email: true, role: true } } }
           }
         },
@@ -124,7 +134,7 @@ export class CasesService {
       const caseRecord = await tx.case.upsert({
         where: { caseNumber },
         create: { caseNumber, accountName: caseAccountName, country: caseCountry },
-        update: { accountName: caseAccountName, country: caseCountry },
+        update: { accountName: caseAccountName, country: caseCountry, receiveCount: { increment: 1 } },
       });
 
       // 2. البحث عن الموظف
@@ -194,7 +204,7 @@ export class CasesService {
           data: {
             formType,
             etaMinutes: caseETA ?? assignment.etaMinutes,
-            startTime: formSubmitTime ? new Date(formSubmitTime) : assignment.startTime,
+            formSubmitTime: formSubmitTime ? new Date(formSubmitTime) : assignment.formSubmitTime,
             etaSetAt: new Date(),
           },
         });
@@ -209,7 +219,7 @@ export class CasesService {
             status: AssignmentStatus.OPEN,
             formType,
             etaMinutes: caseETA,
-            startTime: formSubmitTime ? new Date(formSubmitTime) : new Date(),
+            formSubmitTime: formSubmitTime ? new Date(formSubmitTime) : new Date(),
             etaSetAt: new Date(),
           },
         });
@@ -250,6 +260,11 @@ export class CasesService {
         data: { status: AssignmentStatus.CLOSED, closedAt: new Date() },
       });
 
+      await tx.case.update({
+        where: { id: caseRecord.id },
+        data: { lastClosedAt: new Date() },
+      });
+
       for (const a of openAssignments) {
         await tx.caseLog.create({
           data: { assignmentId: a.id, action: 'SALESFORCE_CASE_CLOSED', userId: user.id, changes: { oldStatus: a.status, newStatus: 'CLOSED' } },
@@ -258,6 +273,109 @@ export class CasesService {
 
       this.broadcastCaseEvent('case_closed', { caseId: caseRecord.id, caseNumber, closedCount: openAssignments.length }, user.id);
       return { count: openAssignments.length };
+    });
+  }
+
+  async handleGasValidatedWebhook(payload: GasValidatedWebhookDto) {
+    const { caseNumber, caseOwner, formType, formSubmitTime, items, choices, description, images, tmpAreas, isValid, isOnTime } = payload;
+    if (!caseNumber || !caseOwner) throw new BadRequestException('caseNumber and caseOwner are required');
+
+    return this.prisma.$transaction(async (tx) => {
+      const caseRecord = await tx.case.findUnique({ where: { caseNumber } });
+      if (!caseRecord) throw new NotFoundException(`Case ${caseNumber} not found`);
+
+      const user = await tx.user.findUnique({ where: { email: caseOwner } });
+      if (!user) throw new NotFoundException(`User with email ${caseOwner} not found`);
+
+      const assignmentQuery: any = {
+        caseId: caseRecord.id,
+        userId: user.id
+      };
+      
+      if (formSubmitTime) {
+         assignmentQuery.formSubmitTime = new Date(formSubmitTime);
+      }
+
+      const assignment = await tx.assignment.findFirst({
+        where: assignmentQuery,
+        orderBy: { assignedAt: 'desc' }
+      });
+
+      if (!assignment) {
+         throw new NotFoundException(`Assignment not found for case: ${caseNumber}, user: ${caseOwner}, time: ${formSubmitTime}`);
+      }
+
+      const updateData: any = { items, choices, description, images, tmpAreas, isValid, isOnTime };
+      if (formType && assignment.formType !== formType) {
+        updateData.formType = formType;
+      }
+
+      const updatedAssignment = await tx.assignment.update({
+        where: { id: assignment.id },
+        data: updateData
+      });
+
+      await tx.caseLog.create({
+         data: {
+            assignmentId: assignment.id,
+            action: 'GAS_EVALUATION_ADDED',
+            userId: user.id,
+            changes: updateData
+         }
+      });
+
+      this.broadcastCaseEvent('case_evaluated', { ...updateData, assignmentId: assignment.id, caseId: caseRecord.id }, user.id);
+
+      return updatedAssignment;
+    });
+  }
+
+  async handleGasEvaluationWebhook(payload: GasEvaluationWebhookDto) {
+    const { caseNumber, caseOwner, evaluationTime, qualityScore, finalCheckScore } = payload;
+    if (!caseNumber || !caseOwner) throw new BadRequestException('caseNumber and caseOwner are required');
+
+    return this.prisma.$transaction(async (tx) => {
+      const caseRecord = await tx.case.findUnique({ where: { caseNumber } });
+      if (!caseRecord) throw new NotFoundException(`Case ${caseNumber} not found`);
+
+      const user = await tx.user.findUnique({ where: { email: caseOwner } });
+      if (!user) throw new NotFoundException(`User with email ${caseOwner} not found`);
+
+      const assignmentQuery: any = {
+        caseId: caseRecord.id,
+        userId: user.id
+      };
+
+      const assignment = await tx.assignment.findFirst({
+        where: assignmentQuery,
+        orderBy: { assignedAt: 'desc' }
+      });
+
+      if (!assignment) {
+         throw new NotFoundException(`Assignment not found for case: ${caseNumber}, user: ${caseOwner}`);
+      }
+
+      const updateData: any = {};
+      if (typeof qualityScore !== 'undefined') updateData.qualityScore = qualityScore;
+      if (typeof finalCheckScore !== 'undefined') updateData.finalCheckScore = finalCheckScore;
+
+      const updatedAssignment = await tx.assignment.update({
+        where: { id: assignment.id },
+        data: updateData
+      });
+
+      await tx.caseLog.create({
+         data: {
+            assignmentId: assignment.id,
+            action: 'GAS_EVALUATION_ADDED',
+            userId: user.id,
+            changes: { evaluationTime, ...updateData }
+         }
+      });
+
+      this.broadcastCaseEvent('case_evaluated', { ...updateData, assignmentId: assignment.id, caseId: caseRecord.id }, user.id);
+
+      return updatedAssignment;
     });
   }
 
