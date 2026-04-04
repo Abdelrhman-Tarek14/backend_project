@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional, IsString, IsInt, IsDateString } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsInt, IsDateString, IsEmail, IsUUID } from 'class-validator';
 import { AssignmentStatus } from '@prisma/client';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -35,11 +35,11 @@ export class UpdateAssignmentDto {
 
   @ApiPropertyOptional({ example: 'agent-uuid-here', description: 'Manually reassign to another user ID' })
   @IsOptional()
-  @IsString()
+  @IsUUID()
   userId?: string;
 
   @ApiPropertyOptional({ example: 'new-owner@example.com', description: 'Manual owner email update' })
   @IsOptional()
-  @IsString()
+  @IsEmail()
   ownerEmail?: string;
 }

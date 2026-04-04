@@ -13,7 +13,7 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
           return request?.cookies?.refresh_token;
         },
       ]),
-      secretOrKey: configService.get<string>('jwt.refreshSecret') || 'rt-secret',
+      secretOrKey: configService.get<string>('jwt.refreshSecret') as string,
       passReqToCallback: true,
     });
   }

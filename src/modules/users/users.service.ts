@@ -3,6 +3,17 @@ import { PrismaService } from '../../database/prisma.service';
 import { Role, User, Prisma } from '@prisma/client';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 
+export const ROLE_RANK: Record<Role, number> = {
+  [Role.SUPER_USER]: 100,
+  [Role.ADMIN]: 80,
+  [Role.SUPERVISOR]: 60,
+  [Role.CMD]: 40,
+  [Role.LEADER]: 30,
+  [Role.SUPPORT]: 20,
+  [Role.AGENT]: 10,
+  [Role.NEW_USER]: 0,
+};
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -97,18 +108,14 @@ export class UsersService {
 
     const reqRole = requestingUser.role;
 
-    if (reqRole === Role.SUPER_USER) {
-    } else if (reqRole === Role.ADMIN) {
-      if (targetUser.role === Role.SUPER_USER || data.role === Role.SUPER_USER) {
-        throw new ForbiddenException('Insufficient permissions to modify Super User accounts.');
+    // HIERARCHY CHECK: No one can modify someone of higher or equal rank (except SUPER_USER)
+    if (reqRole !== Role.SUPER_USER) {
+      if (ROLE_RANK[targetUser.role] >= ROLE_RANK[reqRole]) {
+         throw new ForbiddenException(`Insufficient permissions to modify users with ${targetUser.role} rank.`);
       }
-    } else if (reqRole === Role.SUPERVISOR) {
-      const restrictedRoles: Role[] = [Role.ADMIN, Role.SUPER_USER];
-      if (restrictedRoles.includes(targetUser.role) || (data.role && restrictedRoles.includes(data.role))) {
-        throw new ForbiddenException('Supervisors can only manage accounts up to Supervisor level.');
+      if (data.role && ROLE_RANK[data.role] > ROLE_RANK[reqRole]) {
+         throw new ForbiddenException(`You cannot promote a user to a rank higher than yours (${data.role}).`);
       }
-    } else {
-      throw new ForbiddenException('You do not have permission to modify user status.');
     }
 
     const updateData: Prisma.UserUpdateInput = {};

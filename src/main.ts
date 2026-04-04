@@ -6,12 +6,17 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import { winstonConfig } from './common/logger/winston.config';
+import helmet from 'helmet';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: winstonConfig,
     rawBody: true,
   });
+
+  // Helmet security headers (XSS, Clickjacking, etc.)
+  app.use(helmet());
 
   // Enable trust proxy for accurate client IP identification (behind Nginx, Cloudflare, etc.)
   app.getHttpAdapter().getInstance().set('trust proxy', 1);
@@ -20,8 +25,9 @@ async function bootstrap() {
   app.use(cookieParser());
 
   // CORS config to support withCredentials: true
+  const configService = app.get(ConfigService);
   app.enableCors({
-    origin: true, // In production, replace with specific domain
+    origin: configService.get('corsOrigin'),
     credentials: true,
   });
 
@@ -57,18 +63,18 @@ async function bootstrap() {
     .addApiKey({ type: 'apiKey', name: 'x-sf-api-key', in: 'header' }, 'SfApiKey')
     .addApiKey({ type: 'apiKey', name: 'x-gas-api-key', in: 'header' }, 'GasApiKey')
     .build();
-  
+
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document
-  //   , {
-  //   customfavIcon: 'logo.ico', 
-  //   customCss: `
-  //     .topbar { display: none !important; } 
-  //     body { background-color: #1e1e1e !important; }
-  //     .swagger-ui .info .title { color: #ff5722 !important; }
-  //     .swagger-ui .info p { color: #dddddd !important; }
-  //   `,
-  // }
+    //   , {
+    //   customfavIcon: 'logo.ico', 
+    //   customCss: `
+    //     .topbar { display: none !important; } 
+    //     body { background-color: #1e1e1e !important; }
+    //     .swagger-ui .info .title { color: #ff5722 !important; }
+    //     .swagger-ui .info p { color: #dddddd !important; }
+    //   `,
+    // }
   );
 
   await app.listen(process.env.PORT ?? 3000);

@@ -17,14 +17,16 @@ export class WebhookSecurityGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<RawBodyRequest>();
     
     // 1. IP Validation (IP Allowlisting)
-    // request.ip is reliable here because of 'trust proxy' in main.ts
-    const clientIp = request.ip || request.socket.remoteAddress || '';
+    let clientIp = request.ip || request.socket.remoteAddress || '';
     
-    // Support comma-separated IPs from configuration mapping
+    // Normalize IPv6-mapped IPv4 (e.g. ::ffff:127.0.0.1 -> 127.0.0.1)
+    if (clientIp.startsWith('::ffff:')) {
+      clientIp = clientIp.substring(7);
+    }
+    
     const allowedIps = this.configService.get<string[]>('allowedWebhookIps', []);
     
     // If the list is NOT empty and the IP is NOT in the list, block it.
-    // If the list IS empty, we allow any IP (standard behavior unless restricted).
     if (allowedIps.length > 0 && !allowedIps.includes(clientIp)) {
       this.logger.warn(`Blocked webhook attempt from unauthorized IP: ${clientIp}`);
       throw new ForbiddenException('Unauthorized IP Address');
@@ -53,8 +55,6 @@ export class WebhookSecurityGuard implements CanActivate {
       const hmac = crypto.createHmac('sha256', secret);
       const computedSignature = hmac.update(rawBody).digest('hex');
 
-      // Use timingSafeEqual with Buffer content to prevent timing attacks.
-      // Both buffers MUST be the same length.
       const signatureBuffer = Buffer.from(signatureHeader, 'hex');
       const computedBuffer = Buffer.from(computedSignature, 'hex');
 

@@ -37,8 +37,8 @@ The system monitors real-time activity for all agents and supervisors:
 
 ### 🔐 Webhook Security (Zero-Trust Architecture)
 The system uses a highly secure, zero-trust approach for system-to-system integrations (Salesforce & GAS):
-- **IP Allowlisting**: Requests are strictly filtered by IP via `ALLOWED_WEBHOOK_IPS`.
-- **HMAC SHA256 Signatures**: Payloads must be signed using `WEBHOOK_SECRET`. The guard computes the hash of the raw request payload to ensure data integrity and authenticity.
+- **IP Allowlisting & Normalization**: Requests are strictly filtered by IP via `ALLOWED_WEBHOOK_IPS`. The system automatically normalizes IPv6-mapped IPv4 addresses (e.g., `::ffff:127.0.0.1` -> `127.0.0.1`) to ensure reliable filtering across different network environments.
+- **HMAC SHA256 Signatures**: Payloads must be signed using `WEBHOOK_SECRET`. The guard computes the hash of the raw request payload using `crypto.timingSafeEqual` to prevent timing attacks.
 - **Synchronous Processing**: Webhooks are processed immediately to ensure atomic database updates. High-performance indexing and efficient service logic keep response times minimal.
 
 ### 🛑 Security & Rate Limiting
@@ -98,14 +98,11 @@ Each time an agent submits the ETA form via **GAS**, a **new Assignment record**
 ---
 
 ### 🚦 Hierarchical Visibility & Permissions (RBAC)
-The system implements a strict hierarchical visibility model for its users:
-- **`SUPER_USER` / `ADMIN`**: Complete visibility of all users. Can perform any role updates (with `ADMIN` restricted from modifying `SUPER_USER`).
-- **`SUPERVISOR`**: Can see and manage all users except `ADMIN` and `SUPER_USER`. Can promote/demote users between `NEW_USER` and `SUPERVISOR`.
-- **`CMD` / `LEADER`**: Can only see the status of `AGENT`, `LEADER`, and `CMD` roles. No management permissions.
-- **`AGENT` / `SUPPORT` / `NEW_USER`**: No access to the user list. Restricted from viewing any other user's status.
-
-> [!CAUTION]
-> **Self-Modification Prohibited**: No user, regardless of role, can change their own role. Administrative actions must be performed by a different user with sufficient permissions.
+The system implements a strict **Rank-Based Hierarchical Model**:
+- **Role Ranks**: Every role is assigned a numeric rank (e.g., `SUPER_USER: 100`, `ADMIN: 80`, `AGENT: 10`).
+- **Management Guard**: Users can only manage/modify accounts with a **lower rank** than their own. This prevents an `ADMIN` from modifying a `SUPER_USER`, and ensures a `LEADER` cannot promote someone to `ADMIN`.
+- **Visibility**: `ADMIN` and `SUPER_USER` have complete visibility. `SUPERVISOR` sees everyone except `ADMIN+`. `CMD/LEADER` only see operational roles.
+- **Self-Modification Prohibited**: No user can change their own role or active status.
 
 ---
 
@@ -127,11 +124,80 @@ The `User` model supports a **one-to-many self-referencing hierarchy**, allowing
 
 ---
 
-## 🌐 API Documentation
+## 🛡 Phase 1 & 2 Security & Performance Audit (April 4, 2026)
+
+### 🔒 Security Hardening
+- **HTTP Security Headers**: Integrated `helmet` middleware to enforce secure headers (CSP, HSTS, XSS protection).
+- **Dynamic CORS**: Moved CORS origin control to `.env` (`CORS_ORIGIN`) for environment-specific flexibility.
+- **Refresh Token Reuse Detection**: Implemented a defense-in-depth strategy where using an old/rotated refresh token triggers a `TOKEN_REUSE_DETECTED` event and immediately invalidates all active sessions for that user.
+
+### ⚡ Database Optimization
+- **Performance Indexes**: Added strategic indexes to `schema.prisma` targeting the most expensive queries:
+    - `Assignment(userId, assignedAt)`: Optimized the Leaderboard SQL query for sub-second execution.
+    - `Assignment(caseId)`, `Assignment(status)`: Accelerated case history and status filtering.
+    - `User(role, isActive)`, `User(leaderId)`: Improved management list and hierarchy performance.
+- **Prisma 7 Compatibility**: Standardized the configuration by moving database connection strings to `prisma.config.ts`, ensuring compliance with the latest Prisma architecture.
+- **Data Integrity**: Enforced strict relationship rules to prevent orphaned records and maintain a reliable audit trail.
+
+### 🔄 Integration & Webhook Audit
+- **Transaction Hardening**: Refactored logic to move Socket.io emissions outside of Prisma transactions, ensuring database locks are released as quickly as possible.
+- **Strict Data Validation**: Upgraded all webhook DTOs with `@IsISO8601()`, `@IsEmail()`, and other strict Type-Safety decorators to prevent malformed data from external systems.
+- **Race Condition Prevention**: Verified the use of atomic `upsert` and strict `findFirst` ordering within transactions to handle high-frequency overlap between Salesforce and GAS webhooks.
+
+### 💎 Comprehensive Module Audit (April 4, 2026)
+- **Auth Hardening**: Removed all insecure default secrets (`|| 'secret'`) from JWT strategies. All secrets are now strictly required in `.env` for the server to boot.
+- **Hierarchy Security**: Implemented a centralized `ROLE_RANK` system in `UsersService` to prevent unauthorized privilege escalation (e.g., an ADMIN promoting someone to SUPER_USER).
+- **Webhook Stabilization**: Resolved IP matching issues behind proxies/dual-stack by implementing IPv4 normalization in `WebhookSecurityGuard`.
+- **RT Connectivity**: Optimized Socket.io connection logs to differentiate between token-related failures and connectivity issues.
+- **Data Integrity**: Verified 100% Prisma `select` coverage to ensure `passwordHash` is never leaked through any API response or the Leaderboard.
+- **Robust Testing Suite**: Added a comprehensive set of unit tests covering the most critical security and mathematical logic.
+
+---
+
+## 🛠 Getting Started
+
+### 1. Environment Configuration
+Create a `.env` file from `.env.example` and ensure the following variables are set:
+
+```env
+# Database
+DATABASE_URL="postgresql://user:pass@localhost:5432/db"
+
+# Security
+CORS_ORIGIN=true  # Set to specific origin in production
+WEBHOOK_SECRET=your-shared-secret-key
+ALLOWED_WEBHOOK_IPS=127.0.0.1  # Comma-separated list
+
+# Auth
+JWT_ACCESS_SECRET=your-access-secret
+JWT_ACCESS_EXPIRES_IN=1h
+JWT_REFRESH_SECRET=your-refresh-secret
+JWT_REFRESH_EXPIRES_IN=24h
+GOOGLE_CLIENT_ID=your-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-client-secret
+ENABLE_LOCAL_AUTH=true
+```
 
 ### 📘 Swagger UI
 Interactive API documentation is available at:
 `http://localhost:3000/api`
+
+### 🧪 Unit Testing
+The project includes a robust suite of unit tests for critical security and business logic.
+
+```bash
+# Run all tests
+npm run test
+
+# Run tests in watch mode (Development)
+npm run test:watch
+```
+
+Test coverage includes:
+- **Auth Service**: Token reuse detection and account status blocking.
+- **Users Service**: Role hierarchy (Rank-based) validation.
+- **Webhook Guard**: IP normalization and HMAC signature verification.
+- **Leaderboard**: Calculation accuracy and zero-case protection.
 
 ### 🏁 Core Endpoints
 | Category | Method | Endpoint | Auth | Description |
@@ -156,17 +222,36 @@ Interactive API documentation is available at:
 
 ---
 
-## 🛠 Setup Instructions
+#### 🐳 Docker Deployment Guide (Production)
 
-1. **Install Dependencies:**
-   ```bash
-   npm install
-   ```
+This project uses a multi-stage Docker build to ensure a lightweight and secure production image.
 
-2. **Setup Environment:**
-   Create a `.env` file with the following:
-    - `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_SECRET`, `JWT_REFRESH_EXPIRES_IN`.
-    - `ALLOWED_WEBHOOK_IPS` (comma-separated), `WEBHOOK_SECRET`.
+1.  **Build the Image**:
+    ```bash
+    docker build -t termhub-backend .
+    ```
+
+2.  **Prepare Production Environment**:
+    Manually create a `.env` file on the server. **Do not copy your local .env**.
+    Ensure `DATABASE_URL` points to the internal IP of the database server.
+
+3.  **Run the Container**:
+    ```bash
+    docker run -d \
+      --name termhub-api \
+      -p 3000:3000 \
+      --env-file .env \
+      --restart always \
+      termhub-backend
+    ```
+
+4.  **Database Synchronization**:
+    The Docker build automatically runs `prisma generate`. To push schema changes to a fresh DB:
+    ```bash
+    docker exec -it termhub-api npx prisma db push
+    ```
+
+---
 
 4. **Password Hashing Utility:**
    If you need to generate a hashed password for manual database entry:

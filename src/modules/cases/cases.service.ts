@@ -96,7 +96,7 @@ export class CasesService {
     const assignment = await this.prisma.assignment.findUnique({ where: { id: assignmentId } });
     if (!assignment) throw new NotFoundException('Assignment not found');
 
-    return this.prisma.$transaction(async (tx) => {
+    const updatedAssignment = await this.prisma.$transaction(async (tx) => {
       const updatedAssignment = await tx.assignment.update({
         where: { id: assignmentId },
         data: {
@@ -115,21 +115,25 @@ export class CasesService {
         },
       });
 
-      this.broadcastCaseEvent('case_updated', {
-        caseId: updatedAssignment.caseId,
-        assignmentId: updatedAssignment.id,
-        ...data,
-      }, updatedAssignment.userId || undefined);
-
       return updatedAssignment;
     });
+
+    this.broadcastCaseEvent('case_updated', {
+      caseId: updatedAssignment.caseId,
+      assignmentId: updatedAssignment.id,
+      ...data,
+    }, updatedAssignment.userId ?? undefined);
+
+    this.broadcastLeaderboardUpdate(updatedAssignment);
+
+    return updatedAssignment;
   }
 
   async handleSalesforceWebhook(payload: SalesforceWebhookDto) {
     const { caseNumber, caseAccountName, caseCountry, caseType, caseOwner, caseStartTime } = payload;
     if (!caseNumber) throw new BadRequestException('caseNumber is required');
 
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       // 1. Upsert Case داخل الترانزاكشن لضمان الذرية (Atomicity)
       const caseRecord = await tx.case.upsert({
         where: { caseNumber },
@@ -161,22 +165,24 @@ export class CasesService {
         },
       });
 
-      this.broadcastCaseEvent('case_assigned', {
-        caseId: caseRecord.id,
-        assignmentId: assignment.id,
-        status: assignment.status,
-        caseNumber: caseRecord.caseNumber,
-      }, user?.id);
-
-      return assignment;
+      return { assignment, caseRecord };
     });
+
+    this.broadcastCaseEvent('case_assigned', {
+      caseId: result.caseRecord.id,
+      assignmentId: result.assignment.id,
+      status: result.assignment.status,
+      caseNumber: result.caseRecord.caseNumber,
+    }, result.assignment.userId ?? undefined);
+
+    return result.assignment;
   }
 
   async handleGasFormWebhook(payload: GasFormWebhookDto) {
     const { caseNumber, caseOwner, formType, caseETA, formSubmitTime } = payload;
     if (!caseNumber || !caseOwner) throw new BadRequestException('caseNumber and caseOwner are required');
 
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       // 1. التأكد من وجود الحالة
       let caseRecord = await tx.case.findUnique({ where: { caseNumber } });
       if (!caseRecord) {
@@ -228,21 +234,23 @@ export class CasesService {
         });
       }
 
-      this.broadcastCaseEvent('eta_updated', {
-        caseId: caseRecord.id,
-        assignmentId: assignment.id,
-        etaMinutes: caseETA,
-        updatedAt: assignment.etaSetAt,
-      }, user.id);
-
-      return assignment;
+      return { assignment, caseRecord };
     });
+
+    this.broadcastCaseEvent('eta_updated', {
+      caseId: result.caseRecord.id,
+      assignmentId: result.assignment.id,
+      etaMinutes: result.assignment.etaMinutes,
+      updatedAt: result.assignment.etaSetAt,
+    }, result.assignment.userId ?? undefined);
+
+    return result.assignment;
   }
 
   async handleSalesforceCloseWebhook(payload: CloseCaseWebhookDto) {
     const { caseNumber, caseOwner } = payload;
 
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const caseRecord = await tx.case.findUnique({ where: { caseNumber } });
       if (!caseRecord) throw new NotFoundException(`Case ${caseNumber} not found`);
 
@@ -271,16 +279,24 @@ export class CasesService {
         });
       }
 
-      this.broadcastCaseEvent('case_closed', { caseId: caseRecord.id, caseNumber, closedCount: openAssignments.length }, user.id);
-      return { count: openAssignments.length };
+      return { count: openAssignments.length, caseId: caseRecord.id, userId: user.id };
     });
+
+    if (result.count > 0) {
+       for (let i = 0; i < result.count; i++) {
+          this.broadcastLeaderboardUpdate({ status: AssignmentStatus.CLOSED });
+       }
+       this.broadcastCaseEvent('case_closed', { caseId: result.caseId, caseNumber, closedCount: result.count }, result.userId ?? undefined);
+    }
+
+    return { count: result.count };
   }
 
   async handleGasValidatedWebhook(payload: GasValidatedWebhookDto) {
     const { caseNumber, caseOwner, formType, formSubmitTime, items, choices, description, images, tmpAreas, isValid, isOnTime } = payload;
     if (!caseNumber || !caseOwner) throw new BadRequestException('caseNumber and caseOwner are required');
 
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const caseRecord = await tx.case.findUnique({ where: { caseNumber } });
       if (!caseRecord) throw new NotFoundException(`Case ${caseNumber} not found`);
 
@@ -324,17 +340,21 @@ export class CasesService {
          }
       });
 
-      this.broadcastCaseEvent('case_evaluated', { ...updateData, assignmentId: assignment.id, caseId: caseRecord.id }, user.id);
-
-      return updatedAssignment;
+      return { updatedAssignment, caseId: caseRecord.id, userId: user.id, updateData };
     });
+
+    this.broadcastCaseEvent('case_evaluated', { ...result.updateData, assignmentId: result.updatedAssignment.id, caseId: result.caseId }, result.userId);
+
+    this.broadcastLeaderboardUpdate(result.updatedAssignment);
+
+    return result.updatedAssignment;
   }
 
   async handleGasEvaluationWebhook(payload: GasEvaluationWebhookDto) {
     const { caseNumber, caseOwner, evaluationTime, qualityScore, finalCheckScore } = payload;
     if (!caseNumber || !caseOwner) throw new BadRequestException('caseNumber and caseOwner are required');
 
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const caseRecord = await tx.case.findUnique({ where: { caseNumber } });
       if (!caseRecord) throw new NotFoundException(`Case ${caseNumber} not found`);
 
@@ -373,16 +393,26 @@ export class CasesService {
          }
       });
 
-      this.broadcastCaseEvent('case_evaluated', { ...updateData, assignmentId: assignment.id, caseId: caseRecord.id }, user.id);
-
-      return updatedAssignment;
+      return { updatedAssignment, caseId: caseRecord.id, userId: user.id, updateData };
     });
+
+    this.broadcastCaseEvent('case_evaluated', { ...result.updateData, assignmentId: result.updatedAssignment.id, caseId: result.caseId }, result.userId);
+
+    this.broadcastLeaderboardUpdate(result.updatedAssignment);
+
+    return result.updatedAssignment;
   }
 
   private broadcastCaseEvent(eventName: string, payload: any, userId?: string) {
     this.realtimeGateway.server.to('management_dashboard').emit(eventName, payload);
     if (userId) {
       this.realtimeGateway.server.to(`user:${userId}`).emit(eventName, payload);
+    }
+  }
+
+  private broadcastLeaderboardUpdate(assignment: { status: AssignmentStatus }) {
+    if (assignment.status === AssignmentStatus.CLOSED) {
+      this.realtimeGateway.server.to('management_dashboard').emit('leaderboard_updated');
     }
   }
 }

@@ -13,7 +13,7 @@ import { GasFormWebhookDto } from './dto/gas-form-webhook.dto';
 import { CloseCaseWebhookDto } from './dto/close-case-webhook.dto';
 import { GasValidatedWebhookDto } from './dto/gas-validated-webhook.dto';
 import { GasEvaluationWebhookDto } from './dto/gas-evaluation-webhook.dto';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiHeader, ApiSecurity } from '@nestjs/swagger';
 
 interface RequestWithUser extends Request {
   user: { id: string; email: string; role: Role };
@@ -33,6 +33,7 @@ export class CasesController {
     summary: 'Get All Cases (Unified)', 
     description: 'Retrieve cases with dynamic filtering. Agents are restricted to their own assignments, while Management can use all filters.' 
   })
+  @ApiResponse({ status: 200, description: 'List of cases retrieved successfully.' })
   async getAllCases(@Request() req: RequestWithUser, @Query() query: GetCasesDto) {
     const managementRoles: Role[] = [Role.SUPER_USER, Role.ADMIN, Role.SUPERVISOR, Role.CMD, Role.LEADER, Role.SUPPORT];
     const isManagement = managementRoles.includes(req.user.role);
@@ -51,6 +52,7 @@ export class CasesController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get Case by ID', description: 'Detailed info with all historical assignments.' })
+  @ApiResponse({ status: 200, description: 'Case details retrieved successfully.' })
   async getCaseById(@Param('id') id: string) {
     return this.casesService.findById(id);
   }
@@ -60,6 +62,7 @@ export class CasesController {
   @Roles(Role.SUPER_USER, Role.ADMIN, Role.CMD)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Manual Assignment Update', description: 'Manually update any field for a specific agent session (Admin/CMD only).' })
+  @ApiResponse({ status: 200, description: 'Assignment updated successfully.' })
   async updateAssignment(
     @Param('assignmentId') assignmentId: string,
     @Body() dto: UpdateAssignmentDto,
@@ -72,8 +75,9 @@ export class CasesController {
   @Throttle({ webhook: { limit: 200, ttl: 60000 } })
   @UseGuards(WebhookSecurityGuard)
   @HttpCode(HttpStatus.ACCEPTED)
+  @ApiSecurity('SfApiKey')
   @ApiHeader({ name: 'x-webhook-signature', description: 'HMAC SHA256 Signature of the raw payload', required: true })
-  @ApiOperation({ summary: 'Salesforce Webhook' })
+  @ApiOperation({ summary: 'Salesforce Webhook', description: 'Triggered when a case is created or assigned in Salesforce.' })
   @ApiResponse({ status: 202, description: 'Webhook received and processed successfully.' })
   async handleSalesforceWebhook(@Body() payload: SalesforceWebhookDto) {
     await this.casesService.handleSalesforceWebhook(payload);
@@ -84,8 +88,9 @@ export class CasesController {
   @Throttle({ webhook: { limit: 200, ttl: 60000 } })
   @UseGuards(WebhookSecurityGuard)
   @HttpCode(HttpStatus.ACCEPTED)
+  @ApiSecurity('SfApiKey')
   @ApiHeader({ name: 'x-webhook-signature', description: 'HMAC SHA256 Signature of the raw payload', required: true })
-  @ApiOperation({ summary: 'Salesforce Case Closure' })
+  @ApiOperation({ summary: 'Salesforce: Close Case' })
   @ApiResponse({ status: 202, description: 'Webhook received and processed successfully.' })
   async handleSalesforceCloseWebhook(@Body() payload: CloseCaseWebhookDto) {
     await this.casesService.handleSalesforceCloseWebhook(payload);
@@ -96,8 +101,9 @@ export class CasesController {
   @Throttle({ webhook: { limit: 200, ttl: 60000 } })
   @UseGuards(WebhookSecurityGuard)
   @HttpCode(HttpStatus.ACCEPTED)
-  @ApiHeader({ name: 'x-webhook-signature', description: 'HMAC SHA256 Signature of the raw payload', required: true })
-  @ApiOperation({ summary: 'GAS Form Webhook' })
+  @ApiSecurity('GasApiKey')
+  @ApiHeader({ name: 'x-webhook-signature', description: 'HMAC SHA256 Signature', required: true })
+  @ApiOperation({ summary: 'GAS: Form Submission (ETA)' })
   @ApiResponse({ status: 202, description: 'Webhook received and processed successfully.' })
   async handleGasFormWebhook(@Body() payload: GasFormWebhookDto) {
     await this.casesService.handleGasFormWebhook(payload);
@@ -108,8 +114,9 @@ export class CasesController {
   @Throttle({ webhook: { limit: 200, ttl: 60000 } })
   @UseGuards(WebhookSecurityGuard)
   @HttpCode(HttpStatus.ACCEPTED)
-  @ApiHeader({ name: 'x-webhook-signature', description: 'HMAC SHA256 Signature of the raw payload', required: true })
-  @ApiOperation({ summary: 'GAS Validated Webhook' })
+  @ApiSecurity('GasApiKey')
+  @ApiHeader({ name: 'x-webhook-signature', description: 'HMAC SHA256 Signature', required: true })
+  @ApiOperation({ summary: 'GAS: Form Validation (Metrics)' })
   @ApiResponse({ status: 202, description: 'Webhook received and processed successfully.' })
   async handleGasValidatedWebhook(@Body() payload: GasValidatedWebhookDto) {
     await this.casesService.handleGasValidatedWebhook(payload);
@@ -120,8 +127,9 @@ export class CasesController {
   @Throttle({ webhook: { limit: 200, ttl: 60000 } })
   @UseGuards(WebhookSecurityGuard)
   @HttpCode(HttpStatus.ACCEPTED)
-  @ApiHeader({ name: 'x-webhook-signature', description: 'HMAC SHA256 Signature of the raw payload', required: true })
-  @ApiOperation({ summary: 'GAS Evaluation Webhook' })
+  @ApiSecurity('GasApiKey')
+  @ApiHeader({ name: 'x-webhook-signature', description: 'HMAC SHA256 Signature', required: true })
+  @ApiOperation({ summary: 'GAS: Evaluation Submission' })
   @ApiResponse({ status: 202, description: 'Webhook received and processed successfully.' })
   async handleGasEvaluationWebhook(@Body() payload: GasEvaluationWebhookDto) {
     await this.casesService.handleGasEvaluationWebhook(payload);

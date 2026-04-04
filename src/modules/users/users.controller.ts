@@ -22,7 +22,11 @@ export class UsersController {
   @ApiOperation({ summary: 'Get Current Profile', description: 'Retrieve the profile of the currently authenticated user.' })
   @ApiResponse({ status: 200, description: 'Return user profile' })
   getProfile(@Request() req: RequestWithUser) {
-    return req.user;
+    return {
+       id: req.user.id,
+       email: req.user.email,
+       role: req.user.role
+    };
   }
 
   @Get()

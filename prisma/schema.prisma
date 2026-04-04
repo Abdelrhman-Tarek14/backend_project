@@ -55,6 +55,9 @@ model User {
   assignedOthers     Assignment[] @relation("AssignedBy")
   userLogs           UserLog[]
   caseLogs           CaseLog[]
+
+  @@index([role, isActive])
+  @@index([leaderId])
 }
 
 // =======================
@@ -76,6 +79,8 @@ model Case {
 
 
   assignments       Assignment[]
+
+  @@index([createdAt])
 }
 
 // =======================
@@ -120,6 +125,10 @@ model Assignment {
   user         User?            @relation("UserAssignments", fields: [userId], references: [id])
   assignedBy   User?            @relation("AssignedBy", fields: [assignedById], references: [id])
   caseLogs     CaseLog[]
+
+  @@index([userId, assignedAt])
+  @@index([caseId])
+  @@index([status])
 }
 
 // =======================
@@ -137,6 +146,9 @@ model CaseLog {
 
   assignment   Assignment @relation(fields: [assignmentId], references: [id])
   user         User?      @relation(fields: [userId], references: [id])
+
+  @@index([assignmentId, createdAt])
+  @@index([userId, createdAt])
 }
 
 // =======================
@@ -150,4 +162,6 @@ model UserLog {
 
   // Relations
   user         User       @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
 }

@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsEmail } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEmail, IsISO8601 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class SalesforceWebhookDto {
@@ -28,7 +28,7 @@ export class SalesforceWebhookDto {
   caseOwner?: string;
 
   @ApiProperty({ example: '2026-03-30T14:00:00Z', description: 'Start time in ISO 8601 format' })
-  @IsString()
+  @IsISO8601()
   @IsOptional()
   caseStartTime?: string;
 }

@@ -55,7 +55,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
 
       await client.join(`user:${userId}`);
 
-      const managementRoles: string[] = [Role.ADMIN, Role.SUPER_USER, Role.SUPERVISOR, Role.CMD, Role.LEADER, Role.SUPPORT];
+      const managementRoles: Role[] = [Role.SUPER_USER, Role.ADMIN, Role.SUPERVISOR, Role.CMD, Role.LEADER, Role.SUPPORT];
       if (managementRoles.includes(payload.role)) {
         await client.join('management_dashboard');
       }
@@ -68,7 +68,8 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
       this.logger.log(`User ${userId} connected as ${payload.role}`);
 
     } catch (err: any) {
-      this.logger.warn(`Connection failed for socket ${client.id}: ${err.message}`);
+      const reason = err instanceof Error ? err.message : 'Unknown error';
+      this.logger.warn(`Realtime connection rejected for socket ${client.id}. Reason: ${reason}`);
       client.disconnect();
     }
   }

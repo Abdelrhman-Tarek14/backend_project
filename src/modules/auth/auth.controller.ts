@@ -85,7 +85,7 @@ export class AuthController {
     await this.authService.logout(req.user.sub);
     const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: this.configService.get<string>('NODE_ENV') === 'production',
       sameSite: 'lax' as const,
     };
     res.clearCookie('access_token', cookieOptions);
@@ -94,15 +94,16 @@ export class AuthController {
   }
 
   private setCookies(res: Response, tokens: { access_token: string; refresh_token: string }) {
+    const isProd = this.configService.get<string>('NODE_ENV') === 'production';
     res.cookie('access_token', tokens.access_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProd,
       sameSite: 'lax',
       maxAge: 1 * 60 * 60 * 1000, // 1 hour
     });
     res.cookie('refresh_token', tokens.refresh_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProd,
       sameSite: 'lax',
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     });

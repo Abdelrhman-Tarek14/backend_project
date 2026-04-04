@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsEmail, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsNotEmpty, IsEmail, IsOptional, IsBoolean, IsISO8601 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class GasEvaluationWebhookDto {
@@ -14,7 +14,7 @@ export class GasEvaluationWebhookDto {
 
   @ApiPropertyOptional({ example: '2023-10-25T10:00:00Z', description: 'Evaluation Time' })
   @IsOptional()
-  @IsString()
+  @IsISO8601()
   evaluationTime?: string;
 
   @ApiPropertyOptional({ example: true, description: 'Quality Score (passed = true)' })

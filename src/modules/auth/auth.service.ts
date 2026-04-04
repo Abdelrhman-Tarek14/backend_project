@@ -115,7 +115,13 @@ export class AuthService {
 
     const rtMatches = await bcrypt.compare(rt, user.hashedRefreshToken);
     if (!rtMatches) {
-      throw new UnauthorizedException('Access Denied');
+      // TOKEN REUSE DETECTION
+      // If a user sends a valid RT that doesn't match the one in the database, 
+      // it means this token has likely been used before or stolen.
+      // For safety, we invalidate all sessions by clearing the stored token.
+      await this.usersService.update(userId, { hashedRefreshToken: null });
+      await this.usersService.logUserActivity(userId, 'TOKEN_REUSE_DETECTED');
+      throw new UnauthorizedException('Access Denied - Potential reuse detected');
     }
 
     if (user.role === Role.NEW_USER || !user.isActive) {

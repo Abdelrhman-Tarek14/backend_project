@@ -14,5 +14,6 @@ export default () => ({
   salesforceWebhookSecret: process.env.SALESFORCE_WEBHOOK_SECRET,
   webhookSecret: process.env.WEBHOOK_SECRET,
   allowedWebhookIps: process.env.ALLOWED_WEBHOOK_IPS?.split(','),
+  corsOrigin: process.env.CORS_ORIGIN === 'true' ? true : process.env.CORS_ORIGIN,
 });
 
