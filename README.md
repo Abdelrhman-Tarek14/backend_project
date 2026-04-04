@@ -8,10 +8,12 @@ It solves "time blindness" for agents via live tracking and provides a centraliz
 
 This project follows a **Modular Monolith** pattern using a single NestJS server with isolated internal modules.
 
-- **Backend:** Node.js (NestJS v11) — REST API & WebSocket Server
+- **Backend:** Node.js (NestJS v11.1.18) — REST API & WebSocket Server
+- **Build System:** [SWC](https://swc.rs/) (Speedy Web Compiler) — ~20x faster than `tsc`
 - **Database:** PostgreSQL v16
 - **ORM:** Prisma v7 (v7.6.0+)
 - **Authentication:** Google Identity Provider (OAuth2) & JWT (with Refresh Token Rotation)
+- **Security:** Helmet, CORS, CSRF (Double Submit Cookie), Rate Limiting
 - **Documentation:** Swagger (OpenAPI 3.0)
 - **Real-time:** Socket.io
 
@@ -29,6 +31,8 @@ TermHub uses a dual-token JWT strategy for maximum security:
 
 > [!IMPORTANT]
 > **Frontend Requirement**: Clients must send requests with `withCredentials: true` (or equivalent) for the browser to include and accept cookies.
+>
+> **CSRF Requirement**: Before any state-changing request (POST, PATCH, DELETE), the client must first call `GET /csrf` to obtain a token and include it in the `x-csrf-token` header.
 
 ### 👤 User Activity Tracking
 The system monitors real-time activity for all agents and supervisors:
@@ -46,6 +50,12 @@ The application uses a tiered rate-limiting strategy via `@nestjs/throttler`:
 - **Global Policy**: 120 requests/minute for general API usage.
 - **Auth Protection**: Strict **5 attempts per 3 minutes** on login/SSO endpoints to prevent brute-force attacks.
 - **Webhook Policy**: 200 requests/minute for Salesforce and GAS integrations to handle peak synchronization loads.
+
+### 🛡 CSRF Protection
+State-changing endpoints are protected against Cross-Site Request Forgery attacks using the **Double Submit Cookie** pattern via `csrf-csrf`:
+- **How it works**: The server issues a signed CSRF token via `GET /csrf`. The client must echo this token in every `POST/PATCH/DELETE` request using the `x-csrf-token` header.
+- **Webhook Exemption**: All `/cases/webhook/*` routes are exempt from CSRF checks, as they are server-to-server calls authenticated via HMAC API keys.
+- **Cookie**: The CSRF state cookie is named `__Host-csrf` and is `HttpOnly`, `SameSite: Lax`.
 
 ---
 
@@ -176,6 +186,9 @@ JWT_REFRESH_EXPIRES_IN=24h
 GOOGLE_CLIENT_ID=your-id.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=your-client-secret
 ENABLE_LOCAL_AUTH=true
+
+# CSRF Protection
+CSRF_SECRET=a-long-random-string-for-csrf
 ```
 
 ### 📘 Swagger UI
@@ -199,14 +212,14 @@ Test coverage includes:
 - **Webhook Guard**: IP normalization and HMAC signature verification.
 - **Leaderboard**: Calculation accuracy and zero-case protection.
 
-### 🏁 Core Endpoints
 | Category | Method | Endpoint | Auth | Description |
 | :--- | :--- | :--- | :--- | :--- |
-| **Auth** | `POST` | `/auth/login` | None | Local login |
-| **Auth** | `POST` | `/auth/google-sso` | None | Google SSO login |
-| **Auth** | `POST` | `/auth/refresh` | Refresh Guard | Rotate tokens |
-| **Auth** | `POST` | `/auth/logout` | JWT | Logout and clear RT |
 | **System** | `GET` | `/` | None | System Health Check |
+| **System** | `GET` | `/csrf` | None | Get CSRF token (required before any POST/PATCH/DELETE) |
+| **Auth** | `POST` | `/auth/login` | CSRF | Local login |
+| **Auth** | `POST` | `/auth/sso` | CSRF | Google SSO login |
+| **Auth** | `POST` | `/auth/refresh` | Refresh Guard + CSRF | Rotate tokens |
+| **Auth** | `POST` | `/auth/logout` | JWT + CSRF | Logout and clear RT |
 | **Cases** | `POST` | `/cases/webhook/salesforce` | API Key | Ingest Case & Create Initial Assignment |
 | **Cases** | `POST` | `/cases/webhook/salesforce/close` | API Key | Close all OPEN assignments for a Case/Owner |
 | **Cases** | `POST` | `/cases/webhook/gas-form` | API Key | Update Case ETA/Session from GAS Form |
@@ -214,28 +227,33 @@ Test coverage includes:
 | **Cases** | `POST` | `/cases/webhook/gas-evaluation` | API Key | Receive quality & final check boolean scores from GAS |
 | **Cases** | `GET` | `/cases` | JWT | Get cases with dynamic filters (`status`, `agentEmail`, `agentName`, `date`). Agents only see their own work. |
 | **Cases** | `GET` | `/cases/:id` | JWT | Get case with full assignment history |
-| **Cases** | `PATCH` | `/cases/assignments/:id` | JWT + RBAC | Manual Assignment Update (Admin/CMD Only) |
+| **Cases** | `PATCH` | `/cases/assignments/:id` | JWT + RBAC + CSRF | Manual Assignment Update (Admin/CMD Only) |
 | **Users** | `GET` | `/users/me` | JWT | Get own profile |
-| **Users** | `GET` | `/users/:id` | JWT + RBAC | Get specific user by ID |
-| **Users** | `PATCH` | `/users/:id/status` | JWT + RBAC (Management Only) | Update role or isActive status |
-| Leaderboard | GET | /leaderboard | JWT (Agents+) | Get performance metrics & percentages with dynamic filters (`name`, `email`, `leaderName`, `leaderId`) |
+| **Users** | `GET` | `/users` | JWT + RBAC | List users (visibility filtered by role) |
+| **Users** | `PATCH` | `/users/:id/status` | JWT + RBAC + CSRF | Update role or isActive status |
+| **Leaderboard** | `GET` | `/leaderboard` | JWT (Agents+) | Get performance metrics with dynamic filters (`name`, `email`, `leaderName`, `leaderId`) |
 
 ---
 
 #### 🐳 Docker Deployment Guide (Production)
 
-This project uses a multi-stage Docker build to ensure a lightweight and secure production image.
+This project uses an optimized **3-stage Docker build** for a lightweight and secure production image.
 
-1.  **Build the Image**:
+- **Stage 1 (deps)**: Installs all dependencies.
+- **Stage 2 (builder)**: Compiles source with SWC, then prunes devDependencies.
+- **Stage 3 (runner)**: Final lean image with only compiled JS + production deps.
+
+1. **Build the Image**:
     ```bash
     docker build -t termhub-backend .
     ```
 
-2.  **Prepare Production Environment**:
+2. **Prepare Production Environment**:
     Manually create a `.env` file on the server. **Do not copy your local .env**.
     Ensure `DATABASE_URL` points to the internal IP of the database server.
+    Make sure `CSRF_SECRET` is set to a long random string in production.
 
-3.  **Run the Container**:
+3. **Run the Container**:
     ```bash
     docker run -d \
       --name termhub-api \
@@ -245,8 +263,7 @@ This project uses a multi-stage Docker build to ensure a lightweight and secure 
       termhub-backend
     ```
 
-4.  **Database Synchronization**:
-    The Docker build automatically runs `prisma generate`. To push schema changes to a fresh DB:
+4. **Database Synchronization**:
     ```bash
     docker exec -it termhub-api npx prisma db push
     ```
@@ -283,7 +300,13 @@ The system uses **Socket.io** with room-based isolation:
 
 ## 🕒 Recent Updates & Fixes
 
-### Phase 9 — Dynamic Leaderboard Filtering (April 3, 2026)
+### Phase 10 — Dependency Updates, SWC Build System & CSRF Protection (April 4, 2026)
+- **Dependency Upgrade**: Updated all NestJS packages to `v11.1.18`, TypeScript to `v6.0.2`, ESLint to `v10.2.0`, and all other packages to their latest compatible versions.
+- **SWC Integration**: Replaced the default TypeScript compiler with [SWC](https://swc.rs/). Build times reduced to ~150ms for 59 files (~20x faster). Enabled via `"builder": "swc"` in `nest-cli.json`.
+- **Circular Dependency Fix**: Extracted `ROLE_RANK` to a dedicated `users.constants.ts` file. Refactored `UsersService` to use `ModuleRef` + dynamic `import()` for lazy-loading `RealtimeGateway`, eliminating the initialization race condition exposed by SWC's stricter module ordering.
+- **CSRF Protection**: Integrated `csrf-csrf` using the Double Submit Cookie pattern. All state-changing API endpoints now require a valid `x-csrf-token` header. Webhook routes (`/cases/webhook/*`) are explicitly exempted.
+- **Optimized Dockerfile**: Restructured the Dockerfile into a **3-stage build** (deps → builder → runner) with `npm prune --production` in the builder stage for a smaller final image.
+- **Fixed Production Start Path**: Corrected the `start:prod` script to `node dist/main` (SWC outputs a flat dist directory without the `src/` prefix).
 - **Advanced Filtering**: Enhanced the `GET /leaderboard` and `GET /cases` (History/Open) endpoints to support real-time filtering by `name`, `email`, `leaderName`, and `leaderId`.
 - **Search Logic**: Implemented case-insensitive partial matching (ILIKE for DB, Prisma `contains` for ORM) for name and email searches, providing a more user-friendly search experience.
 - **Deep Filtering**: Optimized `CasesService.findAll` to not only filter cases but also filter the nested assignments to ensure only relevant work history is returned for the searched agent.

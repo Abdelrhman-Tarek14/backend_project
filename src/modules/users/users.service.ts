@@ -1,33 +1,33 @@
-import { Injectable, ForbiddenException, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException, BadRequestException, OnModuleInit } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import { PrismaService } from '../../database/prisma.service';
 import { Role, User, Prisma } from '@prisma/client';
-import { RealtimeGateway } from '../realtime/realtime.gateway';
-
-export const ROLE_RANK: Record<Role, number> = {
-  [Role.SUPER_USER]: 100,
-  [Role.ADMIN]: 80,
-  [Role.SUPERVISOR]: 60,
-  [Role.CMD]: 40,
-  [Role.LEADER]: 30,
-  [Role.SUPPORT]: 20,
-  [Role.AGENT]: 10,
-  [Role.NEW_USER]: 0,
-};
+import { ROLE_RANK } from './users.constants.js';
+import { UserEntity } from './entities/user.entity';
+import type { RealtimeGateway } from '../realtime/realtime.gateway.js';
 
 @Injectable()
-export class UsersService {
+export class UsersService implements OnModuleInit {
+  private realtimeGateway: RealtimeGateway;
+
   constructor(
     private prisma: PrismaService,
-    @Inject(forwardRef(() => RealtimeGateway))
-    private realtimeGateway: RealtimeGateway,
+    private moduleRef: ModuleRef,
   ) { }
 
-  async findByEmail(email: string): Promise<User | null> {
-    return this.prisma.user.findUnique({ where: { email } });
+  async onModuleInit() {
+    const { RealtimeGateway } = await import('../realtime/realtime.gateway.js');
+    this.realtimeGateway = this.moduleRef.get(RealtimeGateway, { strict: false });
   }
 
-  async findById(id: string): Promise<User | null> {
-    return this.prisma.user.findUnique({ where: { id } });
+  async findByEmail(email: string): Promise<UserEntity | null> {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    return user ? new UserEntity(user) : null;
+  }
+
+  async findById(id: string): Promise<UserEntity | null> {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    return user ? new UserEntity(user) : null;
   }
 
   async logUserActivity(userId: string, state: string) {
@@ -77,7 +77,7 @@ export class UsersService {
     ]);
 
     return {
-      data: users,
+      data: users.map(user => new UserEntity(user)),
       meta: {
         totalCount,
         page,

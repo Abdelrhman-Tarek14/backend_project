@@ -1,6 +1,6 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, ClassSerializerInterceptor } from '@nestjs/common';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -8,12 +8,16 @@ import cookieParser from 'cookie-parser';
 import { winstonConfig } from './common/logger/winston.config';
 import helmet from 'helmet';
 import { ConfigService } from '@nestjs/config';
+import { doubleCsrf } from 'csrf-csrf';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: winstonConfig,
     rawBody: true,
   });
+
+  // Enable graceful shutdown hooks
+  app.enableShutdownHooks();
 
   // Helmet security headers (XSS, Clickjacking, etc.)
   app.use(helmet());
@@ -24,8 +28,30 @@ async function bootstrap() {
   // Cookie Parsing for HTTP-only tokens
   app.use(cookieParser());
 
-  // CORS config to support withCredentials: true
+  // CSRF Protection using Double Submit Cookie pattern
   const configService = app.get(ConfigService);
+  const { doubleCsrfProtection } = doubleCsrf({
+    getSecret: () => configService.get<string>('CSRF_SECRET') ?? 'default-csrf-secret-change-me',
+    getSessionIdentifier: (req) => (req as any).cookies?.['access_token'] ?? req.ip,
+    cookieName: '__Host-csrf',
+    cookieOptions: {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: configService.get<string>('NODE_ENV') === 'production',
+      path: '/',
+    },
+    getCsrfTokenFromRequest: (req) => req.headers['x-csrf-token'] as string,
+  });
+
+  // Apply CSRF globally but skip for webhook routes (they use API key auth)
+  app.use((req: any, res: any, next: any) => {
+    if (req.path.startsWith('/cases/webhook')) {
+      return next();
+    }
+    doubleCsrfProtection(req, res, next);
+  });
+
+  // CORS config to support withCredentials: true
   app.enableCors({
     origin: configService.get('corsOrigin'),
     credentials: true,
@@ -45,12 +71,22 @@ async function bootstrap() {
   // Global response interceptor
   app.useGlobalInterceptors(new TransformInterceptor());
 
+  // Global serialization for excluding sensitive fields
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
+
   // Swagger Documentation
   const config = new DocumentBuilder()
     .setTitle('TermHub API')
     .setDescription(`
       The TermHub Internal ETA Management System API.
-      
+
+      ## Authentication Flow
+      1. Call \`GET /csrf\` to obtain a CSRF token.
+      2. Include it in the \`x-csrf-token\` header for all state-changing requests (POST, PATCH, DELETE).
+      3. Login via \`POST /auth/sso\` or \`POST /auth/login\`.
+
+      > **Note:** Webhook endpoints (\`/cases/webhook/*\`) are exempt from CSRF protection and use API key authentication instead.
+
       For real-time data streaming and event documentation, please refer to the Realtime (WebSockets) section at the bottom of this page.
     `)
     .setVersion('1.0')
@@ -60,6 +96,7 @@ async function bootstrap() {
     .addTag('System')
     .addTag('Leaderboard')
     .addBearerAuth()
+    .addApiKey({ type: 'apiKey', name: 'x-csrf-token', in: 'header' }, 'CsrfToken')
     .addApiKey({ type: 'apiKey', name: 'x-sf-api-key', in: 'header' }, 'SfApiKey')
     .addApiKey({ type: 'apiKey', name: 'x-gas-api-key', in: 'header' }, 'GasApiKey')
     .build();

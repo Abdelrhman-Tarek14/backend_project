@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UsersService, ROLE_RANK } from './users.service';
+import { UsersService } from './users.service.js';
 import { PrismaService } from '../../database/prisma.service';
 import { Role } from '@prisma/client';
 import { ForbiddenException } from '@nestjs/common';

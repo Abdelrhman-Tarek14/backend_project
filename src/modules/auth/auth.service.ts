@@ -4,7 +4,8 @@ import { OAuth2Client } from 'google-auth-library';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
-import { User, Role } from '@prisma/client';
+import { Role } from '@prisma/client';
+import { UserEntity } from '../users/entities/user.entity';
 
 @Injectable()
 export class AuthService {

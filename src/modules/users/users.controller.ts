@@ -1,4 +1,5 @@
-import { Controller, Get, Patch, Body, Param, UseGuards, Request, Query, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
+import { Controller, Get, Patch, Body, Param, UseGuards, Query, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -6,10 +7,6 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
-
-interface RequestWithUser extends Request {
-  user: { id: string; email: string; role: Role };
-}
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -21,11 +18,11 @@ export class UsersController {
   @Get('me')
   @ApiOperation({ summary: 'Get Current Profile', description: 'Retrieve the profile of the currently authenticated user.' })
   @ApiResponse({ status: 200, description: 'Return user profile' })
-  getProfile(@Request() req: RequestWithUser) {
+  getProfile(@CurrentUser() user: any) {
     return {
-       id: req.user.id,
-       email: req.user.email,
-       role: req.user.role
+       id: user.id,
+       email: user.email,
+       role: user.role
     };
   }
 
@@ -39,9 +36,9 @@ export class UsersController {
   async getAllUsers(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
-    @Request() req: RequestWithUser,
+    @CurrentUser() user: any,
   ) {
-    return this.usersService.findAll(page, limit, req.user.role);
+    return this.usersService.findAll(page, limit, user.role);
   }
 
   @Patch(':id/status')
@@ -54,11 +51,11 @@ export class UsersController {
   async updateStatus(
     @Param('id') id: string,
     @Body() dto: UpdateUserStatusDto,
-    @Request() req: RequestWithUser,
+    @CurrentUser() user: any,
   ) {
     return this.usersService.updateStatus(id, dto, { 
-      sub: req.user.id, 
-      role: req.user.role 
+      sub: user.id, 
+      role: user.role 
     });
   }
 }

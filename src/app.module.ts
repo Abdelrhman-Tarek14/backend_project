@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { PrismaModule } from './database/prisma.module';
@@ -12,12 +12,18 @@ import { AppService } from './app.service';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { LeaderboardModule } from './modules/leaderboard/leaderboard.module';
 import configuration from './config/configuration';
+import { envValidationSchema } from './common/validation/env.validation';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
+      validationSchema: envValidationSchema,
+      validationOptions: {
+        allowUnknown: true,
+        abortEarly: true,
+      },
     }),
     ThrottlerModule.forRoot([
       {
@@ -41,6 +47,7 @@ import configuration from './config/configuration';
   controllers: [AppController],
   providers: [
     AppService,
+    ConfigService,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
