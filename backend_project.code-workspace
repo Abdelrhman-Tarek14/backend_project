@@ -1,8 +1,18 @@
 {
 	"folders": [
 		{
-			"path": "."
+			"name": "🚀 Backend - TermHub",
+			"path": "C:\\Users\\test.project\\Desktop\\backend_project"
+		},
+		{
+			"name": "🎨 Frontend - TermHub",
+			"path": "C:\\Users\\test.project\\Desktop\\frontend"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"workbench.colorCustomizations": {
+			// "titleBar.activeBackground": "#1e3a8a",
+			// "statusBar.background": "#4c1d95"
+		}
+	}
 }

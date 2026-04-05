@@ -17,12 +17,7 @@ export class WebhookSecurityGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<RawBodyRequest>();
     
     // 1. IP Validation (IP Allowlisting)
-    let clientIp = request.ip || request.socket.remoteAddress || '';
-    
-    // Normalize IPv6-mapped IPv4 (e.g. ::ffff:127.0.0.1 -> 127.0.0.1)
-    if (clientIp.startsWith('::ffff:')) {
-      clientIp = clientIp.substring(7);
-    }
+    const clientIp = request.ip || '';
     
     const allowedIps = this.configService.get<string[]>('allowedWebhookIps', []);
     

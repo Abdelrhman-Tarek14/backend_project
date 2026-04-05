@@ -18,12 +18,26 @@ export class UsersController {
   @Get('me')
   @ApiOperation({ summary: 'Get Current Profile', description: 'Retrieve the profile of the currently authenticated user.' })
   @ApiResponse({ status: 200, description: 'Return user profile' })
-  getProfile(@CurrentUser() user: any) {
-    return {
-       id: user.id,
-       email: user.email,
-       role: user.role
-    };
+  async getProfile(@CurrentUser() user: any) {
+    const userProfile = await this.usersService.findById(user.id);
+    return userProfile;
+  }
+
+  @Patch('me')
+  @ApiOperation({ summary: 'Update Current Profile', description: 'Update current user preferences (appearance, theme).' })
+  @ApiResponse({ status: 200, description: 'Profile updated successfully' })
+  async updateProfile(@CurrentUser() user: any, @Body() updateData: any) {
+    // Only allow updating specific fields
+    const allowedFields = ['appearance', 'theme', 'name'];
+    const filteredData: Record<string, any> = {};
+    
+    Object.keys(updateData).forEach((key) => {
+      if (allowedFields.includes(key)) {
+        filteredData[key] = updateData[key];
+      }
+    });
+
+    return this.usersService.update(user.id, filteredData);
   }
 
   @Get()

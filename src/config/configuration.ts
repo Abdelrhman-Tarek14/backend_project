@@ -15,5 +15,6 @@ export default () => ({
   webhookSecret: process.env.WEBHOOK_SECRET,
   allowedWebhookIps: process.env.ALLOWED_WEBHOOK_IPS?.split(','),
   corsOrigin: process.env.CORS_ORIGIN === 'true' ? true : process.env.CORS_ORIGIN,
+  queuePriorityTypes: (process.env.QUEUE_PRIORITY_TYPES || 'Menu Typing,please corcect error').split(',').map((s) => s.trim().toLowerCase()),
 });
 

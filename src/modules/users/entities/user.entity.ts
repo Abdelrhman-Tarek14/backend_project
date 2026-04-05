@@ -9,6 +9,11 @@ export class UserEntity {
   isActive: boolean;
   isOnline: boolean;
   lastActive: Date | null;
+  
+  // Preferences
+  appearance: string;
+  theme: string;
+
   createdAt: Date;
   updatedAt: Date;
   leaderId: string | null;

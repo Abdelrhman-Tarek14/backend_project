@@ -1,10 +1,12 @@
 import { Controller, Post, Body, Get, Patch, Param, Query, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { CasesService } from './cases.service';
+import { CasesWebhookService } from './cases-webhook.service';
 import { WebhookSecurityGuard } from './guards/webhook-security.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { MANAGEMENT_ROLES } from '../../common/constants/roles.constants';
 import { Role, AssignmentStatus } from '@prisma/client';
 import { GetCasesDto } from './dto/get-cases.dto';
 import { UpdateAssignmentDto } from './dto/update-assignment.dto';
@@ -24,23 +26,24 @@ interface RequestWithUser extends Request {
 export class CasesController {
   constructor(
     private readonly casesService: CasesService,
+    private readonly casesWebhookService: CasesWebhookService,
   ) { }
 
   @Get()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ 
-    summary: 'Get All Cases (Unified)', 
-    description: 'Retrieve cases with dynamic filtering. Agents are restricted to their own assignments, while Management can use all filters.' 
+  @ApiOperation({
+    summary: 'Get All Cases (Unified)',
+    description: 'Retrieve cases with dynamic filtering. Agents are restricted to their own assignments, while Management can use all filters.'
   })
   @ApiResponse({ status: 200, description: 'List of cases retrieved successfully.' })
   async getAllCases(@Request() req: RequestWithUser, @Query() query: GetCasesDto) {
-    const managementRoles: Role[] = [Role.SUPER_USER, Role.ADMIN, Role.SUPERVISOR, Role.CMD, Role.LEADER, Role.SUPPORT];
-    const isManagement = managementRoles.includes(req.user.role);
+    const isManagement = MANAGEMENT_ROLES.includes(req.user.role);
 
     if (!isManagement) {
       // Security Override: Force regular users to see only their own assignments
       query.agentId = req.user.id;
+      // Ensure they can't override with names/emails
       delete query.agentEmail;
       delete query.agentName;
     }
@@ -80,7 +83,7 @@ export class CasesController {
   @ApiOperation({ summary: 'Salesforce Webhook', description: 'Triggered when a case is created or assigned in Salesforce.' })
   @ApiResponse({ status: 202, description: 'Webhook received and processed successfully.' })
   async handleSalesforceWebhook(@Body() payload: SalesforceWebhookDto) {
-    await this.casesService.handleSalesforceWebhook(payload);
+    await this.casesWebhookService.handleSalesforceWebhook(payload);
     return { status: 'processed', message: 'Webhook received and processed synchronously' };
   }
 
@@ -93,7 +96,7 @@ export class CasesController {
   @ApiOperation({ summary: 'Salesforce: Close Case' })
   @ApiResponse({ status: 202, description: 'Webhook received and processed successfully.' })
   async handleSalesforceCloseWebhook(@Body() payload: CloseCaseWebhookDto) {
-    await this.casesService.handleSalesforceCloseWebhook(payload);
+    await this.casesWebhookService.handleSalesforceCloseWebhook(payload);
     return { status: 'processed', message: 'Webhook received and processed synchronously' };
   }
 
@@ -106,7 +109,7 @@ export class CasesController {
   @ApiOperation({ summary: 'GAS: Form Submission (ETA)' })
   @ApiResponse({ status: 202, description: 'Webhook received and processed successfully.' })
   async handleGasFormWebhook(@Body() payload: GasFormWebhookDto) {
-    await this.casesService.handleGasFormWebhook(payload);
+    await this.casesWebhookService.handleGasFormWebhook(payload);
     return { status: 'processed', message: 'Webhook received and processed synchronously' };
   }
 
@@ -119,7 +122,7 @@ export class CasesController {
   @ApiOperation({ summary: 'GAS: Form Validation (Metrics)' })
   @ApiResponse({ status: 202, description: 'Webhook received and processed successfully.' })
   async handleGasValidatedWebhook(@Body() payload: GasValidatedWebhookDto) {
-    await this.casesService.handleGasValidatedWebhook(payload);
+    await this.casesWebhookService.handleGasValidatedWebhook(payload);
     return { status: 'processed', message: 'Webhook received and processed synchronously' };
   }
 
@@ -132,7 +135,27 @@ export class CasesController {
   @ApiOperation({ summary: 'GAS: Evaluation Submission' })
   @ApiResponse({ status: 202, description: 'Webhook received and processed successfully.' })
   async handleGasEvaluationWebhook(@Body() payload: GasEvaluationWebhookDto) {
-    await this.casesService.handleGasEvaluationWebhook(payload);
+    await this.casesWebhookService.handleGasEvaluationWebhook(payload);
     return { status: 'processed', message: 'Webhook received and processed synchronously' };
+  }
+
+  @Post('webhook/salesforce/heartbeat')
+  @Throttle({ webhook: { limit: 200, ttl: 60000 } })
+  @UseGuards(WebhookSecurityGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiSecurity('SfApiKey')
+  @ApiHeader({ name: 'x-webhook-signature', description: 'HMAC SHA256 Signature of the raw payload', required: true })
+  @ApiOperation({ summary: 'Salesforce Heartbeat' })
+  async handleSalesforceHeartbeat() {
+    await this.casesWebhookService.handleSalesforceHeartbeat();
+    return { status: 'ok', message: 'Heartbeat received' };
+  }
+
+  @Get('system/status')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get System Integration Status' })
+  async getSystemStatus() {
+    return this.casesService.getSystemStatus();
   }
 }

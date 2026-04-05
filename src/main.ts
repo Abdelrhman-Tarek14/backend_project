@@ -1,3 +1,4 @@
+import 'source-map-support/register';
 import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe, ClassSerializerInterceptor } from '@nestjs/common';
@@ -114,6 +115,6 @@ async function bootstrap() {
     // }
   );
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(configService.get<number>('port') ?? 3000);
 }
 bootstrap();

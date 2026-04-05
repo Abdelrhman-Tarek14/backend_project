@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # ── NestJS Application ──
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: termhub-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    # No ports exposed to host — Nginx handles all external traffic
+    expose:
+      - "3000"
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # ── Nginx Reverse Proxy ──
+  nginx:
+    image: nginx:alpine
+    container_name: termhub-nginx
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN=${DOMAIN}
+      - SSL_CERT_PATH=/etc/nginx/ssl/fullchain.pem
+      - SSL_KEY_PATH=/etc/nginx/ssl/privkey.pem
+    volumes:
+      - ./nginx/nginx.conf.template:/etc/nginx/nginx.conf.template:ro
+      - ${SSL_CERT_FILE:-./nginx/ssl/fullchain.pem}:/etc/nginx/ssl/fullchain.pem:ro
+      - ${SSL_KEY_FILE:-./nginx/ssl/privkey.pem}:/etc/nginx/ssl/privkey.pem:ro
+    # Run envsubst to replace ${DOMAIN}, ${SSL_CERT_PATH}, ${SSL_KEY_PATH}
+    # then start nginx
+    command: >
+      sh -c "envsubst '$$DOMAIN $$SSL_CERT_PATH $$SSL_KEY_PATH'
+      < /etc/nginx/nginx.conf.template
+      > /etc/nginx/nginx.conf
+      && nginx -g 'daemon off;'"
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge
