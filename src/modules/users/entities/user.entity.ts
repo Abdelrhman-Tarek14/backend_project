@@ -5,6 +5,7 @@ export class UserEntity {
   id: string;
   email: string;
   name: string | null;
+  displayName: string | null;
   role: Role;
   isActive: boolean;
   isOnline: boolean;

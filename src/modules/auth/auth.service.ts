@@ -1,6 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { OAuth2Client } from 'google-auth-library';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
@@ -9,18 +8,13 @@ import { UserEntity } from '../users/entities/user.entity';
 
 @Injectable()
 export class AuthService {
-  private googleClient: OAuth2Client;
+
 
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
     private configService: ConfigService,
-  ) {
-    this.googleClient = new OAuth2Client(
-      this.configService.get<string>('GOOGLE_CLIENT_ID'),
-      this.configService.get<string>('GOOGLE_CLIENT_SECRET'),
-    );
-  }
+  ) { }
 
   async validateGoogleUser(googleUser: any) {
     const { email, googleId, firstName, lastName, picture } = googleUser;
@@ -47,6 +41,11 @@ export class AuthService {
       console.log(`[AuthService] Created new user: ${user.id}`);
     } else {
       console.log(`[AuthService] Found existing user: ${user.id} (isActive: ${user.isActive})`);
+    }
+
+    // Double check to satisfy TypeScript null safety
+    if (!user) {
+        throw new UnauthorizedException('Authentication failed: user could not be found or created.');
     }
 
     // 3. Enforce activation check
@@ -76,42 +75,7 @@ export class AuthService {
     return tokens;
   }
 
-  async validateGoogleSso(idToken: string) {
-    try {
-      const ticket = await this.googleClient.verifyIdToken({
-        idToken,
-        audience: this.configService.get<string>('GOOGLE_CLIENT_ID'),
-      });
-      const payload = ticket.getPayload();
-      if (!payload || !payload.email) {
-        throw new UnauthorizedException('Invalid Google payload');
-      }
-      const email = payload.email;
 
-      const user = await this.usersService.findByEmail(email);
-      if (!user) {
-        throw new UnauthorizedException('User not authorized in this system.');
-      }
-
-      if (user.role === Role.NEW_USER || !user.isActive) {
-        throw new UnauthorizedException('Your account is pending approval or has been deactivated.');
-      }
-
-      await this.usersService.logUserActivity(user.id, 'LOGGED_IN');
-
-      const tokens = await this.getTokens(user.id, user.email, user.role);
-
-      await this.usersService.update(user.id, {
-        isOnline: true,
-        lastActive: new Date(),
-        hashedRefreshToken: await bcrypt.hash(tokens.refresh_token, 10),
-      });
-
-      return tokens;
-    } catch (e) {
-      throw new UnauthorizedException('Invalid Google Token');
-    }
-  }
 
   async validateLocalAuth(email: string, passwordPlain: string) {
     const user = await this.usersService.findByEmail(email);

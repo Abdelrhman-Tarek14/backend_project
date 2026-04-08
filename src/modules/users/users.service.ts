@@ -24,15 +24,16 @@ export class UsersService implements OnModuleInit {
     email: string; 
     name: string; 
     googleId?: string; 
-    pictureUrl?: string;
+    pictureUrl?: string | null;
     role?: Role;
     isActive?: boolean;
-  }) {
-    return this.prisma.user.create({
+  }): Promise<UserEntity> {
+    const user = await this.prisma.user.create({
       data: {
         ...data,
       },
     });
+    return new UserEntity(user);
   }
 
   async findByEmail(email: string): Promise<UserEntity | null> {
@@ -84,6 +85,7 @@ export class UsersService implements OnModuleInit {
           id: true,
           email: true,
           name: true,
+          displayName: true,
           role: true,
           isActive: true,
           isOnline: true,

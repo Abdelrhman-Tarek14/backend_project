@@ -22,20 +22,7 @@ export class AuthController {
     private readonly configService: ConfigService,
   ) { }
 
-  @Post('sso')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Login via Google SSO', description: 'Exchange a Google ID Token for TermHub access/refresh tokens. [Rate Limit: 5 attempts / 3 mins]' })
-  @ApiBody({ schema: { type: 'object', properties: { idToken: { type: 'string', example: 'google-id-token-here' } } } })
-  @ApiResponse({ status: 200, description: 'Successfully authenticated' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async loginSso(
-    @Body('idToken') idToken: string,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    const tokens = await this.authService.validateGoogleSso(idToken);
-    this.setCookies(res, tokens);
-    return { message: 'Successfully authenticated' };
-  }
+
 
   @Get('google')
   @UseGuards(AuthGuard('google'))
@@ -51,16 +38,15 @@ export class AuthController {
     @Request() req: any,
     @Res() res: Response,
   ) {
+    const frontendUrl = this.configService.getOrThrow<string>('FRONTEND_URL');
     try {
-        const tokens = await this.authService.validateGoogleUser(req.user);
-        this.setCookies(res, tokens);
-        const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
-        return res.redirect(frontendUrl);
+      const tokens = await this.authService.validateGoogleUser(req.user);
+      this.setCookies(res, tokens);
+      return res.redirect(frontendUrl);
     } catch (error) {
-        console.error('[AuthController] Google Auth Error:', error);
-        // Redirect to login with error param if something fails
-        const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
-        return res.redirect(`${frontendUrl}/login?error=auth_failed`);
+      console.error('[AuthController] Google Auth Error:', error);
+      // Redirect to login with error param if something fails
+      return res.redirect(`${frontendUrl}/login?error=auth_failed`);
     }
   }
 

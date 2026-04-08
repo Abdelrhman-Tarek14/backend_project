@@ -7,13 +7,14 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
+import { UserEntity } from './entities/user.entity';
 
 @ApiTags('Users')
 @ApiBearerAuth()
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   @Get('me')
   @ApiOperation({ summary: 'Get Current Profile', description: 'Retrieve the profile of the currently authenticated user.' })
@@ -28,16 +29,18 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'Profile updated successfully' })
   async updateProfile(@CurrentUser() user: any, @Body() updateData: any) {
     // Only allow updating specific fields
-    const allowedFields = ['appearance', 'theme', 'name'];
+    const allowedFields = ['appearance', 'theme', 'name', 'displayName'];
     const filteredData: Record<string, any> = {};
-    
+
     Object.keys(updateData).forEach((key) => {
       if (allowedFields.includes(key)) {
         filteredData[key] = updateData[key];
       }
     });
 
-    return this.usersService.update(user.id, filteredData);
+    await this.usersService.update(user.id, filteredData);
+    const updatedUser = await this.usersService.findById(user.id);
+    return new UserEntity(updatedUser!);
   }
 
   @Get()
@@ -67,9 +70,9 @@ export class UsersController {
     @Body() dto: UpdateUserStatusDto,
     @CurrentUser() user: any,
   ) {
-    return this.usersService.updateStatus(id, dto, { 
-      sub: user.id, 
-      role: user.role 
+    return this.usersService.updateStatus(id, dto, {
+      sub: user.id,
+      role: user.role
     });
   }
 }

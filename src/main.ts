@@ -20,8 +20,20 @@ async function bootstrap() {
   // Enable graceful shutdown hooks
   app.enableShutdownHooks();
 
-  // Helmet security headers (XSS, Clickjacking, etc.)
-  app.use(helmet());
+  const configService = app.get(ConfigService);
+  const isProduction = configService.get<string>('NODE_ENV') === 'production';
+
+  app.enableCors({
+    origin: configService.get('corsOrigin'),
+    credentials: true,
+  });
+
+  // ── Security Headers (Helmet) ──────────────────────────────────────────────
+  if (isProduction) {
+    app.use(helmet());
+  } else {
+    app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+  }
 
   // Enable trust proxy for accurate client IP identification (behind Nginx, Cloudflare, etc.)
   app.getHttpAdapter().getInstance().set('trust proxy', 1);
@@ -29,16 +41,15 @@ async function bootstrap() {
   // Cookie Parsing for HTTP-only tokens
   app.use(cookieParser());
 
-  // CSRF Protection using Double Submit Cookie pattern
-  const configService = app.get(ConfigService);
+  // ── CSRF Protection using Double Submit Cookie pattern ───────────────────
   const { doubleCsrfProtection } = doubleCsrf({
     getSecret: () => configService.get<string>('CSRF_SECRET') ?? 'default-csrf-secret-change-me',
     getSessionIdentifier: (req) => (req as any).cookies?.['access_token'] ?? req.ip,
-    cookieName: '__Host-csrf',
+    cookieName: isProduction ? '__Host-csrf' : 'csrf-token',
     cookieOptions: {
       httpOnly: true,
       sameSite: 'lax',
-      secure: configService.get<string>('NODE_ENV') === 'production',
+      secure: isProduction, // HTTPS only in production
       path: '/',
     },
     getCsrfTokenFromRequest: (req) => req.headers['x-csrf-token'] as string,
@@ -50,12 +61,6 @@ async function bootstrap() {
       return next();
     }
     doubleCsrfProtection(req, res, next);
-  });
-
-  // CORS config to support withCredentials: true
-  app.enableCors({
-    origin: configService.get('corsOrigin'),
-    credentials: true,
   });
 
   // Global validation 
@@ -84,7 +89,7 @@ async function bootstrap() {
       ## Authentication Flow
       1. Call \`GET /csrf\` to obtain a CSRF token.
       2. Include it in the \`x-csrf-token\` header for all state-changing requests (POST, PATCH, DELETE).
-      3. Login via \`POST /auth/sso\` or \`POST /auth/login\`.
+      3. Login via \`POST /auth/google \` or \`POST /auth/login\`.
 
       > **Note:** Webhook endpoints (\`/cases/webhook/*\`) are exempt from CSRF protection and use API key authentication instead.
 
