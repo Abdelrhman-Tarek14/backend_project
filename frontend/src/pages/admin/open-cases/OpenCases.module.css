@@ -1,0 +1,101 @@
+.sectionTitle {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--color-text-main);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filterTabs {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 1.5rem;
+    padding: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 14px;
+    width: fit-content;
+    border: 1px solid var(--color-border);
+}
+
+.tabBtn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--color-text-muted);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tabBtn:hover {
+    background: rgba(255, 87, 34, 0.05);
+    color: var(--color-primary);
+}
+
+.tabBtn.active {
+    background: var(--color-primary);
+    color: white;
+    box-shadow: 0 4px 12px rgba(255, 87, 34, 0.2);
+}
+
+.tabCount {
+    background: rgba(0, 0, 0, 0.1);
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.tabBtn.active .tabCount {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+@keyframes pulseGlowRed {
+    0% {
+        box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7);
+    }
+
+    70% {
+        box-shadow: 0 0 0 6px rgba(244, 67, 54, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(244, 67, 54, 0);
+    }
+}
+
+.tabCount.pulse {
+    background: var(--color-danger) !important;
+    color: white !important;
+    animation: pulseGlowRed 1.5s infinite;
+}
+
+.tabBtn.active .tabCount.pulse {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+    box-shadow: none !important;
+    animation: none;
+}
+
+.exceededTab.active {
+    background: var(--color-danger) !important;
+    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4) !important;
+}
+
+.nearExceededTab.active {
+    background: #FF9800 !important;
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4) !important;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: .5rem;
+}

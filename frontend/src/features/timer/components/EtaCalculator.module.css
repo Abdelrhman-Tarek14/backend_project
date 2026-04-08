@@ -1,0 +1,517 @@
+/* src/features/etaCalculator/components/EtaCalculator.module.css */
+.container {
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto 3rem auto;
+}
+
+/* Header becomes standalone like 'Completed History' */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.titleWrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.icon {
+    display: none;
+    font-size: 1.5rem;
+    color: var(--color-primary);
+}
+
+.titleWrapper h3 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--color-text-main);
+    margin-right: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Orange Vertical Bar Accent */
+.titleWrapper h3::before {
+    content: '';
+    display: block;
+    width: 6px;
+    height: 26px;
+    background: var(--color-primary);
+    border-radius: 4px;
+}
+
+/* New Body Card Style */
+.calculatorBody {
+    background: var(--color-bg-white);
+    border-radius: 20px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--color-border);
+    animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: top center;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: scaleY(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scaleY(1);
+    }
+}
+
+/* New Collapse Button Style */
+.collapseBtn {
+    background: rgba(255, 87, 34, 0.1);
+    border: none;
+    cursor: pointer;
+    color: var(--color-primary);
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 6px 16px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.collapseBtn:hover {
+    background: var(--color-primary);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(255, 87, 34, 0.2);
+}
+
+.headerControls {
+    display: flex;
+    gap: 8px;
+}
+
+/* Reset Button MOVED to Body */
+.resetBtnWrapper {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1rem;
+}
+
+/* --- NEW LAYOUT STYLES --- */
+
+/* TOP CONTROLS: Dropdown + Result + Reset */
+.topControls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.selectContainer {
+    width: 430px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.floatingLabel {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-left: 4px;
+}
+
+.select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    font-size: 1rem;
+    color: var(--color-text-main);
+    background-color: var(--color-bg-light);
+    cursor: pointer;
+    transition: all 0.2s;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ff5722' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1em;
+}
+
+.select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    background-color: var(--color-bg-white);
+    box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.1);
+}
+
+.resultAndReset {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.resultsWrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.resultBox {
+    background: var(--color-bg-light);
+    color: var(--color-text-main);
+    padding: 8px 24px;
+    border-radius: 30px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: inset 0 2px 4px var(--shadow-sm);
+    /* Slight inset for depth */
+    border: 1px solid var(--color-border);
+    height: 60px;
+    margin-top: 20px;
+}
+
+.resultLabel {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+}
+
+.resultValue {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--color-primary);
+    /* Consistent orange */
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.resultValue span:first-child {
+    line-height: 1;
+}
+
+.mins {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #CBD5E0;
+}
+
+/* New Time Input */
+.timeInputContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 130px;
+}
+
+.timeInput {
+    padding: 12px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--color-text-main);
+    background-color: var(--color-bg-light);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    font-family: 'Inter', sans-serif;
+}
+
+.timeInput:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    background-color: var(--color-bg-white);
+    box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.1);
+}
+
+/* Interactive Time Pill */
+.timePillContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 140px;
+}
+
+.timePill {
+    background: var(--color-success-bg);
+    border: 1px dashed rgba(76, 175, 80, 0.3);
+    border-radius: 12px;
+    padding: 8px 10px;
+    height: 46px;
+    /* Match select height roughly */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.timePill:hover {
+    background: rgba(76, 175, 80, 0.12);
+    border-color: rgba(76, 175, 80, 0.5);
+    transform: translateY(-1px);
+}
+
+.timePill.editing {
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-primary);
+    border-style: solid;
+    box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.1);
+    cursor: default;
+}
+
+.timePillInput {
+    border: none;
+    background: transparent;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--color-text-main);
+    text-align: center;
+    width: 100%;
+    outline: none;
+}
+
+.finishDisplay {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.finishLabel {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    font-weight: 600;
+}
+
+.finishTimeText {
+    font-size: 1.2rem;
+    color: var(--color-success);
+    font-weight: 800;
+}
+
+.editIcon {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    opacity: 0.6;
+    margin-left: 4px;
+    transition: all 0.2s;
+}
+
+.timePill:hover .editIcon {
+    opacity: 1;
+    color: var(--color-primary);
+    transform: scale(1.1);
+}
+
+/* Reset Button (Styled like History Refresh Button) */
+.resetBtn {
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    font-size: 1.4rem;
+    display: flex;
+    align-items: center;
+    padding: 4px;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.resetBtn:hover {
+    /* background-color: var(--color-bg-light); */
+    color: var(--color-primary);
+    transform: rotate(-180deg);
+}
+
+/* INPUTS GRID - Flex Wrap */
+.inputsGrid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-end;
+}
+
+.miniInputWrapper {
+    flex: 0 1 140px;
+    min-width: 100px;
+}
+
+.miniInputWrapper label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    margin-bottom: 6px;
+    margin-left: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.miniInputWrapper input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-align: center;
+    background: var(--color-bg-light);
+    color: var(--color-text-main);
+    transition: all 0.2s;
+}
+
+.miniInputWrapper input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    background: var(--color-bg-white);
+    box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.1);
+}
+
+.miniInputWrapper input::placeholder {
+    font-weight: 400;
+    color: #cbd5e0;
+}
+
+/* MAIN CONTENT LAYOUT (Desktop: Horizontal) */
+.contentRow {
+    display: flex;
+    align-items: flex-start;
+    gap: 2rem;
+    position: relative;
+    /* Context for absolute positioning if needed */
+}
+
+/* Left Side: Inputs */
+.inputsSection {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.inputGroupRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.formGroup {
+    flex: 1 1 250px;
+    /* Grow to at least 250px */
+}
+
+.formGroup label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--color-text-muted, #666);
+    margin-bottom: 6px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+/* The Grid for Counts */
+.grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    width: 100%;
+}
+
+.inputWrapper {
+    flex: 1 1 120px;
+    /* Small inputs */
+}
+
+.inputWrapper label,
+.breakSection label {
+    font-size: 0.75rem;
+    color: var(--color-text-muted, #666);
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.inputWrapper input,
+.breakSection input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #eee;
+    border-radius: 10px;
+    font-size: 1rem;
+    outline: none;
+    transition: all 0.2s;
+    background: #fdfdfd;
+}
+
+.inputWrapper input:focus,
+.breakSection input:focus {
+    border-color: var(--color-primary, #FF5722);
+    background: var(--color-bg-white);
+    box-shadow: 0 2px 8px rgba(255, 87, 34, 0.1);
+}
+
+.breakSection {
+    flex: 1 1 150px;
+    /* Integrated into the flex flow smoothly */
+}
+
+/* Right Side: Result (Or Bottom on Mobile) */
+.resultSection {
+    flex: 0 0 280px;
+    display: flex;
+    justify-content: center;
+}
+
+
+
+/* RESPONSIVE: Switch to Vertical on Mobile/Tablet */
+@media (max-width: 768px) {
+    .contentRow {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .inputsSection {
+        width: 100%;
+    }
+
+    .resultSection {
+        width: 100%;
+        flex: 0;
+    }
+
+    .resultBox {
+        flex-direction: row;
+        justify-content: space-between;
+        padding: 1.5rem;
+        min-height: auto;
+    }
+
+    .resultValue {
+        font-size: 2.5rem;
+    }
+}

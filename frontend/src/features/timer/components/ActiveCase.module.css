@@ -1,0 +1,277 @@
+.container {
+    background: var(--color-bg-white);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 1px solid var(--color-border);
+    transition: all 0.3s ease;
+    width: 100%;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.container.overdue {
+    border-color: var(--color-danger);
+    background: var(--color-danger-bg);
+}
+
+/* In dark mode we might need override for overdue background, but let's stick to base first */
+
+/* Header */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.caseInfo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.badge {
+    background: #FF5722;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 4px 8px;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+}
+
+.caseNumber {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--color-text-main);
+}
+
+.caseType {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    font-weight: 500;
+    background: var(--color-bg-light);
+    padding: 6px 12px;
+    border-radius: 20px;
+}
+
+.icon {
+    font-size: 1.1em;
+}
+
+/* Timer Section */
+.timerSection {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.timerLabel {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    opacity: 0.8;
+    letter-spacing: 1.5px;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+}
+
+.timerValue {
+    font-size: 3.5rem;
+    font-weight: 800;
+    color: #FF5722;
+    /* Changed from black to Orange */
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    text-shadow: 0 2px 4px rgba(255, 87, 34, 0.1);
+}
+
+.overdue .timerValue {
+    color: var(--color-danger);
+}
+
+/* Progress Bar */
+.progressContainer {
+    width: 100%;
+    height: 18px;
+    /* Increased height for text */
+    background: var(--color-bg-light);
+    border-radius: 9px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    position: relative;
+    /* For text overlay */
+}
+
+.progressBar {
+    height: 100%;
+    background: linear-gradient(90deg, #FF5722, #FF8A65);
+    border-radius: 9px;
+    transition: width 1s linear;
+}
+
+.progressText {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #ffffff;
+    z-index: 2;
+    line-height: 1;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* Meta Details */
+.metaGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border);
+}
+
+.metaItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.label {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-text-main);
+}
+
+/* Actions */
+.actions {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: center;
+}
+
+.completeBtn {
+    background: linear-gradient(135deg, #FF5722, #FF8A65);
+    color: white;
+    border: none;
+    border-radius: 30px;
+    padding: 12px 32px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 8px 16px rgba(255, 87, 34, 0.25);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.completeBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 20px rgba(255, 87, 34, 0.35);
+}
+
+.completeBtn:disabled {
+    background: #FFAB91;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.completeBtn span {
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+    font-size: 1.2rem;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Response */
+@media (max-width: 600px) {
+    .timerValue {
+        font-size: 2.5rem;
+    }
+
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .caseType {
+        width: 100%;
+    }
+}
+
+/* Locked Time */
+.lockedTime {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-text-main);
+    padding: 2px 6px;
+}
+
+/* Editable Time */
+.editableTime {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.editableTime:hover {
+    background-color: var(--color-bg-light);
+}
+
+.editIcon {
+    font-size: 0.8rem;
+    color: var(--color-primary);
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.editableTime:hover .editIcon {
+    opacity: 1;
+}
+
+.timeInput {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-text-main);
+    border: 1px solid var(--color-primary);
+    border-radius: 4px;
+    padding: 2px 4px;
+    background: var(--color-bg-white);
+    outline: none;
+    width: auto;
+}

@@ -1,0 +1,49 @@
+.statusBadge {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+}
+
+.statusOnTime {
+    background-color: var(--color-success-bg);
+    color: var(--color-success);
+    border: 1px solid rgba(76, 175, 80, 0.2);
+}
+
+.statusExceeding {
+    background-color: var(--color-danger-bg);
+    color: var(--color-danger);
+    border: 1px solid rgba(244, 67, 54, 0.2);
+}
+
+.statusClosed {
+    background-color: var(--color-bg-light);
+    color: var(--color-text-muted);
+    border: 1px solid var(--color-border);
+}
+
+.statusWaitingEta {
+    background-color: #673ab722;
+    color: #673ab7;
+    border: 1px solid rgba(103, 58, 183, 0.2);
+}
+
+.statusNearExceeded {
+    background-color: #FF980022;
+    color: #FF9800;
+    border: 1px solid rgba(255, 152, 0, 0.2);
+}
+
+.statusBacklog {
+    background-color: rgba(255, 87, 34, 0.15);
+    color: #FF5722;
+    border: 1px solid rgba(255, 87, 34, 0.25);
+    font-weight: 800;
+}

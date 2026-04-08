@@ -1,0 +1,67 @@
+.groupedSection {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.caseGroup {
+    background: rgba(33, 150, 243, 0.03);
+    border: 1px solid rgba(33, 150, 243, 0.15);
+    border-radius: 16px;
+    padding: 1.5rem;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.caseGroup:hover {
+    border-color: rgba(33, 150, 243, 0.3);
+    background: rgba(33, 150, 243, 0.05);
+}
+
+.groupHeader {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 1.5rem;
+}
+
+.groupInfo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    white-space: nowrap;
+}
+
+.groupCaseNumber {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #2196F3;
+    letter-spacing: 0.5px;
+}
+
+.groupBadge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #2196F3;
+    color: white;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    box-shadow: 0 4px 10px rgba(33, 150, 243, 0.25);
+}
+
+.groupLine {
+    flex: 1;
+    height: 2px;
+    background: linear-gradient(90deg, rgba(33, 150, 243, 0.2) 0%, transparent 100%);
+    border-radius: 10px;
+}
+
+.groupGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
