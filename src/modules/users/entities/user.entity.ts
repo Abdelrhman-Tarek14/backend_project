@@ -9,6 +9,11 @@ export class UserEntity {
   isActive: boolean;
   isOnline: boolean;
   lastActive: Date | null;
+
+  @Exclude()
+  googleId: string | null;
+  
+  pictureUrl: string | null;
   
   // Preferences
   appearance: string;

@@ -33,7 +33,8 @@ model User {
   name               String
   email              String       @unique
   passwordHash       String?      
-  googleId           String?      @unique 
+  googleId           String?      @unique
+  pictureUrl         String? 
   role               Role         @default(NEW_USER)
   isActive           Boolean      @default(true)
   

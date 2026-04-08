@@ -1,4 +1,5 @@
-import { Controller, Post, Body, ForbiddenException, HttpCode, HttpStatus, UseGuards, Request, Res } from '@nestjs/common';
+import { Controller, Post, Get, Body, ForbiddenException, HttpCode, HttpStatus, UseGuards, Request, Res } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
@@ -34,6 +35,33 @@ export class AuthController {
     const tokens = await this.authService.validateGoogleSso(idToken);
     this.setCookies(res, tokens);
     return { message: 'Successfully authenticated' };
+  }
+
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  @ApiOperation({ summary: 'Initiate Google OAuth2', description: 'Redirects the user to Google for authentication.' })
+  async googleAuth(@Request() req: any) {
+    // Passport handles the redirect to Google
+  }
+
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  @ApiOperation({ summary: 'Google OAuth2 Callback', description: 'Receives the profile from Google, sets HTTP-only cookies, and redirects to the frontend.' })
+  async googleAuthRedirect(
+    @Request() req: any,
+    @Res() res: Response,
+  ) {
+    try {
+        const tokens = await this.authService.validateGoogleUser(req.user);
+        this.setCookies(res, tokens);
+        const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
+        return res.redirect(frontendUrl);
+    } catch (error) {
+        console.error('[AuthController] Google Auth Error:', error);
+        // Redirect to login with error param if something fails
+        const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
+        return res.redirect(`${frontendUrl}/login?error=auth_failed`);
+    }
   }
 
   @Post('login')

@@ -20,6 +20,21 @@ export class UsersService implements OnModuleInit {
     this.realtimeGateway = this.moduleRef.get(RealtimeGateway, { strict: false });
   }
 
+  async create(data: { 
+    email: string; 
+    name: string; 
+    googleId?: string; 
+    pictureUrl?: string;
+    role?: Role;
+    isActive?: boolean;
+  }) {
+    return this.prisma.user.create({
+      data: {
+        ...data,
+      },
+    });
+  }
+
   async findByEmail(email: string): Promise<UserEntity | null> {
     const user = await this.prisma.user.findUnique({ where: { email } });
     return user ? new UserEntity(user) : null;
@@ -27,6 +42,11 @@ export class UsersService implements OnModuleInit {
 
   async findById(id: string): Promise<UserEntity | null> {
     const user = await this.prisma.user.findUnique({ where: { id } });
+    return user ? new UserEntity(user) : null;
+  }
+
+  async findByGoogleId(googleId: string): Promise<UserEntity | null> {
+    const user = await this.prisma.user.findUnique({ where: { googleId } });
     return user ? new UserEntity(user) : null;
   }
 
@@ -147,12 +167,12 @@ export class UsersService implements OnModuleInit {
   }
 
   async setOnlineStatus(userId: string, isOnline: boolean) {
-    return this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        isOnline,
-        lastActive: new Date()
-      },
-    });
+    // We use $executeRaw to bypass Prisma's automatic @updatedAt bumping 
+    // so that we don't alter the user's main profile 'updatedAt' field on every ping.
+    return this.prisma.$executeRaw`
+      UPDATE "User"
+      SET "isOnline" = ${isOnline}, "lastActive" = CURRENT_TIMESTAMP
+      WHERE "id" = ${userId}
+    `;
   }
 }

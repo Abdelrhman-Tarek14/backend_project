@@ -22,6 +22,60 @@ export class AuthService {
     );
   }
 
+  async validateGoogleUser(googleUser: any) {
+    const { email, googleId, firstName, lastName, picture } = googleUser;
+    console.log(`[AuthService] Attempting Google Auth for: ${email} (ID: ${googleId})`);
+    
+    // 1. Find user by googleId or email
+    let user = await this.usersService.findByGoogleId(googleId);
+    if (!user) {
+      console.log(`[AuthService] User not found by GoogleId, checking email...`);
+      user = await this.usersService.findByEmail(email);
+    }
+
+    // 2. Auto-register if not found
+    if (!user) {
+      console.log(`[AuthService] No user found by GoogleId or email. Creating new account...`);
+      user = await this.usersService.create({
+        email,
+        name: `${firstName} ${lastName}`,
+        googleId,
+        pictureUrl: picture,
+        role: Role.NEW_USER,
+        isActive: false, // Default to inactive for new Google users
+      });
+      console.log(`[AuthService] Created new user: ${user.id}`);
+    } else {
+      console.log(`[AuthService] Found existing user: ${user.id} (isActive: ${user.isActive})`);
+    }
+
+    // 3. Enforce activation check
+    if (!user.isActive) {
+      console.warn(`[AuthService] Access denied for inactive user: ${user.email}`);
+      throw new UnauthorizedException('Your account is pending activation. Please contact your administrator.');
+    }
+
+    // 4. Update core identity data if it changed
+    await this.usersService.update(user.id, {
+      googleId,
+      pictureUrl: picture,
+      name: `${firstName} ${lastName}`,
+      isOnline: true,
+      lastActive: new Date(),
+    });
+
+    await this.usersService.logUserActivity(user.id, 'LOGGED_IN_GOOGLE');
+
+    const tokens = await this.getTokens(user.id, user.email, user.role);
+
+    // 5. Update refresh token with latest
+    await this.usersService.update(user.id, {
+      hashedRefreshToken: await bcrypt.hash(tokens.refresh_token, 10),
+    });
+
+    return tokens;
+  }
+
   async validateGoogleSso(idToken: string) {
     try {
       const ticket = await this.googleClient.verifyIdToken({

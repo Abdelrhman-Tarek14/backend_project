@@ -40,7 +40,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
 
       const existingSocketId = this.activeUsers.get(userId);
       if (existingSocketId && existingSocketId !== client.id) {
-        this.server.to(existingSocketId).emit('force_logout', { message: 'Multiple sessions detected.' });
+        this.server.to(existingSocketId).emit('session_overridden', { message: 'Session paused because you connected from another window.' });
         setTimeout(() => {
           const oldSocket = this.server.sockets.sockets.get(existingSocketId);
           if (oldSocket) oldSocket.disconnect();
