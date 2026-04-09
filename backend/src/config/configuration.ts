@@ -17,7 +17,7 @@ export default () => ({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       callbackUrl: process.env.GOOGLE_CALLBACK_URL,
     },
-    enableLocalAuth: process.env.ENABLE_LOCAL_AUTH?.trim() === 'true',
+    enableLocalAuth: process.env.ENABLE_LOCAL_AUTH === 'true',
     csrfSecret: process.env.CSRF_SECRET || 'default-csrf-secret-change-me',
   },
   integrations: {

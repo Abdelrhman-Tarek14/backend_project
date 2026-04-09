@@ -17,7 +17,7 @@ export class CasesWebhookService {
     private prisma: PrismaService,
     private casesService: CasesService,
     private realtimeGateway: RealtimeGateway,
-  ) {}
+  ) { }
 
   async handleSalesforceWebhook(payload: SalesforceWebhookDto) {
     const { caseNumber, caseAccountName, caseCountry, caseType, caseOwner, caseStartTime } = payload;
@@ -169,10 +169,8 @@ export class CasesWebhookService {
     });
 
     if (result.count > 0) {
-       for (let i = 0; i < result.count; i++) {
-          this.casesService.broadcastLeaderboardUpdate({ status: AssignmentStatus.CLOSED });
-       }
-       this.casesService.broadcastCaseEvent('case_closed', { caseId: result.caseId, caseNumber, closedCount: result.count }, result.userId ?? undefined);
+      this.casesService.broadcastLeaderboardUpdate({ status: AssignmentStatus.CLOSED });
+      this.casesService.broadcastCaseEvent('case_closed', { caseId: result.caseId, caseNumber, closedCount: result.count }, result.userId ?? undefined);
     }
 
     this.casesService.syncQueueTracker().catch(err => this.logger.error('Failed to sync queue tracker', err));
@@ -197,7 +195,7 @@ export class CasesWebhookService {
       });
 
       if (!assignment) {
-         throw new NotFoundException(`Assignment not found for case: ${caseNumber}, user: ${caseOwner}, time: ${formSubmitTime}`);
+        throw new NotFoundException(`Assignment not found for case: ${caseNumber}, user: ${caseOwner}, time: ${formSubmitTime}`);
       }
 
       const updateData: any = { items, choices, description, images, tmpAreas, isValid, isOnTime };
@@ -209,7 +207,7 @@ export class CasesWebhookService {
       });
 
       await tx.caseLog.create({
-         data: { assignmentId: assignment.id, action: 'GAS_EVALUATION_ADDED', userId: user.id, changes: updateData as any }
+        data: { assignmentId: assignment.id, action: 'GAS_EVALUATION_ADDED', userId: user.id, changes: updateData as any }
       });
 
       return { updatedAssignment, caseId: caseRecord.id, userId: user.id, updateData };
@@ -249,7 +247,7 @@ export class CasesWebhookService {
       });
 
       await tx.caseLog.create({
-         data: { assignmentId: assignment.id, action: 'GAS_EVALUATION_ADDED', userId: user.id, changes: { evaluationTime, ...updateData } as any }
+        data: { assignmentId: assignment.id, action: 'GAS_EVALUATION_ADDED', userId: user.id, changes: { evaluationTime, ...updateData } as any }
       });
 
       return { updatedAssignment, caseId: caseRecord.id, userId: user.id, updateData };

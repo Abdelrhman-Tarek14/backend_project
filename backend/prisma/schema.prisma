@@ -37,7 +37,7 @@ model User {
   googleId           String?      @unique
   pictureUrl         String? 
   role               Role         @default(NEW_USER)
-  isActive           Boolean      @default(true)
+  isActive           Boolean      @default(false)
   
 
   hashedRefreshToken String?      @map("hashed_refresh_token")
@@ -119,15 +119,13 @@ model Assignment {
   etaMinutes   Int?             // ETA provided by GAS
   etaSetAt     DateTime?        // when ETA was recorded
   
-  isActive     Boolean          @default(true) // Legacy support: preferably use status
-  
   closedAt DateTime?
   assignedAt DateTime @default(now())
   
   assignedById String?
 
 
-  case         Case             @relation(fields: [caseId], references: [id])
+  case         Case             @relation(fields: [caseId], references: [id], onDelete: Cascade)
   user         User?            @relation("UserAssignments", fields: [userId], references: [id])
   assignedBy   User?            @relation("AssignedBy", fields: [assignedById], references: [id])
   caseLogs     CaseLog[]
@@ -171,14 +169,13 @@ model IntegrationStatus {
 model CaseLog {
   id           String     @id @default(uuid())
   assignmentId String
-  action       String     
-  performedBy  String?    
+  action       String        
   userId       String?
   changes      Json?      
   createdAt    DateTime   @default(now())
 
 
-  assignment   Assignment @relation(fields: [assignmentId], references: [id])
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
   user         User?      @relation(fields: [userId], references: [id])
 
   @@index([assignmentId, createdAt])
@@ -186,7 +183,7 @@ model CaseLog {
 }
 
 // =======================
-// 5. User Logs Table
+// 7. User Logs Table
 // =======================
 model UserLog {
   id           String     @id @default(uuid())
