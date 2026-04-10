@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { PrismaModule } from './database/prisma.module';
@@ -22,19 +22,19 @@ import { envValidationSchema } from './common/validation/env.validation';
       validationSchema: envValidationSchema,
       validationOptions: {
         allowUnknown: true,
-        abortEarly: true,
+        abortEarly: false,
       },
     }),
     ThrottlerModule.forRoot([
       {
-        name: 'default', 
-        ttl: 60000,      
-        limit: 120,      
+        name: 'default',
+        ttl: 60000,
+        limit: 120,
       },
       {
-        name: 'webhook', 
-        ttl: 60000,      
-        limit: 300,      
+        name: 'webhook',
+        ttl: 60000,
+        limit: 300,
       },
     ]),
     PrismaModule,
@@ -47,7 +47,6 @@ import { envValidationSchema } from './common/validation/env.validation';
   controllers: [AppController],
   providers: [
     AppService,
-    ConfigService,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

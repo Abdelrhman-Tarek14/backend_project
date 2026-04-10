@@ -21,7 +21,7 @@ async function bootstrap() {
   app.enableShutdownHooks();
 
   const configService = app.get(ConfigService);
-  const isProduction = configService.get<string>('NODE_ENV') === 'production';
+  const isProduction = configService.get<string>('nodeEnv') === 'production';
 
   app.enableCors({
     origin: configService.get('corsOrigin'),
@@ -70,9 +70,10 @@ async function bootstrap() {
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
   // Swagger Documentation
-  const config = new DocumentBuilder()
-    .setTitle('TermHub API')
-    .setDescription(`
+  if (!isProduction) {
+    const config = new DocumentBuilder()
+      .setTitle('TermHub API')
+      .setDescription(`
       The TermHub Internal ETA Management System API.
 
       ## Authentication Flow
@@ -84,31 +85,31 @@ async function bootstrap() {
 
       For real-time data streaming and event documentation, please refer to the Realtime (WebSockets) section at the bottom of this page.
     `)
-    .setVersion('1.0')
-    .addTag('Auth')
-    .addTag('Cases')
-    .addTag('Users')
-    .addTag('System')
-    .addTag('Leaderboard')
-    .addBearerAuth()
-    .addApiKey({ type: 'apiKey', name: 'x-csrf-token', in: 'header' }, 'CsrfToken')
-    .addApiKey({ type: 'apiKey', name: 'x-sf-api-key', in: 'header' }, 'SfApiKey')
-    .addApiKey({ type: 'apiKey', name: 'x-gas-api-key', in: 'header' }, 'GasApiKey')
-    .build();
+      .setVersion('1.0')
+      .addTag('Auth')
+      .addTag('Cases')
+      .addTag('Users')
+      .addTag('System')
+      .addTag('Leaderboard')
+      .addBearerAuth()
+      .addApiKey({ type: 'apiKey', name: 'x-csrf-token', in: 'header' }, 'CsrfToken')
+      .addApiKey({ type: 'apiKey', name: 'x-sf-api-key', in: 'header' }, 'SfApiKey')
+      .addApiKey({ type: 'apiKey', name: 'x-gas-api-key', in: 'header' }, 'GasApiKey')
+      .build();
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document
-    //   , {
-    //   customfavIcon: 'logo.ico', 
-    //   customCss: `
-    //     .topbar { display: none !important; } 
-    //     body { background-color: #1e1e1e !important; }
-    //     .swagger-ui .info .title { color: #ff5722 !important; }
-    //     .swagger-ui .info p { color: #dddddd !important; }
-    //   `,
-    // }
-  );
-
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api', app, document
+      //   , {
+      //   customfavIcon: 'logo.ico', 
+      //   customCss: `
+      //     .topbar { display: none !important; } 
+      //     body { background-color: #1e1e1e !important; }
+      //     .swagger-ui .info .title { color: #ff5722 !important; }
+      //     .swagger-ui .info p { color: #dddddd !important; }
+      //   `,
+      // }
+    );
+  }
   await app.listen(configService.get<number>('port') ?? 3000);
 }
 bootstrap();
