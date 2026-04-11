@@ -1,4 +1,4 @@
-import apiClient from '../../../services/apiClient';
+import { casesApi } from '../../../api/casesApi';
 import socketService from '../../../services/socket';
 
 export const timerService = {
@@ -14,11 +14,18 @@ export const timerService = {
             // Find and update the case in our local list
             const index = activeCases.findIndex(c => c.assignmentId === updatedCase.assignmentId || c.id === updatedCase.caseId);
             if (index !== -1) {
-                activeCases[index] = { ...activeCases[index], ...updatedCase };
+                // Map backend fields to frontend fields for robustness
+                const mappedCase = { ...updatedCase };
+                if (updatedCase.etaMinutes !== undefined) mappedCase.eta = updatedCase.etaMinutes;
+                if (updatedCase.caseType !== undefined) mappedCase.case_type = updatedCase.caseType;
+                if (updatedCase.formType !== undefined) mappedCase.form_type = updatedCase.formType;
+                if (updatedCase.startTime !== undefined) mappedCase.start_time = updatedCase.startTime;
+
+                activeCases[index] = { ...activeCases[index], ...mappedCase };
                 callback([...activeCases]);
             } else {
                 // If not found, re-fetch for accuracy
-                timerService.getActiveCases().then(cases => {
+                timerService.getActiveCases(email).then(cases => {
                     activeCases = cases;
                     callback(cases);
                 });
@@ -26,25 +33,29 @@ export const timerService = {
         };
 
         const refreshCallback = () => {
-             timerService.getActiveCases().then(cases => {
+             timerService.getActiveCases(email).then(cases => {
                 activeCases = cases;
                 callback(cases);
             });
         }
 
         // Initial fetch
-        timerService.getActiveCases().then(cases => {
+        timerService.getActiveCases(email).then(cases => {
             activeCases = cases;
             callback(cases);
         });
 
         // Socket listeners
         socketService.on('case_updated', updateCallback);
+        socketService.on('case_assigned', refreshCallback);
+        socketService.on('case_closed', refreshCallback);
         socketService.on('queue_updated', refreshCallback);
         socketService.on('leaderboard_updated', refreshCallback);
 
         return () => {
             socketService.off('case_updated', updateCallback);
+            socketService.off('case_assigned', refreshCallback);
+            socketService.off('case_closed', refreshCallback);
             socketService.off('queue_updated', refreshCallback);
             socketService.off('leaderboard_updated', refreshCallback);
         };
@@ -53,9 +64,13 @@ export const timerService = {
     /**
      * Fetch active cases for current user
      */
-    getActiveCases: async () => {
+    getActiveCases: async (email) => {
         try {
-            const response = await apiClient.get('/cases', { params: { status: 'OPEN' } });
+            const params = { status: 'OPEN' };
+            if (email) params.agentEmail = email;
+
+            const response = await casesApi.getCases(params);
+            
             return (response.data.data || []).map(caseItem => {
                 const activeAssignment = caseItem.assignments?.[0];
                 return {
@@ -64,9 +79,10 @@ export const timerService = {
                     case_number: caseItem.caseNumber,
                     case_type: activeAssignment?.caseType || caseItem.caseType || 'N/A',
                     form_type: activeAssignment?.formType || 'N/A',
-                    owner_name: activeAssignment?.user?.name || activeAssignment?.user?.email || 'N/A',
+                    owner_name: activeAssignment?.user?.name || activeAssignment?.ownerEmail || 'N/A',
                     start_time: activeAssignment?.startTime,
                     eta: activeAssignment?.etaMinutes,
+                    assignedBy: activeAssignment?.assignedBy,
                     tl_name: activeAssignment?.user?.leader?.name || 'N/A',
                 };
             });
@@ -79,11 +95,12 @@ export const timerService = {
     /**
      * Fetch closed cases using pagination from the backend
      */
-    getClosedCases: async (page = 1, limit = 10) => {
+    getClosedCases: async (page = 1, limit = 10, email = null) => {
         try {
-            const response = await apiClient.get('/cases', { 
-                params: { status: 'CLOSED', page, limit } 
-            });
+            const params = { status: 'CLOSED', page, limit };
+            if (email) params.agentEmail = email;
+
+            const response = await casesApi.getCases(params);
             
             return (response.data.data || []).map(caseItem => {
                 const closedAssignment = caseItem.assignments?.[0];
@@ -112,7 +129,7 @@ export const timerService = {
                     owner_name: closedAssignment?.user?.name || closedAssignment?.user?.email || 'N/A',
                     start_date: closedAssignment?.startTime ? new Date(closedAssignment.startTime).toLocaleDateString() : null,
                     start_time: closedAssignment?.startTime ? new Date(closedAssignment.startTime).toLocaleTimeString() : null,
-                    timestamp: closedAssignment?.assignedAt || caseItem.createdAt,
+                    timestamp: closedAssignment?.startTime || caseItem.createdAt,
                     closed_at: closedAssignment?.closedAt ? new Date(closedAssignment.closedAt).toLocaleTimeString() : null,
                     timestamp_closed_iso: closedAssignment?.closedAt,
                     eta: closedAssignment?.etaMinutes,
@@ -133,7 +150,7 @@ export const timerService = {
         if (!caseData) return;
         const assignmentId = caseData.assignmentId || caseData.id;
         try {
-            await apiClient.patch(`/cases/assignments/${assignmentId}`, {
+            await casesApi.updateAssignmentParameters(assignmentId, {
                 status: 'CLOSED',
                 closedAt: new Date().toISOString()
             });
@@ -151,7 +168,7 @@ export const timerService = {
         if (!assignmentId) return;
         try {
             const date = new Date(newTime);
-            await apiClient.patch(`/cases/assignments/${assignmentId}`, {
+            await casesApi.updateAssignmentParameters(assignmentId, {
                 startTime: date.toISOString()
             });
         } catch (error) {
@@ -166,7 +183,7 @@ export const timerService = {
     updateActiveCaseEta: async (assignmentId, newEta) => {
         if (!assignmentId || !newEta) return;
         try {
-            await apiClient.patch(`/cases/assignments/${assignmentId}`, {
+            await casesApi.updateAssignmentParameters(assignmentId, {
                 etaMinutes: Number(newEta)
             });
         } catch (error) {
@@ -176,9 +193,24 @@ export const timerService = {
     },
 
     /**
-     * Update any field
+     * Update any fields on an assignment (generic update)
+     */
+    updateAssignment: async (assignmentId, data) => {
+        if (!assignmentId || !data) return;
+        try {
+            const response = await casesApi.updateAssignmentParameters(assignmentId, data);
+            return response.data;
+        } catch (error) {
+            console.error("Error updating assignment:", error);
+            throw error;
+        }
+    },
+
+    /**
+     * Update any field (legacy helper)
      */
     updateActiveCaseField: async (assignmentId, field, value) => {
+
         if (!assignmentId || !field) return;
         
         const fieldMapping = {
@@ -191,7 +223,7 @@ export const timerService = {
         const backendField = fieldMapping[field] || field;
 
         try {
-            await apiClient.patch(`/cases/assignments/${assignmentId}`, {
+            await casesApi.updateAssignmentParameters(assignmentId, {
                 [backendField]: value
             });
         } catch (error) {
@@ -208,7 +240,7 @@ export const timerService = {
     subscribeToAllOpenCases: (callback) => {
         const refreshAll = async () => {
              try {
-                const response = await apiClient.get('/cases', { params: { status: 'OPEN', limit: 100 } });
+                const response = await casesApi.getCases({ status: 'OPEN', limit: 100 });
                 const assignments = (response.data.data || []).flatMap(c => 
                     (c.assignments || []).map(a => ({
                         ...c,
@@ -220,7 +252,8 @@ export const timerService = {
                         owner_name: a.user?.name || a.ownerEmail || 'Unknown',
                         start_time: a.startTime,
                         eta: a.etaMinutes,
-                        timestamp: a.assignedAt || c.createdAt,
+                        assignedBy: a.assignedBy,
+                        timestamp: a.startTime || c.createdAt,
                         tl_name: a.user?.leader?.name || 'N/A'
                     }))
                 );

@@ -22,9 +22,9 @@ export const SortableItem = ({ id, children }) => {
     } = useSortable({ id });
 
     const style = {
-        transform: CSS.Transform.toString(transform),
-        transition: isDragging ? 'none' : transition, // Disable dnd-kit transition during drag for framer-motion to take over
-        opacity: isDragging ? 0.5 : 1,
+        transform: CSS.Translate.toString(transform),
+        transition, // Let dnd-kit handle the sorting transition natively
+        opacity: isDragging ? 0.6 : 1,
         touchAction: 'none',
         position: 'relative',
         zIndex: isDragging ? 999 : 'auto'
@@ -38,7 +38,7 @@ export const SortableItem = ({ id, children }) => {
             variants={itemVariants}
             initial="hidden"
             animate="visible"
-            layout // Enable layout animations for smoother grid reordering
+            // layout prop removed to prevent fighting with dnd-kit transitions, yielding 60fps
         >
             {typeof children === 'function' ? children(listeners) : children}
         </motion.div>

@@ -76,7 +76,16 @@ export class CasesController {
     @Body() dto: UpdateAssignmentDto,
     @Request() req: RequestWithUser,
   ) {
-    return this.casesService.updateAssignment(assignmentId, dto, req.user?.id);
+    return this.casesService.updateAssignment(assignmentId, dto, req.user);
+  }
+
+  @Get('salesforce/status')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get Salesforce Integration Status' })
+  @ApiResponse({ status: 200, description: 'Salesforce integration status retrieved successfully.' })
+  async getSalesforceStatus() {
+    return this.casesService.getSalesforceStatus();
   }
 
   @Post('webhook/salesforce')
@@ -156,11 +165,4 @@ export class CasesController {
     return { status: 'ok', message: 'Heartbeat received' };
   }
 
-  @Get('system/status')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get System Integration Status' })
-  async getSystemStatus() {
-    return this.casesService.getSystemStatus();
-  }
 }

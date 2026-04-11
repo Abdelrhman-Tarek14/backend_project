@@ -58,7 +58,6 @@ model User {
   team               User[]       @relation("TeamHierarchy")
 
   assignments        Assignment[] @relation("UserAssignments")
-  assignedOthers     Assignment[] @relation("AssignedBy")
   userLogs           UserLog[]
   caseLogs           CaseLog[]
 
@@ -109,30 +108,27 @@ model Assignment {
   description  Int?
   images       Int?
   tmpAreas     Int?
-  isValid      Boolean?
+  formValidation String?
   isOnTime     Boolean?
   formSubmitTime DateTime?
   qualityScore Boolean?
   finalCheckScore Boolean?
   
-  startTime    DateTime?        // when the work started
   etaMinutes   Int?             // ETA provided by GAS
-  etaSetAt     DateTime?        // when ETA was recorded
   
-  closedAt DateTime?
-  assignedAt DateTime @default(now())
+  closedAt     DateTime?
+  startTime    DateTime @default(now())
   
-  assignedById String?
-
+  assignedBy   String?
 
   case         Case             @relation(fields: [caseId], references: [id], onDelete: Cascade)
   user         User?            @relation("UserAssignments", fields: [userId], references: [id])
-  assignedBy   User?            @relation("AssignedBy", fields: [assignedById], references: [id])
   caseLogs     CaseLog[]
+
 
   queueRecord  QueueRecord?
 
-  @@index([userId, assignedAt])
+  @@index([userId, startTime])
   @@index([caseId])
   @@index([status])
 }

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import apiClient from '../services/apiClient';
+import { authApi } from '../api/authApi';
+import { usersApi } from '../api/usersApi';
 import socketService from '../services/socket';
 import Swal from 'sweetalert2';
 
@@ -11,7 +12,7 @@ export const AuthProvider = ({ children }) => {
 
     const checkAuth = async () => {
         try {
-            const response = await apiClient.get('/users/me');
+            const response = await usersApi.getCurrentUser();
             setUser(response.data);
         } catch (error) {
             setUser(null);
@@ -64,7 +65,7 @@ export const AuthProvider = ({ children }) => {
     const logout = async () => {
         setLoading(true);
         try {
-            await apiClient.post('/auth/logout');
+            await authApi.logout();
             localStorage.clear();
             setUser(null);
             // After setting user to null, ProtectedRoute should automatically redirect

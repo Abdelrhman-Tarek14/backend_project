@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional, IsString, IsInt, IsDateString, IsEmail, IsUUID } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsInt, IsDateString, IsEmail, IsUUID, IsBoolean } from 'class-validator';
 import { AssignmentStatus } from '@prisma/client';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -8,10 +8,16 @@ export class UpdateAssignmentDto {
   @IsEnum(AssignmentStatus)
   status?: AssignmentStatus;
 
-  @ApiPropertyOptional({ example: 'Menu Typing', description: 'Manual update of case type' })
+  @ApiPropertyOptional({ example: '12345678', description: 'Manual update of case number' })
+  @IsOptional()
+  @IsString()
+  caseNumber?: string;
+
+  @ApiPropertyOptional({ example: 'Menu Typing', description: 'Manual update of case type. (Will be mapped to formType as per business logic)' })
   @IsOptional()
   @IsString()
   caseType?: string;
+
 
   @ApiPropertyOptional({ example: 'Full Form', description: 'Manual update of form type' })
   @IsOptional()
@@ -42,4 +48,9 @@ export class UpdateAssignmentDto {
   @IsOptional()
   @IsEmail()
   ownerEmail?: string;
+
+  @ApiPropertyOptional({ example: true, description: 'Manual override for isOnTime status' })
+  @IsOptional()
+  @IsBoolean()
+  isOnTime?: boolean;
 }

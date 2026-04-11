@@ -1,6 +1,6 @@
 import styles from './StatusBadge.module.css';
 
-export const StatusBadge = ({ isOverdue, isScheduled, isOpen, isWaitingEta, isNearExceeded, isBacklog }) => {
+export const StatusBadge = ({ isExceeded, isScheduled, isOpen, isWaitingEta, isNearExceeded, isBacklog }) => {
     if (!isOpen) return <div className={`${styles.statusBadge} ${styles.statusClosed}`}>Closed</div>;
 
     let label = 'On Time';
@@ -12,7 +12,7 @@ export const StatusBadge = ({ isOverdue, isScheduled, isOpen, isWaitingEta, isNe
     } else if (isWaitingEta) {
         label = 'Waiting for ETA';
         styleClass = styles.statusWaitingEta;
-    } else if (isOverdue) {
+    } else if (isExceeded) {
         label = 'Exceeding';
         styleClass = styles.statusExceeding;
     } else if (isNearExceeded) {

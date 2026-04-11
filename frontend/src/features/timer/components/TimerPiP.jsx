@@ -13,7 +13,7 @@ export const TimerPiP = () => {
     const [activeCase, setActiveCase] = useState(null);
     const [isReady, setIsReady] = useState(false);
 
-    const { timeLeft, formatTime, isOverdue, startTime } = useCaseTimer(activeCase || {});
+    const { timeLeft, formatTime, isExceeded, startTime } = useCaseTimer(activeCase || {});
 
     // 1. Timer Data Subscription
     useEffect(() => {
@@ -126,8 +126,8 @@ export const TimerPiP = () => {
                 </div>
 
                 <div className={styles.mainDisplay}>
-                    <div className={styles.timeLabel}>{isOverdue ? 'Exceeded' : 'Remaining'}</div>
-                    <div className={`${styles.timeValue} ${isOverdue ? styles.overdue : ''}`}>
+                    <div className={styles.timeLabel}>{isExceeded ? 'Exceeded' : 'Remaining'}</div>
+                    <div className={`${styles.timeValue} ${isExceeded ? styles.overdue : ''}`}>
                         {formatTime(timeLeft)}
                     </div>
                 </div>

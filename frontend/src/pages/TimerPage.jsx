@@ -54,7 +54,7 @@ export function TimerPage() {
             }
 
             const fetchPage = isInitial ? 1 : page + 1;
-            const newCases = await timerService.getClosedCases(fetchPage, 10);
+            const newCases = await timerService.getClosedCases(fetchPage, 10, user.email);
 
             if (newCases.length < 10) {
                 setHasMore(false);

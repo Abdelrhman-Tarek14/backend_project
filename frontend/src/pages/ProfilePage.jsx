@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../features/auth/hooks/useAuth';
 import { useUserRole } from '../hooks/useUserRole';
-import apiClient from '../services/apiClient';
+import { usersApi } from '../api/usersApi';
 import Swal from 'sweetalert2';
 import {
     BiUser, BiPalette, BiCheck, BiTimeFive, BiHash,
@@ -36,7 +36,7 @@ const ProfilePage = () => {
         setIsSaving(true);
         try {
             // 1. Update Profile (Custom Display Name) via Backend
-            await apiClient.patch('/users/me', {
+            await usersApi.updateUserPreferences({
                 displayName: displayName || null
             });
 

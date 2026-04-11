@@ -20,7 +20,7 @@ export class CasesService {
 
   async findAll(query: GetCasesDto) {
     const { page = 1, limit = 10, status, date, agentId, agentEmail, agentName } = query;
-    const safeLimit = Math.min(limit, 100); // ✅ رقم 4 — حد أقصى 100
+    const safeLimit = Math.min(limit, 100);
     const skip = (page - 1) * safeLimit;
 
     const whereClause: Prisma.CaseWhereInput = {};
@@ -54,7 +54,7 @@ export class CasesService {
       this.prisma.case.findMany({
         where: whereClause,
         skip,
-        take: safeLimit, // ✅
+        take: safeLimit,
         orderBy: { createdAt: 'desc' },
         select: {
           id: true,
@@ -69,12 +69,14 @@ export class CasesService {
             select: {
               id: true,
               userId: true,
+              ownerEmail: true,
               status: true,
               caseType: true,
               formType: true,
               etaMinutes: true,
-              assignedAt: true,
+              startTime: true,
               closedAt: true,
+              assignedBy: true,
               user: {
                 select: { id: true, name: true, email: true, role: true }
               },
@@ -93,8 +95,8 @@ export class CasesService {
       meta: {
         totalCount,
         page,
-        limit: safeLimit,                            // ✅
-        totalPages: Math.ceil(totalCount / safeLimit), // ✅
+        limit: safeLimit,
+        totalPages: Math.ceil(totalCount / safeLimit),
       },
     };
   }
@@ -108,14 +110,13 @@ export class CasesService {
             user: { select: { id: true, name: true, email: true, role: true } },
             caseLogs: { orderBy: { createdAt: 'desc' } }
           },
-          orderBy: { assignedAt: 'desc' }
+          orderBy: { startTime: 'desc' }
         }
       },
     });
 
     if (!caseRecord) throw new NotFoundException('Case not found');
 
-    // ✅ رقم 6 — Agent يشوف بس الـ cases بتاعته
     if (requestingUser && !MANAGEMENT_ROLES.includes(requestingUser.role)) {
       const hasAccess = caseRecord.assignments.some(a => a.userId === requestingUser.id);
       if (!hasAccess) throw new ForbiddenException('Access denied');
@@ -124,25 +125,91 @@ export class CasesService {
     return caseRecord;
   }
 
-  async updateAssignment(assignmentId: string, data: UpdateAssignmentDto, adminId?: string) {
+  async updateAssignment(assignmentId: string, data: UpdateAssignmentDto, adminUser?: { id: string; email: string; role: Role }) {
     const assignment = await this.prisma.assignment.findUnique({ where: { id: assignmentId } });
     if (!assignment) throw new NotFoundException('Assignment not found');
 
+    // 1. Map incoming caseType to formType, prevent updating caseType
+    if (data.caseType !== undefined) {
+      if (data.caseType !== null && data.caseType.trim() !== '') {
+        data.formType = data.caseType; // Overwrite formType with caseType
+      }
+      delete data.caseType; // Remove caseType so it doesn't try to update DB
+    }
+
+    // 2. Extract caseNumber for the parent Case model
+    const { caseNumber, ...assignmentUpdateData } = data;
+
     const updatedAssignment = await this.prisma.$transaction(async (tx) => {
+      let finalCaseId = assignment.caseId;
+
+      // Update Case Number / Relink logic
+      if (caseNumber !== undefined) {
+        const existingTargetCase = await tx.case.findUnique({ where: { caseNumber } });
+
+        if (existingTargetCase) {
+          // RELINK: Target already exists, move this assignment to it
+          finalCaseId = existingTargetCase.id;
+        } else {
+          // RENAME: Target doesn't exist, just rename the current case record
+          await tx.case.update({
+            where: { id: assignment.caseId },
+            data: { caseNumber }
+          });
+        }
+      }
+
+      // Timing logic: Use startTime as the ground truth
+      const isClosing = (assignmentUpdateData as any).status === 'CLOSED';
+      let isOnTime = assignmentUpdateData.isOnTime !== undefined ? assignmentUpdateData.isOnTime : assignment.isOnTime;
+      
+      // If the admin manually set a "startTime", we use it
+      let finalStartTime = assignment.startTime;
+      if (assignmentUpdateData.startTime) {
+          finalStartTime = new Date(assignmentUpdateData.startTime);
+      }
+
+      if (isClosing) {
+          // Calculate isOnTime based on startTime and closure time
+          const eta = assignmentUpdateData.etaMinutes !== undefined ? assignmentUpdateData.etaMinutes : assignment.etaMinutes;
+          const closedAt = assignmentUpdateData.closedAt ? new Date(assignmentUpdateData.closedAt) : new Date();
+          
+          if (finalStartTime && eta) {
+              const limit = new Date(finalStartTime.getTime() + eta * 60000);
+              isOnTime = closedAt <= limit;
+          }
+      }
+
       const updated = await tx.assignment.update({
         where: { id: assignmentId },
         data: {
-          ...data,
-          startTime: data.startTime ? new Date(data.startTime) : undefined,
-          closedAt: data.closedAt ? new Date(data.closedAt) : undefined,
+          ...assignmentUpdateData,
+          caseId: finalCaseId,
+          startTime: finalStartTime, // Sync startTime with manual edit if provided
+          closedAt: assignmentUpdateData.closedAt ? new Date(assignmentUpdateData.closedAt) : undefined,
+          isOnTime: isOnTime,
+          ...(data.startTime ? { assignedBy: adminUser?.email || 'Manual' } : {}),
         },
       });
+
+
+
+      // CLEANUP: If we relinked, check if the old case is now empty
+      if (finalCaseId !== assignment.caseId) {
+        const otherAssignmentsCount = await tx.assignment.count({
+          where: { caseId: assignment.caseId }
+        });
+        if (otherAssignmentsCount === 0) {
+          await tx.case.delete({ where: { id: assignment.caseId } });
+        }
+      }
+
 
       await tx.caseLog.create({
         data: {
           assignmentId,
           action: 'MANUAL_ASSIGNMENT_UPDATE',
-          userId: adminId,
+          userId: adminUser?.id,
           changes: data as any,
         },
       });
@@ -165,7 +232,7 @@ export class CasesService {
     return updatedAssignment;
   }
 
-  async getSystemStatus() {
+  async getSalesforceStatus() {
     return this.prisma.integrationStatus.findMany();
   }
 
@@ -187,7 +254,7 @@ export class CasesService {
 
     const openAssignments = await this.prisma.assignment.findMany({
       where: { status: AssignmentStatus.OPEN },
-      select: { id: true, caseType: true, assignedAt: true },
+      select: { id: true, caseType: true, startTime: true },
     });
 
     openAssignments.sort((a, b) => {
@@ -201,7 +268,7 @@ export class CasesService {
       const rankB = indexB === -1 ? 999 : indexB;
 
       if (rankA !== rankB) return rankA - rankB;
-      return new Date(a.assignedAt).getTime() - new Date(b.assignedAt).getTime();
+      return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
     });
 
     await this.prisma.$transaction(async (tx) => {

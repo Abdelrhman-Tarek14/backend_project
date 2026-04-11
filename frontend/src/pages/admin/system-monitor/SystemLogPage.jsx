@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import apiClient from '../../services/apiClient';
+import { usersApi } from '../../../api/usersApi';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BiTime, BiUser, BiInfoCircle, BiCheckCircle, BiMoon } from 'react-icons/bi';
+import { BiInfoCircle } from 'react-icons/bi';
 
 const SystemLogPage = () => {
     const [activeTab, setActiveTab] = useState('online'); // 'online', 'agent_logins', or 'users'
@@ -12,7 +12,7 @@ const SystemLogPage = () => {
     const fetchUsers = async () => {
         setLoading(true);
         try {
-            const response = await apiClient.get('/users', { params: { limit: 100 } });
+            const response = await usersApi.getUsers({ limit: 100 });
             setUsers(response.data?.data || []);
         } catch (error) {
             console.error("Error fetching users:", error);
@@ -33,7 +33,7 @@ const SystemLogPage = () => {
             const updateData = { role: newRole };
             if (newIsActive !== null) updateData.isActive = newIsActive;
             
-            await apiClient.patch(`/users/${userId}/status`, updateData);
+            await usersApi.updateUserStatus(userId, updateData);
             // Re-fetch users to update UI
             fetchUsers();
         } catch (error) {

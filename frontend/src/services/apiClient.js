@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { API_ENDPOINTS } from '../api/endpoints';
 
 const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -18,7 +19,7 @@ let csrfToken = null;
  */
 export const fetchCsrfToken = async () => {
     try {
-        const response = await axios.get(`${baseURL}/csrf`, { withCredentials: true });
+        const response = await axios.get(`${baseURL}${API_ENDPOINTS.CSRF}`, { withCredentials: true });
         // Account for backend's TransformInterceptor wrapping
         csrfToken = response.data?.data?.csrfToken || response.data?.csrfToken;
         apiClient.defaults.headers.common['x-csrf-token'] = csrfToken;
@@ -69,13 +70,13 @@ apiClient.interceptors.response.use(
         if (
             error.response?.status === 401 &&
             !originalRequest._retry &&
-            !originalRequest.url?.includes('/users/me')
+            !originalRequest.url?.includes(API_ENDPOINTS.USERS.ME)
         ) {
             originalRequest._retry = true;
 
             try {
                 // Attempt to refresh tokens
-                await axios.post(`${baseURL}/auth/refresh`, {}, { withCredentials: true });
+                await axios.post(`${baseURL}${API_ENDPOINTS.AUTH.REFRESH}`, {}, { withCredentials: true });
                 // If refresh succeeds, we also need to ensure we have a fresh CSRF token 
                 // because the session might have changed.
                 await fetchCsrfToken();

@@ -110,7 +110,7 @@ describe('WebhooksController (e2e)', () => {
     const caseRec = await prisma.case.findUnique({ where: { caseNumber: testCaseNumber } });
     const assignment = await prisma.assignment.findFirst({
       where: { caseId: caseRec!.id },
-      orderBy: { assignedAt: 'desc' },
+      orderBy: { startTime: 'desc' },
     });
     
     expect(assignment!.etaMinutes).toBe(15);
@@ -133,7 +133,7 @@ describe('WebhooksController (e2e)', () => {
     const caseRec = await prisma.case.findUnique({ where: { caseNumber: testCaseNumber } });
     const assignment = await prisma.assignment.findFirst({
       where: { caseId: caseRec!.id },
-      orderBy: { assignedAt: 'desc' },
+      orderBy: { startTime: 'desc' },
     });
     
     expect(assignment!.status).toBe('CLOSED');

@@ -1,7 +1,7 @@
-import { IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { IsEnum, IsInt, IsOptional, IsString, Min, IsNotEmpty } from 'class-validator';
 import { Type } from 'class-transformer';
 import { AssignmentStatus } from '@prisma/client';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class GetCasesDto {
   @ApiPropertyOptional({ example: 1, default: 1, description: 'Page number' })
@@ -18,10 +18,10 @@ export class GetCasesDto {
   @Min(1)
   limit?: number = 10;
 
-  @ApiPropertyOptional({ enum: AssignmentStatus, description: 'Filter by assignment status' })
-  @IsOptional()
+  @ApiProperty({ enum: AssignmentStatus, description: 'Filter by assignment status' })
+  @IsNotEmpty()
   @IsEnum(AssignmentStatus)
-  status?: AssignmentStatus;
+  status: AssignmentStatus;
 
   @ApiPropertyOptional({ example: '2026-03-29', description: 'Filter by creation date (YYYY-MM-DD)' })
   @IsOptional()

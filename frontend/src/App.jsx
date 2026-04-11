@@ -122,14 +122,10 @@ function AppContent() {
                 </AnimatePresence>
                 <main
                   style={{
-                    flex: 1,
                     display: 'flex',
-                    flexDirection: 'column',
-                    marginLeft: '60px',
-                    width: 'calc(100% - 60px)',
+                    margin: '80px 10px 0px 85px',
+                    width: 'calc(100% - 95px)',
                     transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                    paddingRight: '20px',
-                    marginTop: '80px',
                     height: 'calc(100vh - 80px)',
                     overflowY: 'auto',
                     overflowX: 'hidden'

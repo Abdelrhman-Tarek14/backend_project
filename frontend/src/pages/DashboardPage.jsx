@@ -76,7 +76,7 @@ const KPIItem = ({ label, value, target, color, icon: Icon }) => {
 // Sync Active Session with Pill Style
 const ActiveKPIItem = ({ activeCases }) => {
     const primaryCase = activeCases[0];
-    const { timeLeft, formatTime, isOverdue, progress } = useCaseTimer(primaryCase || {});
+    const { timeLeft, formatTime, isExceeded, progress } = useCaseTimer(primaryCase || {});
     const radius = 32;
     const circumference = 2 * Math.PI * radius;
     const offset = circumference - (progress / 100) * circumference;
@@ -97,18 +97,18 @@ const ActiveKPIItem = ({ activeCases }) => {
                         style={{
                             strokeDasharray: circumference,
                             strokeDashoffset: offset,
-                            stroke: isOverdue ? '#f43f5e' : '#6366f1'
+                            stroke: isExceeded ? '#f43f5e' : '#6366f1'
                         }}
                     />
                 </svg>
                 <div className={styles.pillIconInner}>
-                    <BiTimeFive size={22} color={isOverdue ? '#f43f5e' : '#6366f1'} />
+                    <BiTimeFive size={22} color={isExceeded ? '#f43f5e' : '#6366f1'} />
                 </div>
             </div>
             <div className={styles.pillRight}>
                 {primaryCase ? (
                     <>
-                        <span className={`${styles.pillValueLarge} ${isOverdue ? styles.overdueText : ''}`}>
+                        <span className={`${styles.pillValueLarge} ${isExceeded ? styles.overdueText : ''}`}>
                             {formatTime(timeLeft)}
                         </span>
                         <div className={styles.pillStatusWrapper}>

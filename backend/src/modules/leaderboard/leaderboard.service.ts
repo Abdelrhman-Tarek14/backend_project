@@ -68,8 +68,8 @@ export class LeaderboardService {
       INNER JOIN "Assignment" a ON u.id = a."userId"
       WHERE u.role = 'AGENT' 
         AND a.status = 'CLOSED'
-        AND a."assignedAt" >= ${start} 
-        AND a."assignedAt" <= ${end}
+        AND a."startTime" >= ${start} 
+        AND a."startTime" <= ${end}
         ${leaderCondition}
         ${leaderNameCondition}
         ${emailCondition}

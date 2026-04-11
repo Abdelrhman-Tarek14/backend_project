@@ -24,8 +24,10 @@ export const Sidebar = ({ isCollapsed, onToggle }) => {
                 <div className={styles.navSection}>
                     {isAdminLevel && (
                         <>
-                            <SidebarLink animate to="/admin/open" icon={<BiCrown size={22} />} label="Open Cases" isCollapsed={isCollapsed} id="tour-nav-admin" />
-                            <SidebarLink animate to="/admin/logs" icon={<BiInfoCircle size={22} />} label="System Log" isCollapsed={isCollapsed} id="tour-nav-logs" />
+                            <SidebarLink animate to="/admin/open-cases" icon={<BiCrown size={22} />} label="Open Cases" isCollapsed={isCollapsed} id="tour-nav-admin" />
+                            <SidebarLink animate to="/admin/system-monitor" icon={<BiInfoCircle size={22} />} label="System Log" isCollapsed={isCollapsed} id="tour-nav-logs" />
+                            <SidebarLink animate to="/admin/closed-cases" icon={<BiInfoCircle size={22} />} label="Closed Cases" isCollapsed={isCollapsed} id="tour-nav-logs" />
+                            <SidebarLink animate to="/admin/activity-history" icon={<BiInfoCircle size={22} />} label="Activity History" isCollapsed={isCollapsed} id="tour-nav-logs" />
                             <div className={styles.navDivider} />
                         </>
                     )}

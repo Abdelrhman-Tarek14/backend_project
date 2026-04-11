@@ -47,13 +47,19 @@ export class GasValidatedWebhookDto {
   @IsInt()
   tmpAreas?: number;
 
-  @ApiPropertyOptional({ example: true, description: 'Is the form valid' })
+  @ApiPropertyOptional({ example: 'valid', description: 'Form validation result: valid, invalid, or amened' })
   @IsOptional()
-  @IsBoolean()
-  isValid?: boolean;
+  @IsString()
+  formValidation?: string;
 
   @ApiPropertyOptional({ example: true, description: 'Is the form on time' })
   @IsOptional()
   @IsBoolean()
   isOnTime?: boolean;
+
+  @ApiPropertyOptional({ example: 45, description: 'ETA in minutes' })
+  @IsOptional()
+  @IsInt()
+  eta?: number;
 }
+

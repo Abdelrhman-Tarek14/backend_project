@@ -19,7 +19,7 @@ export const useCaseTimer = (caseData, durationMinutes = 0) => {
 
     // Track if alerts have been shown locally to prevent spam
     const alertState = useRef({ nearExceeded: false, exceeded: false });
-    
+
     // Reset alert state if the case changes (e.g. ETA updated)
     useEffect(() => {
         alertState.current = { nearExceeded: false, exceeded: false };
@@ -36,8 +36,8 @@ export const useCaseTimer = (caseData, durationMinutes = 0) => {
             // Legacy separate format
             start = new Date(`${startDate}T${startTime}`);
         } else if (caseData.timestamp) {
-             // Fallback to general timestamp
-             start = new Date(caseData.timestamp);
+            // Fallback to general timestamp
+            start = new Date(caseData.timestamp);
         }
 
         if (!start || isNaN(start.getTime())) return null;
@@ -138,7 +138,7 @@ export const useCaseTimer = (caseData, durationMinutes = 0) => {
         startTime: timeDetails?.start || null,
         endTime: timeDetails?.end || null,
         formatTime,
-        isOverdue: status === 'Overdue' || isWaitingEta, // Treat waiting for ETA as a priority state
+        isExceeded: status === 'Overdue' || isWaitingEta, // Treat waiting for ETA as a priority state
         isScheduled: status === 'Scheduled',
         isWaitingEta
     };

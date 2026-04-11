@@ -1,4 +1,4 @@
-import styles from '../../AdminPage.module.css';
+import styles from './CaseGroup.module.css';
 import { CaseCard } from './CaseCard';
 import { BiGroup } from 'react-icons/bi';
 

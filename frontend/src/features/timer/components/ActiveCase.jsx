@@ -27,7 +27,7 @@ export const ActiveCase = ({ caseData, onComplete }) => {
         startTime,
         endTime,
         formatTime,
-        isOverdue,
+        isExceeded,
         isScheduled
     } = useCaseTimer(caseData);
 
@@ -37,7 +37,7 @@ export const ActiveCase = ({ caseData, onComplete }) => {
     const activeCaseId = assignmentId || case_number;
 
     return (
-        <div className={`${styles.container} ${isOverdue ? styles.overdue : ''}`}>
+        <div className={`${styles.container} ${isExceeded ? styles.overdue : ''}`}>
             {/* Header: Case Info */}
             <div className={styles.header}>
                 <div className={styles.caseInfo}>
@@ -58,7 +58,7 @@ export const ActiveCase = ({ caseData, onComplete }) => {
             {/* Timer Display */}
             <div className={styles.timerSection}>
                 <div className={styles.timerLabel}>
-                    {isOverdue ? "TIME EXCEEDED BY" : "TIME REMAINING"}
+                    {isExceeded ? "TIME EXCEEDED BY" : "TIME REMAINING"}
                 </div>
                 <div className={styles.timerValue}>
                     {formatTime(timeLeft)}
@@ -69,7 +69,7 @@ export const ActiveCase = ({ caseData, onComplete }) => {
             <div className={styles.progressContainer}>
                 <div
                     className={styles.progressBar}
-                    style={{ width: `${progress}%`, backgroundColor: isOverdue ? '#F44336' : '#FF5722' }}
+                    style={{ width: `${progress}%`, backgroundColor: isExceeded ? '#F44336' : '#FF5722' }}
                 />
                 <div className={styles.progressText}>{Math.round(progress)}%</div>
             </div>

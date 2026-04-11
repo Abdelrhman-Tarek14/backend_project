@@ -1,4 +1,4 @@
-import apiClient from './apiClient';
+import { leaderboardApi } from '../api/leaderboardApi';
 
 export const scoreService = {
     /**
@@ -10,7 +10,7 @@ export const scoreService = {
 
         try {
             // Fetch leaderboard filtered by email for the current month
-            const response = await apiClient.get('/leaderboard', { params: { email } });
+            const response = await leaderboardApi.getLeaderboard({ email });
             
             // The backend returns an array of matches. Since we filtered by exact email, 
             // the match might be at index 0 or not exist if no cases are assigned yet.
@@ -46,7 +46,7 @@ export const scoreService = {
      */
     getLeaderboard: async () => {
         try {
-            const response = await apiClient.get('/leaderboard');
+            const response = await leaderboardApi.getLeaderboard();
             return response.data || [];
         } catch (error) {
             console.error("Error fetching leaderboard:", error);

@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { ROLES, ROLE_GROUPS } from '../constants/roles';
 import { PERMISSION_MATRIX } from '../constants/permissions';
-import apiClient from '../services/apiClient';
+import { usersApi } from '../api/usersApi';
 import socketService from '../services/socket';
 import { useAuthContext } from './AuthContext';
 
@@ -70,7 +70,7 @@ export const UserProvider = ({ children }) => {
         setAppearance(newAppearance);
         if (user) {
             try {
-                await apiClient.patch('/users/me', { appearance: newAppearance });
+                await usersApi.updateUserPreferences({ appearance: newAppearance });
             } catch (err) {
                 console.error("Failed to update appearance in backend:", err);
             }
@@ -81,7 +81,7 @@ export const UserProvider = ({ children }) => {
         setColorTheme(newTheme);
         if (user) {
             try {
-                await apiClient.patch('/users/me', { theme: newTheme });
+                await usersApi.updateUserPreferences({ theme: newTheme });
             } catch (err) {
                 console.error("Failed to update color theme in backend:", err);
             }

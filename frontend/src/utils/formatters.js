@@ -1,10 +1,10 @@
-export const formatAgentName = (nameOrEmail) => {
-    if (!nameOrEmail) return 'Unknown';
+export const formatAgentName = (email) => {
+    if (!email) return 'Unknown';
 
     // 1. If it has '@', extract local part before @
-    let name = nameOrEmail.includes('@')
-        ? nameOrEmail.split('@')[0]
-        : nameOrEmail;
+    let name = email.includes('@')
+        ? email.split('@')[0]
+        : email;
 
     // 2. Remove .ext suffix if present (e.g. food.queue.ext)
     if (name.toLowerCase().endsWith('.ext')) {

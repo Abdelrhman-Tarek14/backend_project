@@ -32,34 +32,69 @@ export class CasesWebhookService {
 
       const user = caseOwner ? await tx.user.findUnique({ where: { email: caseOwner } }) : null;
 
-      const assignment = await tx.assignment.create({
-        data: {
+      const existingAssignment = await tx.assignment.findFirst({
+        where: {
           caseId: caseRecord.id,
-          userId: user?.id,
-          ownerEmail: caseOwner,
           status: AssignmentStatus.OPEN,
-          caseType,
-          startTime: caseStartTime ? new Date(caseStartTime) : new Date(),
-        },
+          OR: [
+            { ownerEmail: caseOwner },
+            ...(user ? [{ userId: user.id }] : [])
+          ]
+        }
       });
 
-      await tx.caseLog.create({
-        data: {
-          assignmentId: assignment.id,
-          action: 'SALESFORCE_CASE_CREATED',
-          userId: user?.id,
-          changes: { caseNumber, caseOwner },
-        },
-      });
+      let assignment;
+      if (existingAssignment) {
+        assignment = await tx.assignment.update({
+          where: { id: existingAssignment.id },
+          data: {
+            caseType,
+            startTime: caseStartTime ? new Date(caseStartTime) : existingAssignment.startTime,
+            userId: user?.id || existingAssignment.userId,
+          }
+        });
+
+        await tx.caseLog.create({
+          data: {
+            assignmentId: assignment.id,
+            action: 'SALESFORCE_CASE_UPDATED',
+            userId: user?.id,
+            changes: { caseNumber, caseOwner },
+          },
+        });
+      } else {
+        assignment = await tx.assignment.create({
+          data: {
+            caseId: caseRecord.id,
+            userId: user?.id,
+            ownerEmail: caseOwner,
+            assignedBy: 'Synced',
+            status: AssignmentStatus.OPEN,
+            caseType,
+            startTime: caseStartTime ? new Date(caseStartTime) : new Date(),
+          },
+        });
+
+        await tx.caseLog.create({
+          data: {
+            assignmentId: assignment.id,
+            action: 'SALESFORCE_CASE_CREATED',
+            userId: user?.id,
+            changes: { caseNumber, caseOwner },
+          },
+        });
+      }
 
       return { assignment, caseRecord };
     });
 
-    this.casesService.broadcastCaseEvent('case_assigned', {
+    this.casesService.broadcastCaseEvent('case_updated', {
       caseId: result.caseRecord.id,
       assignmentId: result.assignment.id,
-      status: result.assignment.status,
       caseNumber: result.caseRecord.caseNumber,
+      status: result.assignment.status,
+      caseType: result.assignment.caseType,
+      startTime: result.assignment.startTime,
     }, result.assignment.userId ?? undefined);
 
     this.casesService.syncQueueTracker().catch(err => this.logger.error('Failed to sync queue tracker', err));
@@ -79,11 +114,10 @@ export class CasesWebhookService {
       }
 
       const user = await tx.user.findUnique({ where: { email: caseOwner } });
-      if (!user) throw new NotFoundException(`Agent with email ${caseOwner} not found`);
 
       let assignment = await tx.assignment.findFirst({
-        where: { caseId: caseRecord.id, userId: user.id },
-        orderBy: { assignedAt: 'desc' },
+        where: { caseId: caseRecord.id, ownerEmail: caseOwner },
+        orderBy: { startTime: 'desc' },
       });
 
       const shouldUpdate = assignment && (
@@ -97,37 +131,37 @@ export class CasesWebhookService {
             formType,
             etaMinutes: caseETA ?? assignment.etaMinutes,
             formSubmitTime: formSubmitTime ? new Date(formSubmitTime) : assignment.formSubmitTime,
-            etaSetAt: new Date(),
           },
         });
         await tx.caseLog.create({
-          data: { assignmentId: assignment.id, action: 'GAS_FORM_UPDATED', userId: user.id, changes: { formType, caseETA } },
+          data: { assignmentId: assignment.id, action: 'GAS_FORM_UPDATED', userId: user?.id, changes: { formType, caseETA } },
         });
       } else {
         assignment = await tx.assignment.create({
           data: {
             caseId: caseRecord.id,
-            userId: user.id,
+            userId: user?.id,
+            ownerEmail: caseOwner,
             status: AssignmentStatus.OPEN,
             formType,
             etaMinutes: caseETA,
             formSubmitTime: formSubmitTime ? new Date(formSubmitTime) : new Date(),
-            etaSetAt: new Date(),
           },
         });
         await tx.caseLog.create({
-          data: { assignmentId: assignment.id, action: 'GAS_FORM_SUBMITTED', userId: user.id, changes: { formType, caseETA } },
+          data: { assignmentId: assignment.id, action: 'GAS_FORM_SUBMITTED', userId: user?.id, changes: { formType, caseETA } },
         });
       }
 
       return { assignment, caseRecord };
     });
 
-    this.casesService.broadcastCaseEvent('eta_updated', {
+    this.casesService.broadcastCaseEvent('case_updated', {
       caseId: result.caseRecord.id,
       assignmentId: result.assignment.id,
-      etaMinutes: result.assignment.etaMinutes,
-      updatedAt: result.assignment.etaSetAt,
+      eta: result.assignment.etaMinutes,
+      formType: result.assignment.formType,
+      updatedAt: new Date(),
     }, result.assignment.userId ?? undefined);
 
     return result.assignment;
@@ -141,10 +175,13 @@ export class CasesWebhookService {
       if (!caseRecord) throw new NotFoundException(`Case ${caseNumber} not found`);
 
       const user = await tx.user.findUnique({ where: { email: caseOwner } });
-      if (!user) throw new NotFoundException(`User ${caseOwner} not found`);
-
+      
       const openAssignments = await tx.assignment.findMany({
-        where: { caseId: caseRecord.id, userId: user.id, status: AssignmentStatus.OPEN },
+        where: { 
+          caseId: caseRecord.id, 
+          ownerEmail: caseOwner, 
+          status: AssignmentStatus.OPEN 
+        },
       });
 
       if (openAssignments.length === 0) return { count: 0 };
@@ -161,11 +198,16 @@ export class CasesWebhookService {
 
       for (const a of openAssignments) {
         await tx.caseLog.create({
-          data: { assignmentId: a.id, action: 'SALESFORCE_CASE_CLOSED', userId: user.id, changes: { oldStatus: a.status, newStatus: 'CLOSED' } },
+          data: { 
+            assignmentId: a.id, 
+            action: 'SALESFORCE_CASE_CLOSED', 
+            userId: user?.id, 
+            changes: { oldStatus: a.status, newStatus: 'CLOSED' } 
+          },
         });
       }
 
-      return { count: openAssignments.length, caseId: caseRecord.id, userId: user.id };
+      return { count: openAssignments.length, caseId: caseRecord.id, userId: user?.id };
     });
 
     if (result.count > 0) {
@@ -179,7 +221,7 @@ export class CasesWebhookService {
   }
 
   async handleGasValidatedWebhook(payload: GasValidatedWebhookDto) {
-    const { caseNumber, caseOwner, formType, formSubmitTime, items, choices, description, images, tmpAreas, isValid, isOnTime } = payload;
+    const { caseNumber, caseOwner, formType, formSubmitTime, items, choices, description, images, tmpAreas, formValidation, isOnTime } = payload;
     if (!caseNumber || !caseOwner) throw new BadRequestException('caseNumber and caseOwner are required');
 
     const result = await this.prisma.$transaction(async (tx) => {
@@ -187,18 +229,37 @@ export class CasesWebhookService {
       if (!caseRecord) throw new NotFoundException(`Case ${caseNumber} not found`);
 
       const user = await tx.user.findUnique({ where: { email: caseOwner } });
-      if (!user) throw new NotFoundException(`User with email ${caseOwner} not found`);
 
       const assignment = await tx.assignment.findFirst({
-        where: { caseId: caseRecord.id, userId: user.id, ...(formSubmitTime ? { formSubmitTime: new Date(formSubmitTime) } : {}) },
-        orderBy: { assignedAt: 'desc' }
+        where: { caseId: caseRecord.id, ownerEmail: caseOwner, ...(formSubmitTime ? { formSubmitTime: new Date(formSubmitTime) } : {}) },
+        orderBy: { startTime: 'desc' }
       });
 
       if (!assignment) {
         throw new NotFoundException(`Assignment not found for case: ${caseNumber}, user: ${caseOwner}, time: ${formSubmitTime}`);
       }
 
-      const updateData: any = { items, choices, description, images, tmpAreas, isValid, isOnTime };
+      const updateData: any = { items, choices, description, images, tmpAreas, formValidation };
+      
+      // Update ETA if provided
+      if (payload.eta !== undefined) {
+          updateData.etaMinutes = payload.eta;
+      }
+
+      // Calculate isOnTime on server based on startTime (Business Rule: Start Time = startTime)
+      const currentEta = payload.eta !== undefined ? payload.eta : assignment.etaMinutes;
+      const baseStartTime = assignment.startTime; // Ground truth
+      const submitTime = formSubmitTime ? new Date(formSubmitTime) : assignment.formSubmitTime;
+
+      if (baseStartTime && currentEta && submitTime) {
+          const limit = new Date(baseStartTime.getTime() + currentEta * 60000);
+          updateData.isOnTime = submitTime <= limit;
+      } else {
+          // Fallback if we can't calculate but it was provided in payload
+          if (isOnTime !== undefined) updateData.isOnTime = isOnTime;
+      }
+
+
       if (formType && assignment.formType !== formType) updateData.formType = formType;
 
       const updatedAssignment = await tx.assignment.update({
@@ -207,13 +268,19 @@ export class CasesWebhookService {
       });
 
       await tx.caseLog.create({
-        data: { assignmentId: assignment.id, action: 'GAS_EVALUATION_ADDED', userId: user.id, changes: updateData as any }
+        data: { assignmentId: assignment.id, action: 'GAS_EVALUATION_ADDED', userId: user?.id, changes: updateData as any }
       });
 
-      return { updatedAssignment, caseId: caseRecord.id, userId: user.id, updateData };
+
+      return { updatedAssignment, caseId: caseRecord.id, userId: user?.id, updateData };
     });
 
-    this.casesService.broadcastCaseEvent('case_evaluated', { ...result.updateData, assignmentId: result.updatedAssignment.id, caseId: result.caseId }, result.userId);
+    this.casesService.broadcastCaseEvent('case_updated', { 
+      ...result.updateData, 
+      eta: result.updatedAssignment.etaMinutes, 
+      assignmentId: result.updatedAssignment.id, 
+      caseId: result.caseId 
+    }, result.userId);
     this.casesService.broadcastLeaderboardUpdate(result.updatedAssignment);
 
     return result.updatedAssignment;
@@ -228,11 +295,10 @@ export class CasesWebhookService {
       if (!caseRecord) throw new NotFoundException(`Case ${caseNumber} not found`);
 
       const user = await tx.user.findUnique({ where: { email: caseOwner } });
-      if (!user) throw new NotFoundException(`User with email ${caseOwner} not found`);
 
       const assignment = await tx.assignment.findFirst({
-        where: { caseId: caseRecord.id, userId: user.id },
-        orderBy: { assignedAt: 'desc' }
+        where: { caseId: caseRecord.id, ownerEmail: caseOwner },
+        orderBy: { startTime: 'desc' }
       });
 
       if (!assignment) throw new NotFoundException('Assignment not found');
@@ -247,13 +313,17 @@ export class CasesWebhookService {
       });
 
       await tx.caseLog.create({
-        data: { assignmentId: assignment.id, action: 'GAS_EVALUATION_ADDED', userId: user.id, changes: { evaluationTime, ...updateData } as any }
+        data: { assignmentId: assignment.id, action: 'GAS_EVALUATION_ADDED', userId: user?.id, changes: { evaluationTime, ...updateData } as any }
       });
 
-      return { updatedAssignment, caseId: caseRecord.id, userId: user.id, updateData };
+      return { updatedAssignment, caseId: caseRecord.id, userId: user?.id, updateData };
     });
 
-    this.casesService.broadcastCaseEvent('case_evaluated', { ...result.updateData, assignmentId: result.updatedAssignment.id, caseId: result.caseId }, result.userId);
+    this.casesService.broadcastCaseEvent('case_updated', { 
+      ...result.updateData, 
+      assignmentId: result.updatedAssignment.id, 
+      caseId: result.caseId 
+    }, result.userId);
     this.casesService.broadcastLeaderboardUpdate(result.updatedAssignment);
 
     return result.updatedAssignment;
