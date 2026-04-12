@@ -1,7 +1,7 @@
 # Dependencies
 /node_modules
 /dist
-
+/tmp 
 # Environment variables
 .env
 .env.*

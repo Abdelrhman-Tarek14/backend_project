@@ -151,10 +151,11 @@ model QueueRecord {
 // 5. Integration Status Table (System Heartbeats)
 // =======================
 model IntegrationStatus {
-  id        String   @id @default(uuid())
-  system    String   @unique  // e.g., "salesforce"
-  status    String            // e.g., "OK", "ERROR"
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(uuid())
+  system         String   @unique  // e.g., "salesforce"
+  status         String            // e.g., "OK", "ERROR"
+  lastSyncStatus Int?              // Last HTTP status from POST /webhook/salesforce (e.g., 202, 401, 500)
+  updatedAt      DateTime @updatedAt
   
   @@index([system])
 }

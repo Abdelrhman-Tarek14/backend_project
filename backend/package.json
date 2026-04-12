@@ -1,10 +1,10 @@
 {
-  "name": "backend_project",
-  "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "name": "eta-tool-backend",
+  "version": "1.0.0",
+  "description": "ETA Tool Backend - Case Management & Assignments API powered by NestJS",
+  "author": "Abdelrhman Tarek",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "ISC",
   "scripts": {
     "start:dev": "nest start --watch",
     "build": "nest build",
@@ -20,7 +20,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "security": "tsx scripts/security.ts",
     "studio": "npx prisma studio",
-    "mock": "tsx scripts/mock-webhooks.ts"
+    "mock": "tsx scripts/mock-webhooks.ts",
+    "simulate": "node scripts/simulate.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.18",
@@ -62,6 +63,9 @@
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.1.18",
+    "axios": "^1.15.0",
+    "chalk": "^4.1.2",
+    "inquirer": "^8.2.5",
     "@swc/cli": "^0.6.0",
     "@swc/core": "^1.11.2",
     "@swc/jest": "^0.2.39",

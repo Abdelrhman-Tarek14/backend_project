@@ -22,41 +22,37 @@ export function Header({ isOnline, isIdle }) {
                 {/* Logo Section */}
                 <NavLink to="/" className={styles.logoSection}>
                     <div className={styles.logoIconWrapper}>
-                        <BiLayer size={44} />
+                        <BiLayer size={32} />
                     </div>
                     <span className={styles.logoTitle}>
                         TermHub
                     </span>
                 </NavLink>
 
-                {/* Main Nav/Actions */}
-                <div className={styles.container}>
+                {/* Actions & Nav */}
+                <div className={styles.actionsSection}>
                     <button className={styles.hamburger} onClick={toggleMenu}>
                         {isMenuOpen ? <HiX size={24} /> : <HiMenu size={24} />}
                     </button>
 
-                    <div className={styles.spacer} />
-
-                    <div className={styles.actionsSection}>
-                        <div className={styles.actions}>
-                            <button
-                                className={styles.themeTogglePill}
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    toggleTheme();
-                                }}
-                                aria-label="Toggle Dark Mode"
-                            >
-                                <div className={styles.toggleSlider} />
-                                <div className={`${styles.toggleIcon} ${theme === 'light' ? styles.activeTheme : ''}`}>
-                                    <HiOutlineSun size={18} />
-                                </div>
-                                <div className={`${styles.toggleIcon} ${theme === 'dark' ? styles.activeTheme : ''}`}>
-                                    <HiOutlineMoon size={18} />
-                                </div>
-                            </button>
-                            <UserMenu isOnline={isOnline} isIdle={isIdle} />
-                        </div>
+                    <div className={styles.actions}>
+                        <button
+                            className={styles.themeTogglePill}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                toggleTheme();
+                            }}
+                            aria-label="Toggle Dark Mode"
+                        >
+                            <div className={styles.toggleSlider} />
+                            <div className={`${styles.toggleIcon} ${theme === 'light' ? styles.activeTheme : ''}`}>
+                                <HiOutlineSun size={16} />
+                            </div>
+                            <div className={`${styles.toggleIcon} ${theme === 'dark' ? styles.activeTheme : ''}`}>
+                                <HiOutlineMoon size={16} />
+                            </div>
+                        </button>
+                        <UserMenu isOnline={isOnline} isIdle={isIdle} />
                     </div>
                 </div>
             </div>

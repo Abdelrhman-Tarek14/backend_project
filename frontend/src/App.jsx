@@ -123,10 +123,10 @@ function AppContent() {
                 <main
                   style={{
                     display: 'flex',
-                    margin: '80px 10px 0px 85px',
-                    width: 'calc(100% - 95px)',
+                    margin: '65px 10px 0px 85px',
+                    width: 'calc(100% - 85px)',
                     transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                    height: 'calc(100vh - 80px)',
+                    height: 'calc(100vh - 65px)',
                     overflowY: 'auto',
                     overflowX: 'hidden'
                   }}

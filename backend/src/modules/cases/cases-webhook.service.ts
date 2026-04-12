@@ -329,13 +329,15 @@ export class CasesWebhookService {
     return result.updatedAssignment;
   }
 
-  async handleSalesforceHeartbeat() {
-    const status = await this.prisma.integrationStatus.upsert({
+  async handleSalesforceHeartbeat(payload?: { timestamp?: string; status?: string; lastSyncStatus?: number | null }) {
+    const syncStatus = payload?.lastSyncStatus ?? null;
+    const sfStatus = payload?.status ?? 'OK';
+    const integrationStatus = await this.prisma.integrationStatus.upsert({
       where: { system: 'salesforce' },
-      create: { system: 'salesforce', status: 'OK' },
-      update: { status: 'OK' },
+      create: { system: 'salesforce', status: sfStatus, lastSyncStatus: syncStatus },
+      update: { status: sfStatus, lastSyncStatus: syncStatus },
     });
-    this.realtimeGateway.server.to('management_dashboard').emit('sf_heartbeat', status);
-    return status;
+    this.realtimeGateway.server.to('management_dashboard').emit('sf_heartbeat', integrationStatus);
+    return integrationStatus;
   }
 }

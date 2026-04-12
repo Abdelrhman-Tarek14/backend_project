@@ -2,7 +2,7 @@
  * Formats a name to a Talabat internal email format.
  * Example: "Ahmed Ali" -> "ahmed.ali_bseg.ext@talabat.com"
  */
-function formatToTalabatEmail(name) {
+export function formatToTalabatEmail(name: string | null | undefined): string | null {
     if (!name || name === '-') return null;
     
     let email = name.trim().toLowerCase().replace(/\s+/g, '.');
@@ -24,7 +24,7 @@ function formatToTalabatEmail(name) {
 /**
  * Normalizes case data for comparison and storage.
  */
-function normalizeCase(rawCase) {
+export function normalizeCase(rawCase: any): any {
     return {
         caseNumber: rawCase.caseNumber,
         caseOwner: rawCase.caseOwner,
@@ -34,8 +34,3 @@ function normalizeCase(rawCase) {
         caseType: rawCase.caseType
     };
 }
-
-module.exports = {
-    formatToTalabatEmail,
-    normalizeCase
-};

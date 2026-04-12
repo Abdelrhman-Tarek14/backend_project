@@ -160,8 +160,8 @@ export class CasesController {
   @ApiSecurity('SfApiKey')
   @ApiHeader({ name: 'x-webhook-signature', description: 'HMAC SHA256 Signature of the raw payload', required: true })
   @ApiOperation({ summary: 'Salesforce Heartbeat' })
-  async handleSalesforceHeartbeat() {
-    await this.casesWebhookService.handleSalesforceHeartbeat();
+  async handleSalesforceHeartbeat(@Body() body: { timestamp?: string; status?: string; lastSyncStatus?: number }) {
+    await this.casesWebhookService.handleSalesforceHeartbeat(body);
     return { status: 'ok', message: 'Heartbeat received' };
   }
 

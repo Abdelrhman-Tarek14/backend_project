@@ -1,5 +1,5 @@
 export default () => ({
-  nodeEnv: process.env.NODE_ENV || 'development',
+  nodeEnv: process.env.NODE_ENV,
   port: parseInt(process.env.PORT || '3000', 10),
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
   database: {
@@ -23,7 +23,6 @@ export default () => ({
   integrations: {
     gasWebhookSecret: process.env.GAS_WEBHOOK_SECRET,
     salesforceWebhookSecret: process.env.SALESFORCE_WEBHOOK_SECRET,
-    webhookSecret: process.env.WEBHOOK_SECRET,
     allowedWebhookIps: process.env.ALLOWED_WEBHOOK_IPS?.split(',') || [],
   },
   corsOrigin: process.env.CORS_ORIGIN === 'true' ? true : process.env.CORS_ORIGIN,

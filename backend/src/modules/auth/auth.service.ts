@@ -4,7 +4,6 @@ import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { Role } from '@prisma/client';
-import { UserEntity } from '../users/entities/user.entity';
 
 @Injectable()
 export class AuthService {

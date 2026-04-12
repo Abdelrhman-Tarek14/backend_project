@@ -8,13 +8,15 @@ import { GasEvaluationWebhookDto } from '../src/modules/cases/dto/gas-evaluation
 
 dotenv.config();
 
-const SECRET = process.env.WEBHOOK_SECRET || 'fallback-secret-for-dev';
+const GAS_SECRET = process.env.GAS_WEBHOOK_SECRET || 'gas-fallback';
+const SF_SECRET = process.env.SALESFORCE_WEBHOOK_SECRET || 'sf-fallback';
 const BASE_URL = `http://localhost:${process.env.PORT || 3000}/cases/webhook`;
 
 async function signAndSend(path: string, payload: any) {
+  const secret = path.includes('salesforce') ? SF_SECRET : GAS_SECRET;
   const body = JSON.stringify(payload);
   const signature = crypto
-    .createHmac('sha256', SECRET)
+    .createHmac('sha256', secret)
     .update(body)
     .digest('hex');
 

@@ -17,6 +17,20 @@ export class WebhookSecurityGuard implements CanActivate {
     return ip.startsWith('::ffff:') ? ip.slice(7) : ip;
   }
 
+  private getSecretForRoute(request: Request): string | undefined {
+    const url = request.url;
+    
+    if (url.includes('salesforce')) {
+      return this.configService.get<string>('integrations.salesforceWebhookSecret');
+    }
+    
+    if (url.includes('gas')) {
+      return this.configService.get<string>('integrations.gasWebhookSecret');
+    }
+
+    return undefined;
+  }
+
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<RawBodyRequest>();
 
@@ -36,9 +50,9 @@ export class WebhookSecurityGuard implements CanActivate {
       throw new UnauthorizedException('Missing signature');
     }
 
-    const secret = this.configService.get<string>('integrations.webhookSecret');
+    const secret = this.getSecretForRoute(request);
     if (!secret) {
-      this.logger.error('WEBHOOK_SECRET is not configured!');
+      this.logger.error(`Webhook secret is not configured for route: ${request.url}`);
       throw new UnauthorizedException('Internal Configuration Error');
     }
 

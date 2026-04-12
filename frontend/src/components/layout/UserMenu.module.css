@@ -3,29 +3,30 @@
     align-items: center;
 }
 
-.profileSection:hover {
-    border-color: var(--color-primary);
-    box-shadow: var(--shadow-md);
-}
-
 .profileSection {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     text-decoration: none;
-    padding: 8px 16px;
+    padding: 6px 14px;
+    padding-right: 18px;
     border-radius: 100px;
     background: var(--color-bg-white);
     border: 1px solid var(--color-border);
-    transition: all 0.2s ease;
-    box-shadow: var(--shadow-md);
-    /* Stronger standalone shadow */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.profileSection:hover {
+    border-color: var(--color-primary);
+    background: rgba(var(--color-primary-rgb), 0.02);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
 }
 
 .avatarWrapper {
     position: relative;
-    width: 36px;
-    height: 36px;
+    width: 30px;
+    height: 30px;
     display: flex;
     align-items: center;
 }
@@ -35,32 +36,41 @@
     height: 100%;
     border-radius: 50%;
     object-fit: cover;
+    border: 1px solid var(--color-border);
 }
 
 .statusDot {
     position: absolute;
-    bottom: 0;
-    right: 0;
+    bottom: -1px;
+    right: -1px;
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    border: 2px solid var(--color-bg-white);
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .userInfo {
     display: flex;
     flex-direction: column;
+    gap: 0;
 }
 
 .username {
-    font-size: 0.9rem;
-    font-weight: 700;
+    font-size: 0.85rem;
+    font-weight: 800;
     color: var(--color-text-main);
-    line-height: 1.2;
+    line-height: 1.1;
+    white-space: nowrap;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .userRole {
-    font-size: 0.75rem;
-    font-weight: 600;
+    font-size: 0.65rem;
+    font-weight: 700;
     color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }

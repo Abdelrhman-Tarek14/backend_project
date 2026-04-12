@@ -1,19 +1,19 @@
-const syncService = require('./src/services/sync-service');
+import syncService from './src/services/sync-service.js';
 
 console.log('====================================================');
 console.log('   Salesforce API Integration Service Starting...   ');
 console.log('====================================================');
 
-process.on('uncaughtException', (err) => {
+process.on('uncaughtException', (err: Error) => {
     console.error('🔥 UNCAUGHT EXCEPTION:', err);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
     console.error('🔥 UNHANDLED REJECTION at:', promise, 'reason:', reason);
 });
 
 // Start the service
-syncService.start().catch(err => {
+syncService.start().catch((err: Error) => {
     console.error('❌ Failed to start service:', err);
     process.exit(1);
 });

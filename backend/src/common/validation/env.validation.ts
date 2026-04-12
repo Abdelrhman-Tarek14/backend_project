@@ -2,18 +2,19 @@ import * as Joi from 'joi';
 
 export const envValidationSchema = Joi.object({
   NODE_ENV: Joi.string()
-    .valid('development', 'production', 'test', 'localhost')
-    .default('localhost'),
-  PORT: Joi.number().port().default(3000),
+    .valid('development', 'production')
+    .default('development'),
+
+  PORT: Joi.number().port().required(),
   DATABASE_URL: Joi.string().required(),
   FRONTEND_URL: Joi.string().required(),
-  CORS_ORIGIN: Joi.string().default('true'),
+  CORS_ORIGIN: Joi.string().required(),
 
   // JWT
   JWT_ACCESS_SECRET: Joi.string().required(),
-  JWT_ACCESS_EXPIRES_IN: Joi.string().default('1h'),
+  JWT_ACCESS_EXPIRES_IN: Joi.string().required(),
   JWT_REFRESH_SECRET: Joi.string().required(),
-  JWT_REFRESH_EXPIRES_IN: Joi.string().default('7d'),
+  JWT_REFRESH_EXPIRES_IN: Joi.string().required(),
 
   // Auth
   CSRF_SECRET: Joi.string().required(),
@@ -21,16 +22,23 @@ export const envValidationSchema = Joi.object({
 
   // Google OAuth
   GOOGLE_CLIENT_ID: Joi.string().optional(),
-  GOOGLE_CLIENT_SECRET: Joi.string().optional(),
-  GOOGLE_CALLBACK_URL: Joi.string().optional(),
+  GOOGLE_CLIENT_SECRET: Joi.when('GOOGLE_CLIENT_ID', {
+    is: Joi.exist(),
+    then: Joi.string().required(),
+    otherwise: Joi.string().optional(),
+  }),
+  GOOGLE_CALLBACK_URL: Joi.when('GOOGLE_CLIENT_ID', {
+    is: Joi.exist(),
+    then: Joi.string().required(),
+    otherwise: Joi.string().optional(),
+  }),
   ALLOWED_GOOGLE_DOMAINS: Joi.string().optional(),
 
   // Webhooks
-  WEBHOOK_SECRET: Joi.string().required(),
-  GAS_WEBHOOK_SECRET: Joi.string().optional(),
-  SALESFORCE_WEBHOOK_SECRET: Joi.string().optional(),
-  ALLOWED_WEBHOOK_IPS: Joi.string().default('127.0.0.1,::1'),
+  GAS_WEBHOOK_SECRET: Joi.string().required(),
+  SALESFORCE_WEBHOOK_SECRET: Joi.string().required(),
+  ALLOWED_WEBHOOK_IPS: Joi.string().required(),
 
   // Queue
-  QUEUE_PRIORITY_TYPES: Joi.string().default('Menu Typing,please correct error'),
+  QUEUE_PRIORITY_TYPES: Joi.string().required(),
 });

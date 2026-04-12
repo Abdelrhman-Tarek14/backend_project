@@ -5,20 +5,21 @@ const chalk = require('chalk');
 require('dotenv').config();
 
 const BACKEND_URL = process.env.BACKEND_URL;
-const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
+const GAS_SECRET = process.env.GAS_WEBHOOK_SECRET;
+const SF_SECRET = process.env.SALESFORCE_WEBHOOK_SECRET;
 
-if (!WEBHOOK_SECRET) {
-  console.error(chalk.red('Error: WEBHOOK_SECRET is not defined in .env'));
+if (!GAS_SECRET || !SF_SECRET) {
+  console.error(chalk.red('Error: Both GAS_WEBHOOK_SECRET and SALESFORCE_WEBHOOK_SECRET must be defined in .env'));
   process.exit(1);
 }
 
 /**
  * Calculates HMAC SHA256 signature for the payload
  */
-function calculateSignature(payload) {
+function calculateSignature(payload, secret) {
   const jsonPayload = JSON.stringify(payload);
   return crypto
-    .createHmac('sha256', WEBHOOK_SECRET)
+    .createHmac('sha256', secret)
     .update(jsonPayload)
     .digest('hex');
 }
@@ -27,7 +28,8 @@ function calculateSignature(payload) {
  * Sends a POST request to the backend with the required signature header
  */
 async function sendWebhook(endpoint, payload) {
-  const signature = calculateSignature(payload);
+  const secret = endpoint.includes('salesforce') ? SF_SECRET : GAS_SECRET;
+  const signature = calculateSignature(payload, secret);
   const url = `${BACKEND_URL}${endpoint}`;
 
   console.log(chalk.cyan(`\nSending webhook to ${endpoint}...`));

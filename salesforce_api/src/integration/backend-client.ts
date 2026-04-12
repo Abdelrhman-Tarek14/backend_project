@@ -1,20 +1,25 @@
-const axios = require('axios');
-const { BACKEND_URL, WEBHOOK_SECRET } = require('../config/env');
-const { generateSignature } = require('../utils/crypto');
+import axios from 'axios';
+import { BACKEND_URL, SALESFORCE_WEBHOOK_SECRET } from '../config/env.js';
+import { generateSignature } from '../utils/crypto.js';
 
 class BackendClient {
+    private baseUrl: string | undefined;
+    private secret: string | undefined;
+    private lastSyncStatus: number | null;
+
     constructor() {
         this.baseUrl = BACKEND_URL;
-        this.secret = WEBHOOK_SECRET;
+        this.secret = SALESFORCE_WEBHOOK_SECRET;
+        this.lastSyncStatus = null; // Tracks last HTTP status of POST /webhook/salesforce
     }
 
-    async syncCase(caseData) {
+    public async syncCase(caseData: any): Promise<boolean> {
         const url = `${this.baseUrl}/cases/webhook/salesforce`;
         const result = await this.sendRequest('POST', url, caseData);
         return result !== null;
     }
 
-    async closeCase(caseData) {
+    public async closeCase(caseData: any): Promise<boolean> {
         const url = `${this.baseUrl}/cases/webhook/salesforce/close`;
         const payload = {
             caseNumber: caseData.caseNumber,
@@ -24,17 +29,22 @@ class BackendClient {
         return result !== null;
     }
 
-    async sendHeartbeat() {
+    public async sendHeartbeat(sfSessionStatus: string = 'OK'): Promise<boolean> {
         const url = `${this.baseUrl}/cases/webhook/salesforce/heartbeat`;
-        const payload = { timestamp: new Date().toISOString(), status: 'OK' };
+        const payload = {
+            timestamp: new Date().toISOString(),
+            status: sfSessionStatus,       // Salesforce session health: 'OK' or 'SESSION_EXPIRED'
+            lastSyncStatus: this.lastSyncStatus
+        };
         const result = await this.sendRequest('POST', url, payload);
         return result !== null;
     }
 
-    async sendRequest(method, url, payload, retries = 3) {
+    private async sendRequest(method: string, url: string, payload: any, retries: number = 3): Promise<any> {
         const rawBody = JSON.stringify(payload);
-        const signature = generateSignature(rawBody, this.secret);
-        const endpoint = url.replace(this.baseUrl, '');
+        const signature = generateSignature(rawBody, this.secret || '');
+        const endpoint = url.replace(this.baseUrl || '', '');
+        const isSyncEndpoint = endpoint === '/cases/webhook/salesforce';
 
         for (let attempt = 1; attempt <= retries; attempt++) {
             try {
@@ -55,11 +65,17 @@ class BackendClient {
                     },
                     timeout: 5000 // 5s timeout
                 });
+
+                // Track successful sync status
+                if (isSyncEndpoint) this.lastSyncStatus = response.status;
                 return response.data;
-            } catch (err) {
+            } catch (err: any) {
                 const status = err.response?.status;
                 const message = err.response?.data?.message || err.message;
-                
+
+                // Track failed sync status
+                if (isSyncEndpoint && status) this.lastSyncStatus = status;
+
                 console.error(`   ❌ [BackendClient] Attempt ${attempt} failed: ${message}`);
 
                 // Don't retry if it's a client error (4xx) except 429
@@ -76,4 +92,4 @@ class BackendClient {
     }
 }
 
-module.exports = new BackendClient();
+export default new BackendClient();

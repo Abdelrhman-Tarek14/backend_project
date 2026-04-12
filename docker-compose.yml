@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  # ── NestJS Backend ──
+  app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: eta-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      - NODE_ENV=production
+    expose:
+      - "3000"
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # ── Salesforce API Integration ──
+  sf-api:
+    build:
+      context: ./salesforce_api
+      dockerfile: Dockerfile
+    container_name: eta-sf-api
+    restart: unless-stopped
+    env_file:
+      - ./salesforce_api/.env
+    environment:
+      - NODE_ENV=production
+      - BACKEND_URL=http://app:3000
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - internal
+
+  # ── Frontend (Build stage only) ──
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: eta-frontend-build
+    volumes:
+      - frontend_assets:/app/dist
+
+  # ── Nginx Reverse Proxy & Static File Server ──
+  nginx:
+    image: nginx:alpine
+    container_name: eta-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+      - SSL_CERT_PATH=/etc/nginx/ssl/fullchain.pem
+      - SSL_KEY_PATH=/etc/nginx/ssl/privkey.pem
+    volumes:
+      - ./backend/nginx/nginx.conf.template:/etc/nginx/nginx.conf.template:ro
+      - frontend_assets:/usr/share/nginx/html:ro
+      - ${SSL_CERT_FILE:-./backend/nginx/ssl/fullchain.pem}:/etc/nginx/ssl/fullchain.pem:ro
+      - ${SSL_KEY_FILE:-./backend/nginx/ssl/privkey.pem}:/etc/nginx/ssl/privkey.pem:ro
+    command: >
+      sh -c "envsubst '$$DOMAIN $$SSL_CERT_PATH $$SSL_KEY_PATH'
+      < /etc/nginx/nginx.conf.template
+      > /etc/nginx/nginx.conf
+      && nginx -g 'daemon off;'"
+    depends_on:
+      app:
+        condition: service_healthy
+      frontend:
+        condition: service_completed_successfully
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  frontend_assets:

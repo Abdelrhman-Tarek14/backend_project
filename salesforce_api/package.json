@@ -1,18 +1,28 @@
 {
-  "name": "new-folder",
+  "name": "salesforce-api-worker",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "type": "module",
+  "main": "dist/index.js",
   "scripts": {
-    "sf:api": "node index.js",
+    "dev": "node --import @swc-node/register/esm-register index.ts",
+    "build": "swc . -d dist --ignore node_modules,dist,test",
+    "start": "node dist/index.js",
+    "lint:types": "tsc --noEmit",
+    "sf:api": "npm run dev",
     "clear": "powershell -Command \"Remove-Item -Path data/state.json -ErrorAction SilentlyContinue\""
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
     "axios": "^1.15.0",
     "dotenv": "^17.4.1"
+  },
+  "devDependencies": {
+    "@swc-node/register": "^1.11.1",
+    "@swc/cli": "^0.8.1",
+    "@swc/core": "^1.15.24",
+    "@types/axios": "^0.9.36",
+    "@types/dotenv": "^6.1.1",
+    "@types/node": "^25.6.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.2"
   }
 }

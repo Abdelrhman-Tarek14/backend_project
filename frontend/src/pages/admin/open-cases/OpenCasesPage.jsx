@@ -298,14 +298,11 @@ const OpenCasesPage = () => {
                         <h2 className={styles.sectionTitle}>
                             {getTabTitle()} ({filteredCases.length})
                         </h2>
-                        <span className={styles.tabDescription}>
-                            💡 {getTabDescription()}
-                        </span>
                     </div>
-
                     <AdminSearchInput
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="Search..."
                     />
                 </div>
 
@@ -348,8 +345,9 @@ const OpenCasesPage = () => {
                     </button>
 
                     <div className={`${styles.connectionStatus} ${isSalesforceConnected ? styles.statusConnected : styles.statusDisconnected}`}>
-                        {!isSalesforceConnected && <BiWifiOff size={16} />}
-                        <SiSalesforce size={24} /> Salesforce {isSalesforceConnected ? 'Connected' : 'Disconnected'}
+                        {!isSalesforceConnected && <BiWifiOff size={14} />}
+                        <SiSalesforce size={20} />
+                        <span>{isSalesforceConnected ? 'Salesforce Connected' : 'Salesforce Offline'}</span>
                     </div>
                 </div>
 
