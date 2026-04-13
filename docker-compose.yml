@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   # ── NestJS Backend ──
@@ -41,6 +40,19 @@ services:
     networks:
       - internal
 
+  # ── Cloudflare Tunnel (Commented for Localtunnel Test) ──
+  # tunnel:
+  #   image: cloudflare/cloudflared:latest
+  #   container_name: eta-tunnel
+  #   restart: unless-stopped
+  #   command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+  #   depends_on:
+  #     - nginx
+  #   networks:
+  #     - internal
+
+
+
   # ── Frontend (Build stage only) ──
   frontend:
     build:
@@ -57,21 +69,19 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
-      - "443:443"
+
+
     environment:
       - DOMAIN=${DOMAIN:-localhost}
-      - SSL_CERT_PATH=/etc/nginx/ssl/fullchain.pem
-      - SSL_KEY_PATH=/etc/nginx/ssl/privkey.pem
     volumes:
       - ./backend/nginx/nginx.conf.template:/etc/nginx/nginx.conf.template:ro
       - frontend_assets:/usr/share/nginx/html:ro
-      - ${SSL_CERT_FILE:-./backend/nginx/ssl/fullchain.pem}:/etc/nginx/ssl/fullchain.pem:ro
-      - ${SSL_KEY_FILE:-./backend/nginx/ssl/privkey.pem}:/etc/nginx/ssl/privkey.pem:ro
     command: >
-      sh -c "envsubst '$$DOMAIN $$SSL_CERT_PATH $$SSL_KEY_PATH'
+      sh -c "envsubst '$$DOMAIN'
       < /etc/nginx/nginx.conf.template
       > /etc/nginx/nginx.conf
       && nginx -g 'daemon off;'"
+
     depends_on:
       app:
         condition: service_healthy

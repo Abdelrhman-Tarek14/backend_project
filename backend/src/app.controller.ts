@@ -9,7 +9,7 @@ import { getDoubleCsrfInstance } from './common/utils/csrf.util';
 export class AppController {
   constructor(private readonly appService: AppService) { }
 
-  @Get()
+  @Get('health')
   @ApiOperation({
     summary: 'System Health Check',
     description: 'Returns current server status and version.'

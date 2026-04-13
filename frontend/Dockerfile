@@ -1,17 +1,22 @@
 # Build Stage
-FROM node:20-alpine AS build
+FROM node:24-alpine AS build
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
 COPY . .
-# We need to ensure the environment variables for Vite are set if needed
-# ARG VITE_API_URL
-# ENV VITE_API_URL=$VITE_API_URL
+# Build arguments for production environment
+ARG VITE_API_URL=""
+ARG VITE_SOCKET_URL=""
+
+# Set as environment variables for Vite build
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_SOCKET_URL=$VITE_SOCKET_URL
 
 RUN npm run build
+
 
 # Since we will serve this via Nginx, we just need the build output.
 # We can use a small image for the build output or just an alpine image to hold it.

@@ -17,7 +17,7 @@ export function LoginPage() {
     }, [location]);
 
     const handleLogin = () => {
-        const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        const apiBaseUrl = import.meta.env.VITE_API_URL;
         window.location.href = `${apiBaseUrl}/auth/google`;
     };
 
@@ -45,7 +45,7 @@ export function LoginPage() {
                 </div>
             </div>
 
-            <p className={styles.footer}>TermHub Tool © 2025</p>
+            <p className={styles.footer}><p>TermHub Tool © {new Date().getFullYear()} <span style={{ color: '#FF5722' }}>V 1.0</span></p></p>
         </div>
     );
 }

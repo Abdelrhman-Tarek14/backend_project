@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { API_ENDPOINTS } from '../api/endpoints';
 
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const baseURL = import.meta.env.VITE_API_URL || '';
+
 
 const apiClient = axios.create({
     baseURL,
@@ -69,8 +70,7 @@ apiClient.interceptors.response.use(
         // to avoid infinite loops on the login page when no session exists.
         if (
             error.response?.status === 401 &&
-            !originalRequest._retry &&
-            !originalRequest.url?.includes(API_ENDPOINTS.USERS.ME)
+            !originalRequest._retry
         ) {
             originalRequest._retry = true;
 

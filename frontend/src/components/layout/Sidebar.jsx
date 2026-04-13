@@ -25,20 +25,20 @@ export const Sidebar = ({ isCollapsed, onToggle }) => {
                     {isAdminLevel && (
                         <>
                             <SidebarLink animate to="/admin/open-cases" icon={<BiCrown size={22} />} label="Open Cases" isCollapsed={isCollapsed} id="tour-nav-admin" />
-                            <SidebarLink animate to="/admin/system-monitor" icon={<BiInfoCircle size={22} />} label="System Log" isCollapsed={isCollapsed} id="tour-nav-logs" />
-                            <SidebarLink animate to="/admin/closed-cases" icon={<BiInfoCircle size={22} />} label="Closed Cases" isCollapsed={isCollapsed} id="tour-nav-logs" />
-                            <SidebarLink animate to="/admin/activity-history" icon={<BiInfoCircle size={22} />} label="Activity History" isCollapsed={isCollapsed} id="tour-nav-logs" />
+                            {/* <SidebarLink animate to="/admin/system-monitor" icon={<BiInfoCircle size={22} />} label="System Log" isCollapsed={isCollapsed} id="tour-nav-logs" /> */}
+                            {/* <SidebarLink animate to="/admin/closed-cases" icon={<BiInfoCircle size={22} />} label="Closed Cases" isCollapsed={isCollapsed} id="tour-nav-logs" /> */}
+                            {/* <SidebarLink animate to="/admin/activity-history" icon={<BiInfoCircle size={22} />} label="Activity History" isCollapsed={isCollapsed} id="tour-nav-logs" /> */}
                             <div className={styles.navDivider} />
                         </>
                     )}
                     <SidebarLink to="/" icon={<BiTimeFive size={22} />} label="Timer" isCollapsed={isCollapsed} id="tour-nav-timer" />
-                    <SidebarLink to="/dashboard" icon={<BiGridAlt size={22} />} label="Dashboard" isCollapsed={isCollapsed} id="tour-nav-dashboard" />
+                    {/* <SidebarLink to="/dashboard" icon={<BiGridAlt size={22} />} label="Dashboard" isCollapsed={isCollapsed} id="tour-nav-dashboard" /> */}
                 </div>
 
                 <div className={styles.navDivider} />
 
                 <div className={styles.navSection}>
-                    <SidebarLink to="/profile" icon={<BiCog size={22} />} label="Settings" isCollapsed={isCollapsed} id="tour-nav-settings" />
+                    {/* <SidebarLink to="/profile" icon={<BiCog size={22} />} label="Settings" isCollapsed={isCollapsed} id="tour-nav-settings" /> */}
                     <button onClick={logout} className={`${styles.navLink} ${styles.logoutBtn}`} id="tour-logout">
                         <BiLogOut size={22} />
                         {!isCollapsed && <span>Log Out</span>}
