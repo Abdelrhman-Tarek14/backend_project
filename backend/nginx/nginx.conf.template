@@ -40,6 +40,11 @@ http {
         server app:3000;
     }
 
+    # ── Upstream (Frontend App) ──
+    upstream frontend_app {
+        server frontend:80;
+    }
+
     # ── Unified Server Block (Port 80) ──
     # This server is only accessible internally via the Cloudflare Tunnel container.
     server {
@@ -51,15 +56,17 @@ http {
         add_header X-Content-Type-Options "nosniff" always;
         add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 
-        # ── Static Frontend ──
+        # ── Static Frontend (Proxied) ──
         location / {
-            root /usr/share/nginx/html;
-            index index.html;
-            try_files $uri $uri/ /index.html;
+            proxy_pass http://frontend_app;
+            proxy_set_header Host              $host;
+            proxy_set_header X-Real-IP         $remote_addr;
+            proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
         }
 
         # ── API Routes ──
-        location ~ ^/(auth|cases|users|metrics|health|status) {
+        location ~ ^/(auth|cases|users|metrics|health|status|csrf|leaderboard) {
             limit_req zone=api burst=50 nodelay;
 
             proxy_pass http://nestjs_app;

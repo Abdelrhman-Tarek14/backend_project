@@ -10,7 +10,7 @@ class BackendClient {
     constructor() {
         this.baseUrl = BACKEND_URL;
         this.secret = SALESFORCE_WEBHOOK_SECRET;
-        this.lastSyncStatus = null; // Tracks last HTTP status of POST /webhook/salesforce
+        this.lastSyncStatus = null;
     }
 
     public async syncCase(caseData: any): Promise<boolean> {

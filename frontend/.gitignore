@@ -2,28 +2,30 @@
 logs
 *.log
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# Dependencies
+node_modules/
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# Build output (Vite uses dist by default)
+dist/
+dist-ssr/
+
+# Environment variables
+.env
+.env.*
+.env.local
+
+# Editor/OS files
+.vscode/
 .DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?
 
-# Environment variables
-.env
-.env.*
-!.env.example
+# Git & Docker specific (mainly for .dockerignore)
+.git
+.gitignore
+.dockerignore
+Dockerfile
+*.md

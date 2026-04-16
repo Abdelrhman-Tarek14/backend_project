@@ -1,5 +1,5 @@
 # Build Stage
-FROM node:24-alpine AS build
+FROM node:22-alpine AS build
 
 WORKDIR /app
 
@@ -17,10 +17,12 @@ ENV VITE_SOCKET_URL=$VITE_SOCKET_URL
 
 RUN npm run build
 
-
-# Since we will serve this via Nginx, we just need the build output.
-# We can use a small image for the build output or just an alpine image to hold it.
-FROM alpine:latest
-WORKDIR /app
-COPY --from=build /app/dist /app/dist
-CMD ["sh", "-c", "echo 'Frontend build complete. Files are in /app/dist'"]
+# Stage 2: Serve via Nginx
+FROM nginx:alpine
+# Copy custom Nginx configuration to support Frontend Routing (SPA)
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy the built output to Nginx's HTML folder
+COPY --from=build /app/dist /usr/share/nginx/html
+# Expose port 80 inside the container
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger, Inject, forwardRef } from '@nestjs/common';
+import { OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from '../../database/prisma.service';
 import { AssignmentStatus } from '@prisma/client';
 import { SalesforceWebhookDto } from './dto/salesforce-webhook.dto';
@@ -16,8 +17,14 @@ export class CasesWebhookService {
   constructor(
     private prisma: PrismaService,
     private casesService: CasesService,
+    @Inject(forwardRef(() => RealtimeGateway))
     private realtimeGateway: RealtimeGateway,
   ) { }
+
+  @OnEvent('sf.status.changed')
+  handleStatusChangeEvent(payload: { status: string }) {
+    this.handleSalesforceHeartbeat({ status: payload.status });
+  }
 
   async handleSalesforceWebhook(payload: SalesforceWebhookDto) {
     const { caseNumber, caseAccountName, caseCountry, caseType, caseOwner, caseStartTime } = payload;

@@ -1,5 +1,5 @@
 import * as dotenv from 'dotenv';
-dotenv.config();
+dotenv.config({ quiet: true } as any);
 
 interface EnvConfig {
     AURA_TOKEN: string;

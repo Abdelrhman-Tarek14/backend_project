@@ -1,9 +1,31 @@
-node_modules
-dist
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Dependencies
+node_modules/
+
+# Build output (Vite uses dist by default)
+dist/
+dist-ssr/
+
+# Environment variables
 .env
+.env.*
+.env.local
+
+# Editor/OS files
+.vscode/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Git & Docker specific (mainly for .dockerignore)
 .git
 .gitignore
-*.md
-Dockerfile
 .dockerignore
-npm-debug.log
+Dockerfile
+*.md

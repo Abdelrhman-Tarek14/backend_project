@@ -152,9 +152,9 @@ export class UsersService implements OnModuleInit {
       data: updateData,
     });
 
-    if (data.isActive === false) {
-      this.realtimeGateway.server.to(`user:${targetUserId}`).emit('force_logout', {
-        message: 'Your account has been deactivated by an administrator.',
+    if (data.isActive !== undefined || data.role !== undefined) {
+      this.realtimeGateway.server.to(`user:${targetUserId}`).emit('user_status_changed', {
+        message: 'Your account status or role has been updated by an administrator.',
       });
     }
 

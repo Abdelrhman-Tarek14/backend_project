@@ -268,7 +268,9 @@ export class CasesService {
       const rankB = indexB === -1 ? 999 : indexB;
 
       if (rankA !== rankB) return rankA - rankB;
-      return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+      const timeA = a.startTime ? new Date(a.startTime).getTime() : Infinity;
+      const timeB = b.startTime ? new Date(b.startTime).getTime() : Infinity;
+      return timeA - timeB;
     });
 
     await this.prisma.$transaction(async (tx) => {

@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
 import { Role } from '@prisma/client';
 import { Inject, forwardRef, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @WebSocketGateway({ cors: false })
 export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
@@ -19,6 +20,7 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     private configService: ConfigService,
     @Inject(forwardRef(() => UsersService))
     private usersService: UsersService,
+    private eventEmitter: EventEmitter2,
   ) { }
 
   afterInit(server: Server) {
@@ -29,6 +31,27 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
 
   async handleConnection(client: Socket) {
     try {
+      // 1. Check for Service-to-Service API Key Auth (Heartbeats)
+      const apiKeyHead = client.handshake.headers['x-api-key'];
+      const apiKeyAuth = client.handshake.auth?.apiKey;
+      const providedApiKey = apiKeyHead || apiKeyAuth;
+
+      if (providedApiKey) {
+        const sfSecret = this.configService.get<string>('salesforceWebhookSecret');
+        if (providedApiKey === sfSecret) {
+          client.data.role = 'SERVICE';
+          client.data.serviceName = 'salesforce';
+          await client.join('services');
+          
+          this.logger.log(`Service 'salesforce' connected to Realtime Gateway`);
+          
+          // Update status immediately on connection via Event
+          this.eventEmitter.emit('sf.status.changed', { status: 'OK' });
+          return;
+        }
+      }
+
+      // 2. Standard User JWT Auth (Cookies)
       const rawCookie = client.handshake.headers.cookie;
       if (!rawCookie) throw new Error('No cookies found');
 
@@ -41,7 +64,7 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
 
       const existingSocketId = this.activeUsers.get(userId);
       if (existingSocketId && existingSocketId !== client.id) {
-        this.server.to(existingSocketId).emit('force_logout', {
+        this.server.to(existingSocketId).emit('session_overridden', {
           message: 'Session paused because you connected from another window.'
         });
         setTimeout(() => {
@@ -78,6 +101,13 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   }
 
   async handleDisconnect(client: Socket) {
+    // Handle Service Disconnection via Event
+    if (client.data.role === 'SERVICE' && client.data.serviceName === 'salesforce') {
+      this.logger.warn(`Service 'salesforce' disconnected from Realtime Gateway`);
+      this.eventEmitter.emit('sf.status.changed', { status: 'OFFLINE' });
+      return;
+    }
+
     const userId = client.data.userId;
     if (userId && this.activeUsers.get(userId) === client.id) {
       this.activeUsers.delete(userId);

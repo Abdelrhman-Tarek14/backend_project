@@ -16,7 +16,7 @@ services:
     networks:
       - internal
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -53,16 +53,17 @@ services:
 
 
 
-  # ── Frontend (Build stage only) ──
+  # ── Frontend (Standalone Nginx Server) ──
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: eta-frontend-build
-    volumes:
-      - frontend_assets:/app/dist
+    container_name: eta-frontend
+    restart: unless-stopped
+    networks:
+      - internal
 
-  # ── Nginx Reverse Proxy & Static File Server ──
+  # ── Nginx Reverse Proxy & API Gateway ──
   nginx:
     image: nginx:alpine
     container_name: eta-nginx
@@ -70,12 +71,10 @@ services:
     ports:
       - "80:80"
 
-
     environment:
       - DOMAIN=${DOMAIN:-localhost}
     volumes:
       - ./backend/nginx/nginx.conf.template:/etc/nginx/nginx.conf.template:ro
-      - frontend_assets:/usr/share/nginx/html:ro
     command: >
       sh -c "envsubst '$$DOMAIN'
       < /etc/nginx/nginx.conf.template
@@ -86,7 +85,7 @@ services:
       app:
         condition: service_healthy
       frontend:
-        condition: service_completed_successfully
+        condition: service_started
     networks:
       - internal
 
@@ -94,5 +93,3 @@ networks:
   internal:
     driver: bridge
 
-volumes:
-  frontend_assets:

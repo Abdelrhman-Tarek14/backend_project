@@ -1,12 +1,12 @@
 import axios from 'axios';
-import { 
-    SALESFORCE_URL, 
-    AURA_TOKEN, 
-    AURA_CONTEXT, 
-    COOKIE, 
-    X_SFDC_Page_Scope_Id, 
-    REPORT_ID, 
-    ALLOWED_CASE_TYPES_RAW 
+import {
+    SALESFORCE_URL,
+    AURA_TOKEN,
+    AURA_CONTEXT,
+    COOKIE,
+    X_SFDC_Page_Scope_Id,
+    REPORT_ID,
+    ALLOWED_CASE_TYPES_RAW
 } from '../config/env.js';
 import { formatToTalabatEmail } from '../utils/formatters.js';
 
@@ -56,7 +56,7 @@ class SalesforceClient {
                                     { column: "STATUS", filterType: "fieldValue", isRunPageEditable: true, operator: "equals", value: ALLOWED_CASE_TYPES_RAW },
                                     { column: "SUBJECT", filterType: "fieldValue", isRunPageEditable: true, operator: "equals", value: "Menu Processing" },
                                     { column: "Case.Country__c", filterType: "fieldValue", isRunPageEditable: true, operator: "notEqual", value: "Iraq" },
-                                    { column: "ACCOUNT.NAME", filterType: "fieldValue", isRunPageEditable: true, operator: "notEqual", value: "TEST LEAD,Production Test Restaurants - Test" },
+                                    { column: "ACCOUNT.NAME", filterType: "fieldValue", isRunPageEditable: true, operator: "notEqual", value: "TEST LEAD,Production Test Restaurants - Test,test" },
                                     { column: "OWNER", filterType: "fieldValue", isRunPageEditable: true, operator: "notEqual", value: "Talabat Menu Typing SSU GCC Food Queue,Khaled Ahmed Elsayed,Noha Abozeid,Youssef Duwaida,Ahmed AbdElAtie,Nahin Ahmed Jisun,Mohamed M Niazy" }
                                 ],
                                 reportFormat: "SUMMARY",
@@ -120,7 +120,7 @@ class SalesforceClient {
 
                 let responseData: any = response.data;
                 if (typeof responseData === 'string' && responseData.startsWith('/*')) {
-                    responseData = JSON.parse(responseData.replace(/^\/\*O\*\//, '')); 
+                    responseData = JSON.parse(responseData.replace(/^\/\*O\*\//, ''));
                 }
 
                 if (!responseData?.actions?.[0]?.returnValue) {
@@ -131,7 +131,7 @@ class SalesforceClient {
             } catch (err: any) {
                 const status = err.response?.status;
                 console.error(`   ❌ [SalesforceClient] Attempt ${attempt} failed: ${status || err.message}`);
-                
+
                 if (attempt === retries) {
                     throw err; // Re-throw on last attempt
                 }
@@ -148,7 +148,7 @@ class SalesforceClient {
         Object.keys(factMap).forEach((key) => {
             if (!key.includes('!T')) return;
 
-            const groupIndex = parseInt(key.split('!')[0]); 
+            const groupIndex = parseInt(key.split('!')[0]);
             const group = groupings[groupIndex];
             const status = group?.label;
 
@@ -164,7 +164,7 @@ class SalesforceClient {
                     caseStartTime: cells[2]?.value,
                     caseAccountName: cells[3]?.label,
                     caseCountry: cells[4]?.label,
-                    caseType: status 
+                    caseType: status
                 });
             });
         });
