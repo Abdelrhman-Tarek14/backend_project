@@ -13,6 +13,9 @@ import { TimerPiP } from './features/timer/components/TimerPiP';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { TimerPage } from './pages/TimerPage';
 import { useUserRole } from './hooks/useUserRole';
+import { MaintenancePage } from './pages/MaintenancePage';
+import { systemApi } from './api/systemApi';
+import socketService from './services/socket';
 
 const AdminRoutes = lazy(() => import('./pages/admin/routes/AdminRoutes'));
 
@@ -59,8 +62,39 @@ function AppContent() {
   const { isAdminLevel, loading: roleLoading } = useUserRole();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const [showIntro, setShowIntro] = useState(true);
+  const [isMaintenance, setIsMaintenance] = useState(false);
   const { isOpen, viewMode } = usePiP();
   const location = useLocation();
+
+  // 1. Initial Maintenance Check & Socket Listener
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const { data } = await systemApi.getMaintenanceStatus();
+        setIsMaintenance(data?.enabled || false);
+      } catch (err) {
+          // If we can't even reach the status endpoint, assume something is wrong
+      }
+    };
+
+    checkStatus();
+
+    // Listen for real-time toggle
+    const handleStatusUpdate = (data: { enabled: boolean }) => {
+        setIsMaintenance(data.enabled);
+    };
+
+    // Listen for 503 errors from API Interceptor
+    const handle503 = () => setIsMaintenance(true);
+
+    socketService.on('maintenance_status_updated', handleStatusUpdate);
+    window.addEventListener('maintenance-mode', handle503);
+
+    return () => {
+      socketService.off('maintenance_status_updated', handleStatusUpdate);
+      window.removeEventListener('maintenance-mode', handle503);
+    };
+  }, []);
 
   useUserPresence(user);
 
@@ -89,7 +123,9 @@ function AppContent() {
         )}
       </AnimatePresence>
 
-      {!shouldShowIntro && (
+      {isMaintenance && !isAdminLevel ? (
+        <MaintenancePage />
+      ) : !shouldShowIntro && (
         <Routes>
           {/* Public Route */}
           <Route path="/" element={

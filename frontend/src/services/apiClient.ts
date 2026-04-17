@@ -94,6 +94,11 @@ apiClient.interceptors.response.use(
             return apiClient(originalRequest);
         }
 
+        // 503 Service Unavailable handling (Maintenance Mode)
+        if (error.response?.status === 503) {
+            window.dispatchEvent(new CustomEvent('maintenance-mode', { detail: { active: true } }));
+        }
+
         return Promise.reject(error);
     }
 );

@@ -6,7 +6,8 @@ import {
     BiTimeFive,
     BiLogOut,
     BiChevronLeft,
-    BiChevronRight
+    BiChevronRight,
+    BiShieldQuarter
 } from 'react-icons/bi';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { useUserRole } from '../../hooks/useUserRole';
@@ -43,6 +44,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                                 label="Open Cases"
                                 isCollapsed={isCollapsed}
                                 id="tour-nav-admin"
+                            />
+                            <SidebarLink
+                                animate
+                                to="/admin/system-status"
+                                icon={<BiShieldQuarter size={22} />}
+                                label="System Status"
+                                isCollapsed={isCollapsed}
                             />
                             <div className={styles.navDivider} />
                         </>
