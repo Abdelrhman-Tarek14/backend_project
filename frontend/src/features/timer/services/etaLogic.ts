@@ -39,7 +39,18 @@ export const CASE_TYPES = [
  * @param {number|string} inputs.breakTime - Break duration in minutes
  * @returns {number} ETA in Minutes (Rounded)
  */
-export const calculateETA = (inputs) => {
+export interface EtaCalculatorInputs {
+    caseType?: string;
+    items?: number | string;
+    choices?: number | string;
+    descriptions?: number | string;
+    images?: number | string;
+    areas?: number | string;
+    extraBranches?: number | string;
+    breakTime?: number | string;
+}
+
+export const calculateETA = (inputs: EtaCalculatorInputs): number => {
     const {
         caseType = "",
         items = 0,
@@ -52,7 +63,7 @@ export const calculateETA = (inputs) => {
     } = inputs;
 
     // Helper to ensure values are numbers
-    const N = (val) => Number(val) || 0;
+    const N = (val: any) => Number(val) || 0;
 
     let totalSeconds = 0;
     const breakSeconds = N(breakTime) * 60;

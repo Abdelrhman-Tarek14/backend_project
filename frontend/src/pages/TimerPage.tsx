@@ -24,8 +24,8 @@ export interface TimerCase {
 }
 
 export function TimerPage() {
-    const { user } = useAuth() as any;
-    const { openPiP } = usePiP() as any;
+    const { user } = useAuth();
+    const { openPiP } = usePiP();
 
     const [activeCase, setActiveCase] = useState<TimerCase | null>(null);
     const [showToast, setShowToast] = useState<boolean>(false);
@@ -33,8 +33,8 @@ export function TimerPage() {
     useEffect(() => {
         if (!user?.email) return;
 
-        const unsubActive = timerService.subscribeToActiveCases(user.email, (cases: TimerCase[]) => {
-            const newActiveCase = cases && cases.length > 0 ? cases[0] : null;
+        const unsubActive = timerService.subscribeToActiveCases(user.email, (cases) => {
+            const newActiveCase = cases && cases.length > 0 ? (cases[0] as unknown as TimerCase) : null;
 
             setActiveCase((prevCase) => {
                 if (prevCase && !newActiveCase) {
@@ -63,22 +63,10 @@ export function TimerPage() {
             </div>
 
             {/* Float Mode Button */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem', marginTop: '-1rem' }}>
+            <div className={styles.floatBtnWrapper}>
                 <button
                     onClick={() => openPiP('TIMER_PAGE', { width: 240, height: 170 })}
                     className={styles.floatBtn}
-                    style={{
-                        display: 'flex',
-                        gap: '8px',
-                        alignItems: 'center',
-                        background: 'var(--color-success-bg)',
-                        color: 'var(--color-primary)',
-                        border: '1px solid var(--color-border)',
-                        padding: '8px 16px',
-                        borderRadius: '20px',
-                        fontWeight: 'bold',
-                        cursor: 'pointer'
-                    }}
                 >
                     <BiWindows /> Float Mode
                 </button>

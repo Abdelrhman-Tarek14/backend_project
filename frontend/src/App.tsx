@@ -4,7 +4,8 @@ import { useAuth } from './features/auth/hooks/useAuth';
 import { LoginPage } from './features/auth/components/LoginPage';
 import { useUserPresence } from './features/auth/hooks/useUserPresence';
 import { useState, useEffect, Suspense, lazy } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { LazyMotion, domAnimation, m, AnimatePresence, useReducedMotion } from 'framer-motion';
+import styles from './App.module.css';
 import { IntroAnimation } from './components/ui/IntroAnimation';
 import { PiPProvider, usePiP } from './context/PiPContext';
 import { UserProvider } from './context/UserContext';
@@ -14,8 +15,7 @@ import { TimerPage } from './pages/TimerPage';
 import { useUserRole } from './hooks/useUserRole';
 
 const AdminRoutes = lazy(() => import('./pages/admin/routes/AdminRoutes'));
-// const DashboardPage = lazy(() => import('./pages/DashboardPage'));
-// const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
@@ -25,17 +25,21 @@ const PageLoading = () => (
   </div>
 );
 
-const PageWrapper = ({ children }) => (
-  <motion.div
-    initial={{ opacity: 0, x: 20 }}
-    animate={{ opacity: 1, x: 0 }}
-    exit={{ opacity: 0, x: -20 }}
-    transition={{ duration: 0.4, ease: "easeOut" }}
-    className="page-transition-wrapper"
-  >
-    {children}
-  </motion.div>
-);
+const PageWrapper = ({ children }: { children: React.ReactNode }) => {
+  const shouldReduceMotion = useReducedMotion();
+  
+  return (
+    <m.div
+      initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: 20 }}
+      animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
+      exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: -20 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="page-transition-wrapper"
+    >
+      {children}
+    </m.div>
+  );
+};
 
 const AdminLoading = () => (
   <div style={{
@@ -58,7 +62,7 @@ function AppContent() {
   const { isOpen, viewMode } = usePiP();
   const location = useLocation();
 
-  useUserPresence(user, false);
+  useUserPresence(user);
 
   useEffect(() => {
     // Show intro on initial load or session recovery
@@ -78,7 +82,7 @@ function AppContent() {
       <AnimatePresence>
         {shouldShowIntro && (
           <IntroAnimation
-            isLoading={isInitialLoading}
+            isLoading={!!isInitialLoading}
             onComplete={() => setShowIntro(false)}
             key="intro"
           />
@@ -95,42 +99,22 @@ function AppContent() {
           {/* Protected Area */}
           <Route element={<ProtectedRoute />}>
             <Route path="*" element={
-              <div className="app-container" style={{ display: 'flex', minHeight: '100vh', background: 'var(--color-bg-light)' }}>
-                <Header isOnline={true} isIdle={false} />
+              <div className={styles.appContainer}>
+                <Header isOnline={true} />
                 <Sidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
 
                 <AnimatePresence>
                   {!isSidebarCollapsed && (
-                    <motion.div
+                    <m.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                       onClick={() => setIsSidebarCollapsed(true)}
-                      style={{
-                        position: 'fixed',
-                        top: '80px',
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        backgroundColor: 'rgba(0, 0, 0, 0.18)',
-                        backdropFilter: 'blur(.5px)',
-                        zIndex: 99,
-                        cursor: 'pointer'
-                      }}
+                      className={styles.overlay}
                     />
                   )}
                 </AnimatePresence>
-                <main
-                  style={{
-                    display: 'flex',
-                    margin: '65px 10px 0px 85px',
-                    width: 'calc(100% - 85px)',
-                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                    height: 'calc(100vh - 65px)',
-                    overflowY: 'auto',
-                    overflowX: 'hidden'
-                  }}
-                >
+                <main className={styles.mainContent}>
                   <AnimatePresence mode="wait">
                     <Routes location={location} key={location.pathname}>
                       <Route path="/timer" element={
@@ -141,21 +125,7 @@ function AppContent() {
                         </Suspense>
                       } />
 
-                      {/* <Route path="/dashboard" element={
-                        <Suspense fallback={<PageLoading />}>
-                          <PageWrapper>
-                            <DashboardPage />
-                          </PageWrapper>
-                        </Suspense>
-                      } /> */}
 
-                      {/* <Route path="/profile" element={
-                        <Suspense fallback={<PageLoading />}>
-                          <PageWrapper>
-                            <ProfilePage />
-                          </PageWrapper>
-                        </Suspense>
-                      } /> */}
 
                       <Route path="/admin/*" element={
                         isAdminLevel ? (
@@ -185,13 +155,15 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <AuthProvider>
-        <PiPProvider>
-          <UserProvider>
-            <AppContent />
-          </UserProvider>
-        </PiPProvider>
-      </AuthProvider>
+      <LazyMotion features={domAnimation}>
+        <AuthProvider>
+          <PiPProvider>
+            <UserProvider>
+              <AppContent />
+            </UserProvider>
+          </PiPProvider>
+        </AuthProvider>
+      </LazyMotion>
     </Router>
   );
 }

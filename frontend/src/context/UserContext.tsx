@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import { createContext, useContext, useEffect, useMemo } from 'react';
+import React from 'react';
 import type { ReactNode, FC } from 'react';
 import { ROLES, ROLE_GROUPS } from '../constants/roles';
 import type { UserRole } from '../constants/roles';
@@ -14,8 +15,49 @@ interface AuthUser {
     role?: UserRole;
     theme?: string;
     appearance?: string;
-    [key: string]: any;
 }
+
+type UserState = {
+    role: UserRole | null;
+    loading: boolean;
+    appearance: string;
+    colorTheme: string;
+};
+
+type UserAction = 
+    | { type: 'SET_USER_DATA'; payload: { role: UserRole | null; theme?: string; appearance?: string } }
+    | { type: 'CLEAR_USER' }
+    | { type: 'SET_APPEARANCE'; payload: string }
+    | { type: 'SET_COLOR_THEME'; payload: string }
+    | { type: 'SET_LOADING'; payload: boolean };
+
+const userReducer = (state: UserState, action: UserAction): UserState => {
+    switch (action.type) {
+        case 'SET_USER_DATA':
+            return {
+                ...state,
+                role: action.payload.role,
+                colorTheme: action.payload.theme || state.colorTheme,
+                appearance: action.payload.appearance || state.appearance,
+                loading: false
+            };
+        case 'CLEAR_USER':
+            return {
+                ...state,
+                role: null,
+                loading: false
+            };
+        case 'SET_APPEARANCE':
+            return { ...state, appearance: action.payload };
+        case 'SET_COLOR_THEME':
+            return { ...state, colorTheme: action.payload };
+        case 'SET_LOADING':
+            return { ...state, loading: action.payload };
+        default:
+            return state;
+    }
+};
+// Role-based context provider
 
 export interface UserContextType {
     role: UserRole | null;
@@ -42,22 +84,20 @@ interface UserProviderProps {
 export const UserProvider: FC<UserProviderProps> = ({ children }) => {
     const { user, loading: authLoading } = useAuthContext() as { user: AuthUser | null; loading: boolean };
 
-    const [role, setRole] = useState<UserRole | null>(null);
-    const [loading, setLoading] = useState<boolean>(true);
+    const [state, dispatch] = React.useReducer(userReducer, {
+        role: null,
+        loading: true,
+        appearance: localStorage.getItem('termhub_appearance') || 'light',
+        colorTheme: localStorage.getItem('termhub_color_theme') || 'orange'
+    });
 
-    const [appearance, setAppearance] = useState<string>(() => {
-        return localStorage.getItem('termhub_appearance') || 'light';
-    });
-    const [colorTheme, setColorTheme] = useState<string>(() => {
-        return localStorage.getItem('termhub_color_theme') || 'orange';
-    });
+    const { role, loading, appearance, colorTheme } = state;
 
     useEffect(() => {
         if (authLoading) return;
 
         if (!user) {
-            setRole(null);
-            setLoading(false);
+            dispatch({ type: 'CLEAR_USER' });
             socketService.disconnect();
             return;
         }
@@ -65,12 +105,14 @@ export const UserProvider: FC<UserProviderProps> = ({ children }) => {
         socketService.connect();
 
         const newRole = (user.role as UserRole) || ROLES.AGENT;
-        setRole(newRole);
-
-        if (user.theme) setColorTheme(user.theme);
-        if (user.appearance) setAppearance(user.appearance);
-
-        setLoading(false);
+        dispatch({
+            type: 'SET_USER_DATA',
+            payload: {
+                role: newRole,
+                theme: user.theme,
+                appearance: user.appearance
+            }
+        });
     }, [user, authLoading]);
 
     useEffect(() => {
@@ -89,7 +131,7 @@ export const UserProvider: FC<UserProviderProps> = ({ children }) => {
     }, [appearance, colorTheme]);
 
     const updateAppearance = async (newAppearance: string) => {
-        setAppearance(newAppearance);
+        dispatch({ type: 'SET_APPEARANCE', payload: newAppearance });
         if (user) {
             try {
                 await usersApi.updateUserPreferences({ appearance: newAppearance } as any);
@@ -100,7 +142,7 @@ export const UserProvider: FC<UserProviderProps> = ({ children }) => {
     };
 
     const updateColorTheme = async (newTheme: string) => {
-        setColorTheme(newTheme);
+        dispatch({ type: 'SET_COLOR_THEME', payload: newTheme });
         if (user) {
             try {
                 await usersApi.updateUserPreferences({ theme: newTheme } as any);

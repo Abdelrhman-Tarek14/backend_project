@@ -20,9 +20,6 @@ export default function AdminRoutes() {
                 <Route>
                     <Route index element={<Navigate to="open-cases" replace />} />
                     <Route path="open-cases" element={<OpenCasesPage />} />
-                    {/* <Route path="closed-cases" element={<ClosedCasesPage />} />
-                    <Route path="activity-history" element={<ActivityHistoryPage />} />
-                    <Route path="system-monitor" element={<SystemLogPage />} /> */}
                 </Route>
             </Routes>
         </Suspense>

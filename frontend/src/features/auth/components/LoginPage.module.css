@@ -52,7 +52,7 @@
     justify-content: center;
     gap: 12px;
     width: 280px;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
     box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
@@ -82,4 +82,9 @@
     margin-bottom: 20px;
     font-size: 0.9rem;
     border: 1px solid #FFCDD2;
+}
+.loginBtnWrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: 1.5rem;
 }

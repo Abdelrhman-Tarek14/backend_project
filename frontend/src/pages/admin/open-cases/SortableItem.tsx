@@ -2,7 +2,7 @@ import React from 'react';
 import type { ReactNode } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 
 const itemVariants: Variants = {
@@ -39,7 +39,7 @@ export const SortableItem = ({ id, children }: SortableItemProps) => {
     };
 
     return (
-        <motion.div
+        <m.div
             ref={setNodeRef}
             style={style}
             {...attributes}
@@ -48,6 +48,6 @@ export const SortableItem = ({ id, children }: SortableItemProps) => {
             animate="visible"
         >
             {typeof children === 'function' ? children(listeners) : children}
-        </motion.div>
+        </m.div>
     );
 };

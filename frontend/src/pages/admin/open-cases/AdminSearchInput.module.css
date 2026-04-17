@@ -1,0 +1,39 @@
+.searchWrapper {
+    display: flex;
+    align-items: center;
+    background: var(--color-bg-base, white);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 0.3rem 0.6rem;
+    width: 180px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+    margin-left: auto;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.searchWrapper:focus-within {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(255, 87, 34, 0.1);
+}
+
+.searchIcon {
+    color: var(--color-text-muted);
+    margin-right: 0.4rem;
+    flex-shrink: 0;
+}
+
+.searchInput {
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 0.82rem;
+    background: transparent;
+    color: var(--color-text-primary);
+}
+
+.searchInput::placeholder {
+    color: var(--color-text-muted);
+    opacity: 0.7;
+}
+
+/* Screen reader only label if needed, but placeholder serves for now in this simple UI */

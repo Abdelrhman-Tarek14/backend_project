@@ -4,7 +4,7 @@ import { NavLink } from 'react-router-dom';
 import { UserMenu } from './UserMenu';
 import { BiLayer } from 'react-icons/bi';
 import { HiOutlineMoon, HiOutlineSun, HiMenu, HiX } from 'react-icons/hi';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../../hooks/useTheme';
 import { useUserRole } from '../../hooks/useUserRole';
 import styles from './Header.module.css';
@@ -64,14 +64,14 @@ export const Header: FC<HeaderProps> = ({ isOnline }) => {
             <AnimatePresence>
                 {isMenuOpen && (
                     <>
-                        <motion.div
+                        <m.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             className={styles.overlay}
                             onClick={closeMenu}
                         />
-                        <motion.nav
+                        <m.nav
                             initial={{ x: '-100%' }}
                             animate={{ x: 0 }}
                             exit={{ x: '-100%' }}
@@ -80,13 +80,11 @@ export const Header: FC<HeaderProps> = ({ isOnline }) => {
                         >
                             <div className={styles.mobileNavContent}>
                                 <MobileNavLink to="/" label="Timer" onClick={closeMenu} delay={0.1} />
-                                <MobileNavLink to="/dashboard" label="Dashboard" onClick={closeMenu} delay={0.2} />
                                 {isAdminLevel && (
-                                    <MobileNavLink to="/admin/open-cases" label="Admin" onClick={closeMenu} delay={0.3} />
+                                    <MobileNavLink to="/admin/open-cases" label="Admin" onClick={closeMenu} delay={0.2} />
                                 )}
-                                <MobileNavLink to="/profile" label="Settings" onClick={closeMenu} delay={0.4} />
                             </div>
-                        </motion.nav>
+                        </m.nav>
                     </>
                 )}
             </AnimatePresence>
@@ -103,7 +101,7 @@ interface MobileNavLinkProps {
 
 const MobileNavLink: FC<MobileNavLinkProps> = ({ to, label, onClick, delay }) => {
     return (
-        <motion.div
+        <m.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay }}
@@ -117,6 +115,6 @@ const MobileNavLink: FC<MobileNavLinkProps> = ({ to, label, onClick, delay }) =>
             >
                 {label}
             </NavLink>
-        </motion.div>
+        </m.div>
     );
 };

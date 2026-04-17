@@ -2,10 +2,10 @@
 import { Header } from './Header';
 import styles from './Layout.module.css';
 
-export function Layout({ children, isOnline, isIdle }) {
+export function Layout({ children, isOnline }: { children: React.ReactNode, isOnline: boolean }) {
     return (
         <div className={styles.layout}>
-            <Header isOnline={isOnline} isIdle={isIdle} />
+            <Header isOnline={isOnline} />
             <main className={styles.main}>
                 {children}
             </main>

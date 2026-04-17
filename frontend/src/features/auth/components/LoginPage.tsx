@@ -5,7 +5,7 @@ import { BiLayer } from 'react-icons/bi';
 import { FcGoogle } from 'react-icons/fc';
 
 export function LoginPage() {
-    const [error, setError] = useState(null);
+    const [error, setError] = useState<string | null>(null);
     const location = useLocation();
     
     // Check for error query param from backend redirect
@@ -34,7 +34,7 @@ export function LoginPage() {
 
                 {error && <div className={styles.error}>{error}</div>}
 
-                <div className={styles.loginBtnWrapper} style={{ display: 'flex', justifyContent: 'center', marginTop: '1.5rem' }}>
+                <div className={styles.loginBtnWrapper}>
                     <button 
                         onClick={handleLogin}
                         className={styles.googleBtn}

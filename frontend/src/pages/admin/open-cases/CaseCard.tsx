@@ -59,7 +59,7 @@ export const CaseCard: FC<CaseCardProps> = React.memo(({ data, isOpen, dragHandl
 
     const caseType = data.case_type;
 
-    const getBadgeStyle = (assignedBy?: string): BadgeStyle | undefined => {
+    const getBadgeStyle = (assignedBy?: string | null): BadgeStyle | undefined => {
         if (!assignedBy) return undefined;
 
         const source = assignedBy.toLowerCase();
@@ -166,7 +166,7 @@ export const CaseCard: FC<CaseCardProps> = React.memo(({ data, isOpen, dragHandl
                 <div className={styles.detailRow}>
                     <span>Country:</span>
                     <strong style={{
-                        fontSize: '0.65rem',
+                        fontSize: '0.75rem',
                         color: data.country?.toLowerCase() === 'oman' ? '#FF9800' : 'inherit'
                     }}>
                         {data.country || "Not Found"}
@@ -179,14 +179,11 @@ export const CaseCard: FC<CaseCardProps> = React.memo(({ data, isOpen, dragHandl
                             <span>Started:</span>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 {badge && (
-                                    <span style={{
-                                        fontSize: badge.label.length > 18 ? '0.45rem' : '0.60rem',
-                                        padding: '1px 6px',
-                                        borderRadius: '4px',
+                                    <span className={styles.caseBadgeDynamic} style={{
+                                        fontSize: badge.label.length > 18 ? '0.70rem' : '0.75rem',
                                         backgroundColor: badge.bg,
                                         color: badge.text,
-                                        border: `1px solid ${badge.border}`,
-                                        whiteSpace: 'nowrap'
+                                        border: `1px solid ${badge.border}`
                                     }}>
                                         {badge.label}
                                     </span>
@@ -244,11 +241,7 @@ export const CaseCard: FC<CaseCardProps> = React.memo(({ data, isOpen, dragHandl
             </div>
 
             <div className={styles.agent}>
-                <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    width: '100%',
+                <div className={styles.agentHeader} style={{
                     visibility: isOwnerQueue ? 'hidden' : 'visible'
                 }}>
                     <span className={styles.tlBadge}>TL: {data.tl_name || 'N/A'}</span>

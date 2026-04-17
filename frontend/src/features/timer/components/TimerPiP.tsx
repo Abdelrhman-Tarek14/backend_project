@@ -1,33 +1,56 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useReducer } from 'react';
 import { createPortal } from 'react-dom';
-import { BiHash, BiTime } from 'react-icons/bi';
 import { timerService } from '../services/timerService';
 import { useCaseTimer } from '../hooks/useCaseTimer';
 import type { TimerCaseData } from '../hooks/useCaseTimer';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { usePiP } from '../../../context/PiPContext';
 import styles from './TimerPagePiPContent.module.css';
+import { PiPContent } from './PiPContent';
+
+type PiPState = {
+    activeCase: TimerCaseData | null;
+    isReady: boolean;
+};
+
+type PiPAction = 
+    | { type: 'SET_ACTIVE_CASE'; payload: TimerCaseData | null }
+    | { type: 'SET_READY'; payload: boolean };
+
+const pipReducer = (state: PiPState, action: PiPAction): PiPState => {
+    switch (action.type) {
+        case 'SET_ACTIVE_CASE':
+            return { ...state, activeCase: action.payload };
+        case 'SET_READY':
+            return { ...state, isReady: action.payload };
+        default:
+            return state;
+    }
+};
 
 export const TimerPiP: React.FC = () => {
     const { isOpen, pipWindow } = usePiP() as { isOpen: boolean; pipWindow: Window | null; closePiP: () => void };
     const { user } = useAuth() as any;
 
-    const [activeCase, setActiveCase] = useState<TimerCaseData | null>(null);
-    const [isReady, setIsReady] = useState<boolean>(false);
+    const [state, dispatch] = useReducer(pipReducer, {
+        activeCase: null,
+        isReady: false
+    });
 
+    const { activeCase, isReady } = state;
     const { timeLeft, formatTime, isExceeded, startTime } = useCaseTimer(activeCase || ({} as TimerCaseData));
 
     useEffect(() => {
         if (!user?.email || !isOpen) return;
-        const unsub = timerService.subscribeToActiveCases(user.email, (cases: TimerCaseData[]) => {
-            setActiveCase(cases && cases.length > 0 ? cases[0] : null);
+        const unsub = timerService.subscribeToActiveCases(user.email, (cases) => {
+            dispatch({ type: 'SET_ACTIVE_CASE', payload: cases && cases.length > 0 ? (cases[0] as TimerCaseData) : null });
         });
         return () => unsub();
     }, [user, isOpen]);
 
     useEffect(() => {
         if (!isOpen || !pipWindow) {
-            setIsReady(false);
+            dispatch({ type: 'SET_READY', payload: false });
             return;
         }
 
@@ -88,7 +111,7 @@ export const TimerPiP: React.FC = () => {
         themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
         themeObserver.observe(document.body, { attributes: true, attributeFilter: ['class', 'style'] });
 
-        const timer = setTimeout(() => setIsReady(true), 150);
+        const timer = setTimeout(() => dispatch({ type: 'SET_READY', payload: true }), 150);
 
         return () => {
             themeObserver.disconnect();
@@ -100,52 +123,15 @@ export const TimerPiP: React.FC = () => {
 
     const target = pipWindow.document.getElementById('pip-root-container') || pipWindow.document.body;
 
-    const renderContent = () => {
-        if (!activeCase) {
-            return (
-                <div className={styles.container}>
-                    <div className={styles.emptyState}>
-                        <BiTime size={32} />
-                        <p>No active case</p>
-                    </div>
-                </div>
-            );
-        }
-
-        return (
-            <div className={styles.container}>
-                <div className={styles.header}>
-                    <div className={styles.caseInfo}>
-                        <BiHash size={14} color="#FF5722" />
-                        <span className={styles.caseNumber}>{activeCase.case_number}</span>
-                    </div>
-                    <div className={styles.etaLabel}>
-                        ETA: {activeCase.eta || 0}m
-                    </div>
-                </div>
-
-                <div className={styles.mainDisplay}>
-                    <div className={styles.timeLabel}>{isExceeded ? 'Exceeded' : 'Remaining'}</div>
-                    <div className={`${styles.timeValue} ${isExceeded ? styles.overdue : ''}`}>
-                        {formatTime(timeLeft)}
-                    </div>
-                </div>
-
-                <div className={styles.footerGrid}>
-                    <div className={styles.metaItem}>
-                        <span className={styles.metaLabel}>Start</span>
-                        <span className={styles.metaValue}>
-                            {startTime ? startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) : '--:--'}
-                        </span>
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
     return createPortal(
-        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            {renderContent()}
+        <div className={styles.rootContainer}>
+            <PiPContent 
+                activeCase={activeCase}
+                isExceeded={isExceeded}
+                timeLeft={timeLeft || 0}
+                formatTime={formatTime}
+                startTime={startTime}
+            />
         </div>,
         target
     );

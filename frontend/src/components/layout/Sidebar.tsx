@@ -10,7 +10,7 @@ import {
 } from 'react-icons/bi';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { useUserRole } from '../../hooks/useUserRole';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import styles from './Sidebar.module.css';
 
 interface SidebarProps {
@@ -27,7 +27,7 @@ interface SidebarLinkProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
-    const { logout } = useAuth() as { logout: () => void;[key: string]: any };
+    const { logout } = useAuth();
     const { isAdminLevel } = useUserRole();
 
     return (
@@ -84,12 +84,12 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({ to, icon, label, isCollapsed,
     >
         <div className={styles.iconWrapper}>{icon}</div>
         {!isCollapsed && (
-            <motion.span
+            <m.span
                 initial={animate ? { opacity: 0, x: -10 } : false}
                 animate={animate ? { opacity: 1, x: 0 } : false}
             >
                 {label}
-            </motion.span>
+            </m.span>
         )}
     </NavLink>
 );

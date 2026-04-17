@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState, memo } from 'react';
 import styles from './EtaCalculator.module.css';
 import { calculateETA, CASE_TYPES } from '../services/etaLogic'; 
 import { BiCalculator, BiReset, BiPencil } from 'react-icons/bi';
@@ -44,46 +44,52 @@ export const EtaCalculator: React.FC<EtaCalculatorProps> = memo(function EtaCalc
     const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
     const [isEditingTime, setIsEditingTime] = useState<boolean>(false);
 
-    useEffect(() => {
-        if (onDataChange) {
-            onDataChange({
-                eta: result,
-                caseType: inputs.caseType,
-                startTime: inputs.startTime,
-                finishTime: finishTime
-            });
-        }
-    }, [result, inputs.caseType, inputs.startTime, finishTime, onDataChange]);
-
-    useEffect(() => {
-        const calculated = calculateETA(inputs as any); 
+    const calculateResult = (newInputs: CalculatorInputs) => {
+        const calculated = calculateETA(newInputs); 
         setResult(calculated);
-    }, [inputs]);
+        return calculated;
+    };
 
-    useEffect(() => {
-        if (!inputs.startTime) {
+    const updateFinishTime = (currentResult: number, currentStartTime: string) => {
+        if (!currentStartTime) {
             setFinishTime("");
-            return;
+            return "";
         }
 
-        const [hours, minutes] = inputs.startTime.split(':').map(Number);
+        const [hours, minutes] = currentStartTime.split(':').map(Number);
         const startDate = new Date();
         startDate.setHours(hours, minutes, 0, 0);
 
-        const finishDate = new Date(startDate.getTime() + result * 60000);
-        setFinishTime(finishDate.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }));
-    }, [result, inputs.startTime]);
+        const finishDate = new Date(startDate.getTime() + currentResult * 60000);
+        const fTime = finishDate.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+        setFinishTime(fTime);
+        return fTime;
+    };
+
+    const notifyChange = (currentResult: number, currentInputs: CalculatorInputs, currentFinishTime: string) => {
+        if (onDataChange) {
+            onDataChange({
+                eta: currentResult,
+                caseType: currentInputs.caseType,
+                startTime: currentInputs.startTime,
+                finishTime: currentFinishTime
+            });
+        }
+    };
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setInputs(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        const nextInputs = { ...inputs, [name]: value };
+        setInputs(nextInputs);
+        
+        const nextResult = calculateResult(nextInputs);
+        const nextFinish = updateFinishTime(nextResult, nextInputs.startTime);
+        notifyChange(nextResult, nextInputs, nextFinish);
     };
 
     const handleReset = (e: React.MouseEvent<HTMLButtonElement>) => {
         e.stopPropagation();
-        setInputs({
+        const resetInputs = {
             caseType: "",
             items: "",
             choices: "",
@@ -93,7 +99,11 @@ export const EtaCalculator: React.FC<EtaCalculatorProps> = memo(function EtaCalc
             extraBranches: "",
             breakTime: "",
             startTime: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
-        });
+        };
+        setInputs(resetInputs);
+        const nextResult = calculateResult(resetInputs);
+        const nextFinish = updateFinishTime(nextResult, resetInputs.startTime);
+        notifyChange(nextResult, resetInputs, nextFinish);
     };
 
     // Helper to determine visibility
@@ -171,7 +181,7 @@ export const EtaCalculator: React.FC<EtaCalculatorProps> = memo(function EtaCalc
                 <div className={styles.calculatorBody}>
                     <div className={styles.topControls}>
                         <div className={styles.selectContainer}>
-                            <label className={styles.floatingLabel}>Case Type</label>
+                            <label className={styles.floatingLabel} htmlFor="caseTypeSelect">Case Type</label>
                             <select
                                 id="caseTypeSelect"
                                 name="caseType"
@@ -187,23 +197,32 @@ export const EtaCalculator: React.FC<EtaCalculatorProps> = memo(function EtaCalc
                         </div>
 
                         <div className={styles.timePillContainer}>
-                            <label className={styles.floatingLabel}>
+                            <label className={styles.floatingLabel} htmlFor="startTimeInput">
                                 {isEditingTime ? "Edit Start Time" : "Finish Time"}
                             </label>
                             <div
                                 className={`${styles.timePill} ${isEditingTime ? styles.editing : ""}`}
                                 onClick={() => !isEditingTime && setIsEditingTime(true)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        !isEditingTime && setIsEditingTime(true);
+                                    }
+                                }}
+                                role="button"
+                                tabIndex={0}
+                                aria-label="Edit start time"
                             >
                                 {isEditingTime ? (
                                     <input
                                         type="time"
+                                        id="startTimeInput"
                                         name="startTime"
                                         value={inputs.startTime}
                                         onChange={handleChange}
                                         onBlur={() => setIsEditingTime(false)}
                                         onKeyDown={(e) => e.key === 'Enter' && setIsEditingTime(false)}
                                         className={styles.timePillInput}
-                                        autoFocus
+                                        ref={(input) => { if (input && isEditingTime) input.focus(); }}
                                     />
                                 ) : (
                                     <div className={styles.finishDisplay}>

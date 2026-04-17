@@ -87,7 +87,7 @@
     color: var(--color-success);
     font-size: 1.2rem;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s;
 }
 
 .completeBtn:hover {
@@ -119,4 +119,17 @@
     font-size: 0.65rem;
     color: var(--color-text-muted);
     font-weight: 600;
+}
+
+.caseBadgeDynamic {
+    padding: 1px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+.agentHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
 }

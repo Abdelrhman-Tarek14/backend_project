@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { BiLockAlt, BiLogOut, BiSupport, BiTimeFive } from 'react-icons/bi';
 import { useAuth } from '../features/auth/hooks/useAuth';
 import { ROLES } from '../constants/roles';
@@ -16,7 +16,7 @@ export const RestrictedPage = () => {
                 <div className={styles.shape2}></div>
             </div>
 
-            <motion.div 
+            <m.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className={styles.glassCard}
@@ -57,7 +57,7 @@ export const RestrictedPage = () => {
                         <span>Sign Out</span>
                     </button>
                 </div>
-            </motion.div>
+            </m.div>
         </div>
     );
 };
