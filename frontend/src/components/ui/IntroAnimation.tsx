@@ -43,6 +43,9 @@ export function IntroAnimation({ onComplete, isLoading = false }: { onComplete: 
 
         if (minTimeElapsed && !isLoading && !exiting) {
             dispatch({ type: 'START_EXIT' });
+        }
+
+        if (exiting) {
             completeTimer = setTimeout(() => {
                 onComplete();
             }, 500);

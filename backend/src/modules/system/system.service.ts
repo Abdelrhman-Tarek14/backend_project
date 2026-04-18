@@ -1,16 +1,22 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import * as os from 'os';
 import { PrismaService } from '../../database/prisma.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 
 @Injectable()
-export class SystemService {
+export class SystemService implements OnModuleInit {
   private readonly logger = new Logger(SystemService.name);
+  private realtimeGateway: RealtimeGateway;
 
   constructor(
     private prisma: PrismaService,
-    private realtimeGateway: RealtimeGateway,
+    private moduleRef: ModuleRef,
   ) {}
+
+  onModuleInit() {
+    this.realtimeGateway = this.moduleRef.get(RealtimeGateway, { strict: false });
+  }
 
   async getMaintenanceStatus() {
     const status = await this.prisma.integrationStatus.findUnique({

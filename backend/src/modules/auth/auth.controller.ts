@@ -99,9 +99,10 @@ export class AuthController {
     await this.authService.logout(req.user.id);
     // secure: false because Cloudflare Tunnel terminates SSL before reaching Nginx/Express.
     // Cloudflare handles HTTPS; internally traffic is plain HTTP.
+    const isProduction = this.configService.get('nodeEnv') === 'production';
     const cookieOptions = {
       httpOnly: true,
-      secure: false,
+      secure: isProduction,
       sameSite: 'lax' as const,
       path: '/',
     };
@@ -111,18 +112,17 @@ export class AuthController {
   }
 
   private setCookies(res: Response, tokens: { access_token: string; refresh_token: string }) {
-    // secure: false because Cloudflare Tunnel terminates SSL before reaching Nginx/Express.
-    // Cloudflare handles HTTPS; internally traffic is plain HTTP, so cookies must NOT be flagged secure.
+    const isProduction = this.configService.get('nodeEnv') === 'production';
     res.cookie('access_token', tokens.access_token, {
       httpOnly: true,
-      secure: false,
+      secure: isProduction,
       sameSite: 'lax',
       path: '/',
       maxAge: 1 * 60 * 60 * 1000, // 1 hour
     });
     res.cookie('refresh_token', tokens.refresh_token, {
       httpOnly: true,
-      secure: false,
+      secure: isProduction,
       sameSite: 'lax',
       path: '/',
       maxAge: 24 * 60 * 60 * 1000, // 24 hours

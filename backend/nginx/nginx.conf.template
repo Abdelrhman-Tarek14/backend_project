@@ -46,36 +46,29 @@ http {
     }
 
     # ── Unified Server Block (Port 80) ──
-    # This server is only accessible internally via the Cloudflare Tunnel container.
     server {
         listen 80;
         server_name ${DOMAIN};
 
-        # ── Security Headers (Cloudflare already adds some, but these are good for defense-in-depth) ──
+        # ── Security Headers ──
         add_header X-Frame-Options "SAMEORIGIN" always;
         add_header X-Content-Type-Options "nosniff" always;
         add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 
-        # ── Static Frontend (Proxied) ──
-        location / {
-            proxy_pass http://frontend_app;
+        # ── API Routes (Strict Routing with Prefix Strip) ──
+        location /api/ {
+            limit_req zone=api burst=50 nodelay;
+
+            # Rewrite to strip /api prefix since NestJS handles routes starting at root /
+            rewrite ^/api/(.*)$ /$1 break;
+            
+            proxy_pass http://nestjs_app;
+
+            # Optimized headers for Cloudflare / Proxy chain
             proxy_set_header Host              $host;
             proxy_set_header X-Real-IP         $remote_addr;
             proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
-        }
-
-        # ── API Routes ──
-        location ~ ^/(auth|cases|users|metrics|health|status|csrf|leaderboard) {
-            limit_req zone=api burst=50 nodelay;
-
-            proxy_pass http://nestjs_app;
-
-            # Headers for trust proxy (Optimized for Cloudflare Tunnel)
-            proxy_set_header Host              $host;
-            proxy_set_header X-Real-IP         $remote_addr;
-            proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto; # Trust the proto from Cloudflare
 
             # Timeouts
             proxy_connect_timeout 60s;
@@ -89,7 +82,7 @@ http {
 
             proxy_http_version 1.1;
             proxy_set_header Upgrade    $http_upgrade;
-            proxy_set_header Connection "upgrade";
+            proxy_set_header Connection "Upgrade";
 
             proxy_set_header Host              $host;
             proxy_set_header X-Real-IP         $remote_addr;
@@ -100,6 +93,18 @@ http {
             proxy_read_timeout 86400s;
             proxy_send_timeout 86400s;
         }
-    }
 
+        # ── Frontend (Static & SPA Routing) ──
+        location / {
+            proxy_pass http://frontend_app;
+            proxy_set_header Host              $host;
+            proxy_set_header X-Real-IP         $remote_addr;
+            proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+
+            # Support SPA routing by falling back to index.html if file not found
+            # Note: This is handled within the frontend container's own Nginx usually,
+            # but we pass through the request correctly here.
+        }
+    }
 }

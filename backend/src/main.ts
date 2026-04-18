@@ -46,7 +46,7 @@ async function bootstrap() {
 
   // Apply CSRF globally but skip for webhook routes (they use API key auth)
   app.use((req: any, res: any, next: any) => {
-    if (req.path.startsWith('/cases/webhook')) {
+    if (req.path.includes('/cases/webhook')) {
       return next();
     }
     doubleCsrfProtection(req, res, next);

@@ -1,28 +1,36 @@
-# Build Stage
-FROM node:22-alpine AS build
+# ── Stage 1: Build ──
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm ci
-
-COPY . .
 # Build arguments for production environment
-ARG VITE_API_URL=""
-ARG VITE_SOCKET_URL=""
+ARG VITE_API_URL
+ARG VITE_SOCKET_URL
 
-# Set as environment variables for Vite build
 ENV VITE_API_URL=$VITE_API_URL
 ENV VITE_SOCKET_URL=$VITE_SOCKET_URL
 
+# Caching dependencies
+COPY package*.json ./
+RUN npm ci
+
+# Copy source and build
+COPY . .
 RUN npm run build
 
-# Stage 2: Serve via Nginx
-FROM nginx:alpine
-# Copy custom Nginx configuration to support Frontend Routing (SPA)
+# ── Stage 2: Serve (Nginx) ──
+FROM nginx:alpine AS runner
+
+# Copy custom Nginx configuration for routing support
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-# Copy the built output to Nginx's HTML folder
-COPY --from=build /app/dist /usr/share/nginx/html
-# Expose port 80 inside the container
+
+# Copy build artifacts
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Security: Adjust permissions for Nginx to run as non-root if needed, 
+# although alpine nginx default is usually fine for edge.
+# Keeping it simple and standard for Nginx Alpine.
+
 EXPOSE 80
+
 CMD ["nginx", "-g", "daemon off;"]

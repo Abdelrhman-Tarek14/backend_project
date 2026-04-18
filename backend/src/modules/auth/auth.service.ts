@@ -55,10 +55,9 @@ export class AuthService {
         throw new UnauthorizedException('Authentication failed: user could not be found or created.');
     }
 
-    // 3. Enforce activation check
+    // 3. Status check - Logging only, no longer throwing to allow /restricted routing
     if (!user.isActive) {
-      console.warn(`[AuthService] Access denied for inactive user: ${user.email}`);
-      throw new UnauthorizedException('Your account is pending activation. Please contact your administrator.');
+      console.log(`[AuthService] Inactive user authenticated: ${user.email} (Status will be handled by frontend)`);
     }
 
     // 4. Update core identity data if it changed
@@ -97,7 +96,7 @@ export class AuthService {
     }
 
     if (user.role === Role.NEW_USER || !user.isActive) {
-      throw new UnauthorizedException('Your account is pending approval or has been deactivated.');
+      console.log(`[AuthService] Local login for restricted user: ${user.email}`);
     }
 
     await this.usersService.logUserActivity(user.id, 'LOGGED_IN');
@@ -151,7 +150,7 @@ export class AuthService {
     }
 
     if (user.role === Role.NEW_USER || !user.isActive) {
-      throw new UnauthorizedException('Your account is pending approval or has been deactivated.');
+      console.log(`[AuthService] Refresh token for restricted user: ${user.id}`);
     }
 
     const tokens = await this.getTokens(user.id, user.email, user.role);

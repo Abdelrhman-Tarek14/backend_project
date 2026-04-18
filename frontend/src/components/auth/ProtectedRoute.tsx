@@ -1,7 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { ROLES } from '../../constants/roles';
-import { RestrictedPage } from '../../pages/RestrictedPage';
 
 /**
  * ProtectedRoute component
@@ -26,7 +25,7 @@ export const ProtectedRoute = () => {
 
     // Intercept inactive users or NEW_USER role
     if (user.isActive === false || user.role === ROLES.NEW_USER) {
-        return <RestrictedPage />;
+        return <Navigate to="/restricted" replace />;
     }
 
     // Authenticated and active: Render the child routes

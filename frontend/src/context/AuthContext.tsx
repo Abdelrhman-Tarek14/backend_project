@@ -43,6 +43,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     };
 
     useEffect(() => {
+        // Circuit breaker: skip auth check if we are on the login page to prevent infinite redirect loops
+        if (window.location.pathname === '/login') {
+            setUser(null);
+            setLoading(false);
+            return;
+        }
+
         checkAuth();
 
         const handleForceLogout = async (data: any) => {

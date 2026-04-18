@@ -94,7 +94,8 @@ export const timerService = {
 
             const response = await casesApi.getCases(params);
 
-            return (response.data || []).map(formatCaseData);
+            const cases = Array.isArray(response.data) ? response.data : [];
+            return cases.map(formatCaseData);
         } catch (error) {
             console.error("Error fetching active cases:", error);
             return [];
@@ -109,7 +110,8 @@ export const timerService = {
             try {
                 const response = await casesApi.getCases({ status: 'OPEN', limit: 100 });
 
-                const formattedCases = (response.data || []).map(formatCaseData);
+                const cases = Array.isArray(response.data) ? response.data : [];
+                const formattedCases = cases.map(formatCaseData);
                 callback(formattedCases);
             } catch (error) {
                 console.error("Error fetching all cases:", error);

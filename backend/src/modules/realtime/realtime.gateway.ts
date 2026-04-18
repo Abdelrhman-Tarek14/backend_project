@@ -6,8 +6,15 @@ import { UsersService } from '../users/users.service';
 import { Role } from '@prisma/client';
 import { Inject, forwardRef, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { SystemService } from '../system/system.service';
 
-@WebSocketGateway({ cors: false })
+@WebSocketGateway({
+  cors: {
+    origin: [process.env.FRONTEND_URL, 'http://localhost:5173'].filter(Boolean),
+    credentials: true,
+  },
+  transports: ['polling', 'websocket'],
+})
 export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
@@ -21,12 +28,24 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     @Inject(forwardRef(() => UsersService))
     private usersService: UsersService,
     private eventEmitter: EventEmitter2,
+    @Inject(forwardRef(() => SystemService))
+    private systemService: SystemService,
   ) { }
 
   afterInit(server: Server) {
-    const origin = this.configService.getOrThrow<string>('frontendUrl');
+    const origin = this.configService.get<string>('frontendUrl') || 'http://localhost:5173';
     server.engine.opts.cors = { origin, credentials: true };
     this.logger.log(`WebSocket CORS restricted to: ${origin}`);
+
+    // Heartbeat: Push health metrics to management room every 60 seconds
+    setInterval(async () => {
+      try {
+        const health = await this.systemService.getSystemHealth();
+        this.server.to('management_dashboard').emit('system_metrics_update', health);
+      } catch (e) {
+        this.logger.error('Failed to emit periodic heartbeat metrics', e);
+      }
+    }, 60000);
   }
 
   async handleConnection(client: Socket) {
@@ -80,8 +99,9 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
       client.data.userRole = payload.role;
 
       await client.join(`user:${userId}`);
-
-      const managementRoles: Role[] = [Role.SUPER_USER, Role.ADMIN, Role.SUPERVISOR, Role.CMD, Role.LEADER, Role.SUPPORT];
+      
+      // Strict Management Room Membership
+      const managementRoles: Role[] = [Role.SUPER_USER, Role.ADMIN, Role.SUPERVISOR];
       if (managementRoles.includes(payload.role)) {
         await client.join('management_dashboard');
       }
@@ -92,6 +112,17 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
       this.server.to('management_dashboard').emit('user_status_changed', { userId, isOnline: true });
 
       this.logger.log(`User ${userId} connected as ${payload.role}`);
+
+      // Push initial system status (maintenance + health) to the new client
+      try {
+        const [maintenance, health] = await Promise.all([
+          this.systemService.getMaintenanceStatus(),
+          this.systemService.getSystemHealth()
+        ]);
+        client.emit('system_status_snapshot', { maintenance, health });
+      } catch (e) {
+        this.logger.error('Failed to push initial status snapshot to client', e);
+      }
 
     } catch (err: any) {
       const reason = err instanceof Error ? err.message : 'Unknown error';

@@ -8,6 +8,7 @@ export const RestrictedPage = () => {
     const { logout, user } = useAuth();
 
     const isPending = user?.role === ROLES.NEW_USER;
+    const isBlocked = user?.isActive === false && user?.role !== ROLES.NEW_USER;
 
     return (
         <div className={styles.container}>
@@ -30,12 +31,14 @@ export const RestrictedPage = () => {
                 </div>
 
                 <h1 className={styles.title}>
-                    {isPending ? 'Approval Pending' : 'Access Restricted'}
+                    {isPending ? 'Approval Pending' : isBlocked ? 'Access Blocked' : 'Access Restricted'}
                 </h1>
                 
                 <p className={styles.message}>
                     {isPending ? (
                         <>Welcome, <strong>{user?.name || user?.email}</strong>. Your account is waiting for administrator approval.</>
+                    ) : isBlocked ? (
+                        <>Your account <strong>({user?.email})</strong> has been blocked by an administrator.</>
                     ) : (
                         <>Your account <strong>({user?.email})</strong> is inactive or you lack permissions.</>
                     )}

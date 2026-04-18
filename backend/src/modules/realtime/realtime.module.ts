@@ -3,6 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { RealtimeGateway } from './realtime.gateway';
 import { UsersModule } from '../users/users.module';
+import { SystemModule } from '../system/system.module';
 import { RealtimeDocsController } from './realtime-docs.controller';
 
 @Module({
@@ -16,6 +17,7 @@ import { RealtimeDocsController } from './realtime-docs.controller';
       inject: [ConfigService],
     }),
     forwardRef(() => UsersModule),
+    forwardRef(() => SystemModule),
   ],
   providers: [RealtimeGateway],
   controllers: [RealtimeDocsController],

@@ -1,4 +1,3 @@
-
 services:
   # ── NestJS Backend ──
   app:
@@ -8,7 +7,7 @@ services:
     container_name: eta-backend
     restart: unless-stopped
     env_file:
-      - ./backend/.env
+      - ./.env
     environment:
       - NODE_ENV=production
     expose:
@@ -20,7 +19,7 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 15s
+      start_period: 20s
 
   # ── Salesforce API Integration ──
   sf-api:
@@ -30,47 +29,47 @@ services:
     container_name: eta-sf-api
     restart: unless-stopped
     env_file:
-      - ./salesforce_api/.env
+      - ./.env
     environment:
       - NODE_ENV=production
-      - BACKEND_URL=http://app:3000
     depends_on:
       app:
         condition: service_healthy
+    volumes:
+      - sf-data:/app/data
     networks:
       - internal
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8080/health', (r) => {if(r.statusCode===200)process.exit(0);else process.exit(1)}).on('error', ()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
-  # ── Cloudflare Tunnel (Commented for Localtunnel Test) ──
-  # tunnel:
-  #   image: cloudflare/cloudflared:latest
-  #   container_name: eta-tunnel
-  #   restart: unless-stopped
-  #   command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
-  #   depends_on:
-  #     - nginx
-  #   networks:
-  #     - internal
-
-
-
-  # ── Frontend (Standalone Nginx Server) ──
+  # ── Frontend (Served by Nginx) ──
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL}
+        - VITE_SOCKET_URL=${VITE_SOCKET_URL}
     container_name: eta-frontend
     restart: unless-stopped
+    env_file:
+      - ./.env
     networks:
       - internal
 
-  # ── Nginx Reverse Proxy & API Gateway ──
+  # ── Nginx Reverse Proxy (Gateway) ──
   nginx:
     image: nginx:alpine
     container_name: eta-nginx
     restart: unless-stopped
     ports:
       - "80:80"
-
+    env_file:
+      - ./.env
     environment:
       - DOMAIN=${DOMAIN:-localhost}
     volumes:
@@ -80,7 +79,6 @@ services:
       < /etc/nginx/nginx.conf.template
       > /etc/nginx/nginx.conf
       && nginx -g 'daemon off;'"
-
     depends_on:
       app:
         condition: service_healthy
@@ -93,3 +91,6 @@ networks:
   internal:
     driver: bridge
 
+volumes:
+  sf-data:
+    driver: local

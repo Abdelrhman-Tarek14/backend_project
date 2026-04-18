@@ -16,6 +16,8 @@ import { useUserRole } from './hooks/useUserRole';
 import { MaintenancePage } from './pages/MaintenancePage';
 import { systemApi } from './api/systemApi';
 import socketService from './services/socket';
+import { RestrictedPage } from './pages/RestrictedPage';
+import { ROLES } from './constants/roles';
 
 const AdminRoutes = lazy(() => import('./pages/admin/routes/AdminRoutes'));
 
@@ -61,7 +63,7 @@ function AppContent() {
   const { user, loading: authLoading } = useAuth();
   const { isAdminLevel, loading: roleLoading } = useUserRole();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
-  const [showIntro, setShowIntro] = useState(true);
+  const [showIntro, setShowIntro] = useState(window.location.pathname !== '/login');
   const [isMaintenance, setIsMaintenance] = useState(false);
   const { isOpen, viewMode } = usePiP();
   const location = useLocation();
@@ -84,14 +86,21 @@ function AppContent() {
         setIsMaintenance(data.enabled);
     };
 
+    // Listen for initial snapshot
+    const handleSnapshot = (data: { maintenance: { enabled: boolean } }) => {
+        setIsMaintenance(data.maintenance.enabled);
+    };
+
     // Listen for 503 errors from API Interceptor
     const handle503 = () => setIsMaintenance(true);
 
     socketService.on('maintenance_status_updated', handleStatusUpdate);
+    socketService.on('system_status_snapshot', handleSnapshot);
     window.addEventListener('maintenance-mode', handle503);
 
     return () => {
       socketService.off('maintenance_status_updated', handleStatusUpdate);
+      socketService.off('system_status_snapshot', handleSnapshot);
       window.removeEventListener('maintenance-mode', handle503);
     };
   }, []);
@@ -123,13 +132,33 @@ function AppContent() {
         )}
       </AnimatePresence>
 
-      {isMaintenance && !isAdminLevel ? (
+      {isMaintenance && !isAdminLevel && location.pathname !== '/login' ? (
         <MaintenancePage />
       ) : !shouldShowIntro && (
         <Routes>
-          {/* Public Route */}
+          {/* Public Routes */}
+          <Route path="/login" element={
+            !user ? <LoginPage /> : (
+              (user.isActive !== false && user.role !== ROLES.NEW_USER) 
+                ? <Navigate to="/timer" replace /> 
+                : <Navigate to="/restricted" replace />
+            )
+          } />
+
+          <Route path="/restricted" element={
+            user ? (
+              (user.isActive !== false && user.role !== ROLES.NEW_USER)
+                ? <Navigate to="/timer" replace />
+                : <RestrictedPage />
+            ) : <Navigate to="/login" replace />
+          } />
+
           <Route path="/" element={
-            !user ? <LoginPage /> : <Navigate to="/timer" replace />
+            user ? (
+              (user.isActive !== false && user.role !== ROLES.NEW_USER)
+                ? <Navigate to="/timer" replace />
+                : <Navigate to="/restricted" replace />
+            ) : <Navigate to="/login" replace />
           } />
 
           {/* Protected Area */}

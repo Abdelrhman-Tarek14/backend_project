@@ -7,15 +7,6 @@ import { UsersModule } from './modules/users/users.module';
 import { CasesModule } from './modules/cases/cases.module';
 import { RealtimeModule } from './modules/realtime/realtime.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { PrismaModule } from './database/prisma.module';
-import { UsersModule } from './modules/users/users.module';
-import { CasesModule } from './modules/cases/cases.module';
-import { RealtimeModule } from './modules/realtime/realtime.module';
-import { AuthModule } from './modules/auth/auth.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
@@ -30,6 +21,11 @@ import { MaintenanceGuard } from './common/guards/maintenance.guard';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: [
+        '.env.production',
+        '.env',
+        '.env.development',
+      ],
       load: [configuration],
       validationSchema: envValidationSchema,
       validationOptions: {

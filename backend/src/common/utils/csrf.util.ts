@@ -24,10 +24,7 @@ export const initializeDoubleCsrf = (configService: ConfigService) => {
     cookieOptions: {
       httpOnly: true,
       sameSite: 'lax',
-      // secure: false — Cloudflare handles HTTPS at the edge.
-      // Internal traffic (Cloudflare → Nginx → NestJS) is plain HTTP,
-      // so secure: true would prevent the cookie from ever being attached.
-      secure: false,
+      secure: configService.get('nodeEnv') === 'production',
       path: '/',
     },
     getCsrfTokenFromRequest: (req) => req.headers['x-csrf-token'] as string,

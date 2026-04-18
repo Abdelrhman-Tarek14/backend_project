@@ -79,6 +79,10 @@ apiClient.interceptors.response.use(
                 return apiClient(originalRequest);
             } catch (refreshError) {
                 console.error('Session expired. Please log in again.');
+                // Prevent infinite redirect loop if already on login page
+                if (window.location.pathname !== '/login') {
+                    window.location.href = '/login';
+                }
                 return Promise.reject(refreshError);
             }
         }

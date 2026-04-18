@@ -4,6 +4,7 @@ import { BiServer, BiData, BiCloud, BiRefresh, BiWrench, BiLockAlt, BiLockOpenAl
 import { TbApi } from 'react-icons/tb';
 import { systemApi } from '../../../api/systemApi';
 import type { SystemHealthResponse } from '../../../api/systemApi';
+import socketService from '../../../services/socket';
 import Swal from 'sweetalert2';
 import styles from './SystemStatusPage.module.css';
 
@@ -70,9 +71,32 @@ const SystemStatusPage = () => {
 
     useEffect(() => {
         fetchData();
-        // Auto-refresh every 30 seconds
-        const intervalId = setInterval(() => fetchData(), 30000);
-        return () => clearInterval(intervalId);
+
+        // 1. Initial Snapshot (if socket connects after component mounts)
+        const handleSnapshot = (data: { maintenance: { enabled: boolean }, health: SystemHealthResponse }) => {
+            setIsMaintenance(data.maintenance.enabled);
+            setHealthData(data.health);
+        };
+
+        // 2. Periodic Metrics (Heartbeat)
+        const handleMetricsUpdate = (data: SystemHealthResponse) => {
+            setHealthData(data);
+        };
+
+        // 3. Global Maintenance Toggle
+        const handleMaintenanceUpdate = (data: { enabled: boolean }) => {
+            setIsMaintenance(data.enabled);
+        };
+
+        socketService.on('system_status_snapshot', handleSnapshot);
+        socketService.on('system_metrics_update', handleMetricsUpdate);
+        socketService.on('maintenance_status_updated', handleMaintenanceUpdate);
+
+        return () => {
+            socketService.off('system_status_snapshot', handleSnapshot);
+            socketService.off('system_metrics_update', handleMetricsUpdate);
+            socketService.off('maintenance_status_updated', handleMaintenanceUpdate);
+        };
     }, [fetchData]);
 
     const handleToggleMaintenance = async () => {
@@ -138,7 +162,7 @@ const SystemStatusPage = () => {
             </header>
 
             <AnimatePresence>
-                <div className={styles.grid}>
+                <div className={styles.grid} key="system-metrics-grid">
 
                     {/* Backend API Card */}
                     <m.div
@@ -177,7 +201,7 @@ const SystemStatusPage = () => {
                                 <div className={`${styles.iconBox} ${styles.iconDatabase}`}><BiData /></div>
                                 <div className={styles.cardTitleArea}>
                                     <h3>Relational Database</h3>
-                                    <p className={styles.subtitleText}>Primary SQL Datastore (Prisma)</p>
+                                    <p className={styles.subtitleText}>Primary PostgreSQL Datastore</p>
                                 </div>
                             </div>
                             <StatusBadge status={healthData?.services?.database.status} />
@@ -307,6 +331,7 @@ const SystemStatusPage = () => {
 
                 {/* System Controls Section */}
                 <m.div
+                    key="global-system-controls"
                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
                     className={styles.card}
                 >

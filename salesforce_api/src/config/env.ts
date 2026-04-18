@@ -22,7 +22,7 @@ const env: EnvConfig = {
     AURA_CONTEXT: process.env.AURA_CONTEXT!,
     COOKIE: process.env.COOKIE!,
     X_SFDC_Page_Scope_Id: process.env.X_SFDC_Page_Scope_Id!,
-    BACKEND_URL: process.env.BACKEND_URL!,
+    BACKEND_URL: process.env.INTERNAL_BACKEND_URL || process.env.BACKEND_URL!,
     SALESFORCE_WEBHOOK_SECRET: process.env.SALESFORCE_WEBHOOK_SECRET!,
     POLL_INTERVAL: parseInt(process.env.POLL_INTERVAL || '45000', 10),
     HEARTBEAT_INTERVAL: parseInt(process.env.HEARTBEAT_INTERVAL || '300000', 10),
