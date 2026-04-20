@@ -1,0 +1,31 @@
+{
+  "name": "sheet-poller",
+  "version": "1.0.0",
+  "description": "Google Sheets polling service for TermHub",
+  "type": "module",
+  "main": "dist/main.js",
+  "scripts": {
+    "start": "node dist/main.js",
+    "dev": "tsx watch src/main.ts",
+    "build:swc": "swc src -d dist",
+    "typecheck": "tsc --noEmit",
+    "build": "npm run typecheck && npm run build:swc",
+    "lint": "eslint 'src/**/*.{ts,tsx}'"
+  },
+  "dependencies": {
+    "axios": "^1.15.1",
+    "dotenv": "^17.4.1",
+    "googleapis": "^128.0.0",
+    "node-cron": "^3.0.3",
+    "zod": "^3.23.4"
+  },
+  "devDependencies": {
+    "@swc/cli": "^0.8.1",
+    "@swc/core": "^1.15.30",
+    "@types/dotenv": "^6.1.1",
+    "@types/node": "^25.6.0",
+    "@types/node-cron": "^3.0.11",
+    "tsx": "^4.7.2",
+    "typescript": "^6.0.2"
+  }
+}

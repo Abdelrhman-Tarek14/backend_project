@@ -1,4 +1,4 @@
-import syncService from './src/services/sync-service.js';
+import syncService from './services/sync-service.js';
 
 console.log('====================================================');
 console.log('   Salesforce API Integration Service Starting...   ');

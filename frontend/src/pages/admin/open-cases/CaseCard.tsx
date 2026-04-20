@@ -14,12 +14,10 @@ import { useUserRole } from '../../../hooks/useUserRole';
 import { ROLES } from '../../../constants/roles';
 import type { UserRole } from '../../../constants/roles';
 
-// 1. تحديث الواجهة لتكون مرنة ومتوافقة مع ما يرسله الـ timerService
 export interface CaseData {
     assignmentId?: string | number;
     case_number: string | number;
     case_type: string;
-    // التعديل هنا: ضيف | null عشان يتوافق مع بيانات السيرفس
     assignedBy?: string | null;
     owner_name?: string | null;
     ownerEmail?: string | null;
@@ -50,7 +48,6 @@ interface BadgeStyle {
 export const CaseCard: FC<CaseCardProps> = React.memo(({ data, isOpen, dragHandleProps, onUpdate }) => {
     const { role } = useUserRole() as { role: UserRole | null };
 
-    // 2. استدعاء الـ Hook مع تمرير 0 كقيمة احتياطية (fallback)
     const {
         startTime, endTime, isExceeded, isScheduled, isWaitingEta, isNearExceeded, timeDetails
     } = useAdminCaseTimer(data, 0);
@@ -138,7 +135,7 @@ export const CaseCard: FC<CaseCardProps> = React.memo(({ data, isOpen, dragHandl
     return (
         <div className={styles.card}>
             <div className={styles.cardHeader}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center'}}>
                     <div className={styles.caseNumber}>{data.case_number}</div>
                 </div>
                 <div className={styles.cardGrap} {...dragHandleProps}></div>
@@ -156,7 +153,7 @@ export const CaseCard: FC<CaseCardProps> = React.memo(({ data, isOpen, dragHandl
                 <div className={styles.detailRow}>
                     <span>Type:</span>
                     <strong style={{
-                        fontSize: caseType.length > 30 ? '0.55rem' : '0.75rem',
+                        fontSize: caseType.length > 30 ? '0.55rem' : '0.65rem',
                         lineHeight: '1.2'
                     }}>
                         {caseType}
@@ -177,10 +174,10 @@ export const CaseCard: FC<CaseCardProps> = React.memo(({ data, isOpen, dragHandl
                     <>
                         <div className={styles.detailRow}>
                             <span>Started:</span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center'}}>
                                 {badge && (
                                     <span className={styles.caseBadgeDynamic} style={{
-                                        fontSize: badge.label.length > 18 ? '0.70rem' : '0.75rem',
+                                        fontSize: badge.label.length > 18 ? '0.50rem' : '0.55rem',
                                         backgroundColor: badge.bg,
                                         color: badge.text,
                                         border: `1px solid ${badge.border}`
@@ -188,8 +185,8 @@ export const CaseCard: FC<CaseCardProps> = React.memo(({ data, isOpen, dragHandl
                                         {badge.label}
                                     </span>
                                 )}
-                                <span style={{ color: '#666', fontSize: '0.85rem' }}>{formattedStartTime}</span>
                             </div>
+                                <span style={{ color: '#666', fontSize: '0.60rem' }}>{formattedStartTime}</span>
                         </div>
 
                         <div className={styles.detailRow}>

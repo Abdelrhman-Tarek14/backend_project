@@ -29,6 +29,9 @@ class StateManager {
     }
 
     private ensureDir(): void {
+        if (!STATE_FILE) {
+            throw new Error('[StateManager] CRITICAL: STATE_FILE environment variable is not defined. Check your .env configuration.');
+        }
         const dir = path.dirname(STATE_FILE);
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });

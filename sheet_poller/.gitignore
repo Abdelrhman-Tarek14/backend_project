@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+
+# Data directory
+# Ignore the credentials, but keep the cursor file tracked if desired (or ignore it too)
+data/credentials.json
+data/cursor.json
+
+# Logs
+*.log
+npm-debug.log*

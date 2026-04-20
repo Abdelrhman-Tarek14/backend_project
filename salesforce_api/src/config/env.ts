@@ -1,5 +1,9 @@
 import * as dotenv from 'dotenv';
-dotenv.config({ quiet: true } as any);
+import * as path from 'path';
+
+// Force load .env.development in non-production environments
+const envPath = process.env.NODE_ENV === 'production' ? '.env' : '.env.development';
+dotenv.config({ path: path.resolve(process.cwd(), envPath), quiet: false });
 
 interface EnvConfig {
     AURA_TOKEN: string;

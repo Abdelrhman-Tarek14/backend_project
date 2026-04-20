@@ -1,7 +1,7 @@
 import * as crypto from 'crypto';
 import * as dotenv from 'dotenv';
 import { SalesforceWebhookDto } from '../src/modules/cases/dto/salesforce-webhook.dto';
-import { GasFormWebhookDto } from '../src/modules/cases/dto/gas-form-webhook.dto';
+import { SheetFormDto } from '../src/modules/cases/dto/sheet-form.dto';
 import { CloseCaseWebhookDto } from '../src/modules/cases/dto/close-case-webhook.dto';
 import { GasValidatedWebhookDto } from '../src/modules/cases/dto/gas-validated-webhook.dto';
 import { GasEvaluationWebhookDto } from '../src/modules/cases/dto/gas-evaluation-webhook.dto';
@@ -64,14 +64,20 @@ async function main() {
       break;
 
     case 'gas-form':
-      const gasFormPayload: GasFormWebhookDto = {
+      const sheetPayload: SheetFormDto = {
         caseNumber,
         caseOwner,
         formType: 'TypeA',
-        caseETA: 45,
+        eta: 45,
         formSubmitTime: new Date().toISOString(),
+        items: 5,
+        choices: 2,
+        description: 1,
+        images: 1,
+        tmpAreas: 1,
+        formValidation: 'Valid',
       };
-      await signAndSend('/gas-form', gasFormPayload);
+      await signAndSend('/sheet-open-cases', sheetPayload);
       break;
 
     case 'gas-validated':
@@ -85,7 +91,7 @@ async function main() {
         description: 2,
         images: 3,
         tmpAreas: 1,
-        isValid: true,
+        formValidation: 'valid',
         isOnTime: true,
       };
       await signAndSend('/gas-validated', validatedPayload);
@@ -113,7 +119,7 @@ async function main() {
       console.log('- sf-create      : Simulate Salesforce case creation');
       console.log('- sf-close       : Simulate Salesforce case closure');
       console.log('- sf-heartbeat   : Simulate Salesforce heartbeat');
-      console.log('- gas-form       : Simulate GAS Form (ETA) submission');
+      console.log('- gas-form       : Simulate Sheet Form (Unified) submission');
       console.log('- gas-validated  : Simulate GAS Form Validation (Metrics)');
       console.log('- gas-evaluation : Simulate GAS Final Evaluation');
       console.log('\nExample:');

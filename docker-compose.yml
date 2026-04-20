@@ -87,6 +87,26 @@ services:
     networks:
       - internal
 
+  # ── Google Sheets Poller ──
+  sheet-poller:
+    build:
+      context: ./sheet_poller
+      dockerfile: Dockerfile
+    container_name: eta-sheet-poller
+    restart: unless-stopped
+    env_file:
+      - ./.env
+      - ./sheet_poller/.env
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      app:
+        condition: service_healthy
+    volumes:
+      - ./sheet_poller/data:/app/data
+    networks:
+      - internal
+
 networks:
   internal:
     driver: bridge

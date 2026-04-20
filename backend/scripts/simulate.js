@@ -2,7 +2,11 @@ const axios = require('axios');
 const crypto = require('crypto');
 const inquirer = require('inquirer');
 const chalk = require('chalk');
-require('dotenv').config();
+const dotenv = require('dotenv');
+const path = require('path');
+
+const envPath = process.env.NODE_ENV === 'production' ? '.env' : '.env.development';
+dotenv.config({ path: path.resolve(process.cwd(), envPath), quiet: false });
 
 const BACKEND_URL = process.env.BACKEND_URL;
 const GAS_SECRET = process.env.GAS_WEBHOOK_SECRET;
@@ -73,7 +77,7 @@ async function mainMenu() {
       message: 'What would you like to simulate?',
       choices: [
         { name: '1. [SF] Create New Case', value: 'sf-new' },
-        { name: '2. [GAS] Submit Form (ETA)', value: 'gas-form' },
+        { name: '2. [Sheet] Submit Form (Unified)', value: 'gas-form' },
         { name: '3. [GAS] Submit Validation (Metrics)', value: 'gas-validated' },
         { name: '4. [GAS] Submit Evaluation (Quality)', value: 'gas-evaluation' },
         { name: '5. [SF] Close Case', value: 'sf-close' },
@@ -134,8 +138,14 @@ async function simulateGasForm() {
   const answers = await inquirer.prompt([
     { name: 'caseNumber', message: 'Case Number:', default: lastCase.caseNumber },
     { name: 'caseOwner', message: 'Agent Email:', default: lastCase.caseOwner },
-    { name: 'caseETA', message: 'ETA (Minutes):', type: 'number', default: 45 },
     { name: 'formType', message: 'Form Type:', default: 'Menu Typing' },
+    { name: 'items', message: 'Items:', type: 'number', default: 5 },
+    { name: 'choices', message: 'Choices:', type: 'number', default: 2 },
+    { name: 'description', message: 'Description (Count):', type: 'number', default: 1 },
+    { name: 'images', message: 'Images (Count):', type: 'number', default: 1 },
+    { name: 'tmpAreas', message: 'TMP Areas:', type: 'number', default: 1 },
+    { name: 'formValidation', message: 'Validation:', default: 'Valid' },
+    { name: 'eta', message: 'ETA (Minutes):', type: 'number', default: 45 },
   ]);
 
   const payload = {
@@ -143,7 +153,7 @@ async function simulateGasForm() {
     formSubmitTime: new Date().toISOString(),
   };
 
-  await sendWebhook('/cases/webhook/gas-form', payload);
+  await sendWebhook('/cases/webhook/sheet-open-cases', payload);
 }
 
 async function simulateGasValidated() {

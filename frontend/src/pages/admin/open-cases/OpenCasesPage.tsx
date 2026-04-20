@@ -35,12 +35,20 @@ const OpenCasesPage: React.FC = () => {
         const fetchStatus = async () => {
             try {
                 const response = await casesApi.getSalesforceSyncStatus();
-                const { status: apiStatus, ...rest } = response.data;
+                console.log('SF Status Response:', response);
+                
+                // response.data could be an array of status objects or a single one depending on endpoint
+                // CasesService.findAll returns an array of IntegrationStatus
+                const data = Array.isArray(response.data) 
+                    ? response.data.find((s: any) => s.system === 'salesforce') 
+                    : response.data;
+
+                if (!data) return;
 
                 const sfData: SystemStatus = {
                     system: 'salesforce',
-                    status: apiStatus === 'online' ? 'OK' : 'Offline',
-                    ...rest
+                    status: (data.status === 'online' || data.status === 'OK') ? 'OK' : 'Offline',
+                    updatedAt: data.updatedAt || new Date().toISOString()
                 };
 
                 dispatch({ type: 'SET_SYSTEM_STATUS_LIST', payload: [sfData] });
@@ -52,8 +60,13 @@ const OpenCasesPage: React.FC = () => {
 
         fetchStatus();
 
-        const handleHeartbeat = (status: SystemStatus) => {
-            dispatch({ type: 'UPDATE_SYSTEM_STATUS', payload: status });
+        const handleHeartbeat = (data: any) => {
+            const normalizedStatus: SystemStatus = {
+                ...data,
+                status: (data.status === 'online' || data.status === 'OK') ? 'OK' : 'Offline',
+                updatedAt: data.updatedAt || new Date().toISOString()
+            };
+            dispatch({ type: 'UPDATE_SYSTEM_STATUS', payload: normalizedStatus });
         };
 
         socketService.on('sf_heartbeat', handleHeartbeat);
@@ -62,8 +75,22 @@ const OpenCasesPage: React.FC = () => {
 
     const isSalesforceConnected = useMemo(() => {
         const sf = systemStatus.find(s => s.system === 'salesforce');
-        return sf?.status === 'OK';
-    }, [systemStatus]);
+        if (!sf || sf.status !== 'OK') return false;
+
+        // Staleness check: if updatedAt is more than 6 minutes old (5m interval + 1m buffer)
+        if (sf.updatedAt) {
+            const lastUpdate = new Date(sf.updatedAt).getTime();
+            const now = Date.now();
+            const diffMinutes = (now - lastUpdate) / (1000 * 60);
+            
+            // If the heartbeat is strictly older than 6 minutes, consider it stale/offline
+            if (diffMinutes > 6) {
+                return false;
+            }
+        }
+
+        return true;
+    }, [systemStatus, tick]);
 
     const getSafeId = (c: OpenCase): string => {
         const id = c.assignmentId || c.id || c.case_number;
@@ -127,6 +154,12 @@ const OpenCasesPage: React.FC = () => {
         });
         return () => { unsubscribe(); };
     }, []);
+
+    useEffect(() => {
+        if (cases.length > 0) {
+            console.log('OpenCasesPage: Fetched Cases:', cases);
+        }
+    }, [cases]);
 
     useEffect(() => {
         const timer = setInterval(() => dispatch({ type: 'INCREMENT_TICK' }), 1000);

@@ -24,7 +24,7 @@ export class WebhookSecurityGuard implements CanActivate {
       return this.configService.get<string>('integrations.salesforceWebhookSecret');
     }
     
-    if (url.includes('gas')) {
+    if (url.includes('gas') || url.includes('sheet-open-cases')) {
       return this.configService.get<string>('integrations.gasWebhookSecret');
     }
 

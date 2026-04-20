@@ -4,9 +4,9 @@ import { PrismaService } from '../../database/prisma.service';
 import { AssignmentStatus } from '@prisma/client';
 import { SalesforceWebhookDto } from './dto/salesforce-webhook.dto';
 import { CloseCaseWebhookDto } from './dto/close-case-webhook.dto';
-import { GasFormWebhookDto } from './dto/gas-form-webhook.dto';
 import { GasValidatedWebhookDto } from './dto/gas-validated-webhook.dto';
 import { GasEvaluationWebhookDto } from './dto/gas-evaluation-webhook.dto';
+import { SheetFormDto } from './dto/sheet-form.dto';
 import { CasesService } from './cases.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 
@@ -109,70 +109,6 @@ export class CasesWebhookService {
     return result.assignment;
   }
 
-  async handleGasFormWebhook(payload: GasFormWebhookDto) {
-    const { caseNumber, caseOwner, formType, caseETA, formSubmitTime } = payload;
-    if (!caseNumber || !caseOwner) throw new BadRequestException('caseNumber and caseOwner are required');
-
-    const result = await this.prisma.$transaction(async (tx) => {
-      let caseRecord = await tx.case.findUnique({ where: { caseNumber } });
-      if (!caseRecord) {
-        this.logger.warn(`Case ${caseNumber} received from GAS before Salesforce. Creating stub...`);
-        caseRecord = await tx.case.create({ data: { caseNumber } });
-      }
-
-      const user = await tx.user.findUnique({ where: { email: caseOwner } });
-
-      let assignment = await tx.assignment.findFirst({
-        where: { caseId: caseRecord.id, ownerEmail: caseOwner },
-        orderBy: { startTime: 'desc' },
-      });
-
-      const shouldUpdate = assignment && (
-        assignment.status === AssignmentStatus.OPEN || assignment.etaMinutes === null
-      );
-
-      if (assignment && shouldUpdate) {
-        assignment = await tx.assignment.update({
-          where: { id: assignment.id },
-          data: {
-            formType,
-            etaMinutes: caseETA ?? assignment.etaMinutes,
-            formSubmitTime: formSubmitTime ? new Date(formSubmitTime) : assignment.formSubmitTime,
-          },
-        });
-        await tx.caseLog.create({
-          data: { assignmentId: assignment.id, action: 'GAS_FORM_UPDATED', userId: user?.id, changes: { formType, caseETA } },
-        });
-      } else {
-        assignment = await tx.assignment.create({
-          data: {
-            caseId: caseRecord.id,
-            userId: user?.id,
-            ownerEmail: caseOwner,
-            status: AssignmentStatus.OPEN,
-            formType,
-            etaMinutes: caseETA,
-            formSubmitTime: formSubmitTime ? new Date(formSubmitTime) : new Date(),
-          },
-        });
-        await tx.caseLog.create({
-          data: { assignmentId: assignment.id, action: 'GAS_FORM_SUBMITTED', userId: user?.id, changes: { formType, caseETA } },
-        });
-      }
-
-      return { assignment, caseRecord };
-    });
-
-    this.casesService.broadcastCaseEvent('case_updated', {
-      caseId: result.caseRecord.id,
-      assignmentId: result.assignment.id,
-      eta: result.assignment.etaMinutes,
-      formType: result.assignment.formType,
-      updatedAt: new Date(),
-    }, result.assignment.userId ?? undefined);
-
-    return result.assignment;
-  }
 
   async handleSalesforceCloseWebhook(payload: CloseCaseWebhookDto) {
     const { caseNumber, caseOwner } = payload;
@@ -347,4 +283,87 @@ export class CasesWebhookService {
     this.realtimeGateway.server.to('management_dashboard').emit('sf_heartbeat', integrationStatus);
     return integrationStatus;
   }
+
+  async handleSheetOpenCases(payload: SheetFormDto) {
+    const { 
+        caseNumber, caseOwner, formType, formSubmitTime, 
+        items, choices, description, images, tmpAreas, 
+        formValidation, eta 
+    } = payload;
+
+    if (!caseNumber || !caseOwner) throw new BadRequestException('caseNumber and caseOwner are required');
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      let caseRecord = await tx.case.findUnique({ where: { caseNumber } });
+      if (!caseRecord) {
+        this.logger.warn(`Case ${caseNumber} received from Sheet before Salesforce. Creating stub...`);
+        caseRecord = await tx.case.create({ data: { caseNumber } });
+      }
+
+      const user = await tx.user.findUnique({ where: { email: caseOwner } });
+
+      let assignment = await tx.assignment.findFirst({
+        where: { caseId: caseRecord.id, ownerEmail: caseOwner },
+        orderBy: { startTime: 'desc' },
+      });
+
+      const shouldUpdate = assignment && (
+        assignment.status === AssignmentStatus.OPEN || assignment.etaMinutes === null
+      );
+
+      const commonData: any = {
+        formType, items, choices, description, images, tmpAreas, formValidation,
+        etaMinutes: eta,
+        formSubmitTime: formSubmitTime ? new Date(formSubmitTime) : new Date(),
+      };
+
+      if (assignment && shouldUpdate) {
+        const currentEta = eta !== undefined ? eta : assignment.etaMinutes;
+        const baseStartTime = assignment.startTime;
+        const submitTime = commonData.formSubmitTime;
+
+        if (baseStartTime && currentEta) {
+            const limit = new Date(baseStartTime.getTime() + currentEta * 60000);
+            commonData.isOnTime = submitTime <= limit;
+        }
+
+        if (eta === undefined) delete commonData.etaMinutes;
+
+        assignment = await tx.assignment.update({
+          where: { id: assignment.id },
+          data: commonData,
+        });
+
+        await tx.caseLog.create({
+          data: { assignmentId: assignment.id, action: 'SHEET_FORM_UPDATED', userId: user?.id, changes: commonData },
+        });
+
+      } else {
+        assignment = await tx.assignment.create({
+          data: {
+            caseId: caseRecord.id, userId: user?.id, ownerEmail: caseOwner,
+            status: AssignmentStatus.OPEN,
+            ...commonData
+          },
+        });
+
+        await tx.caseLog.create({
+          data: { assignmentId: assignment.id, action: 'SHEET_FORM_SUBMITTED', userId: user?.id, changes: commonData },
+        });
+      }
+
+      return { assignment, caseRecord, user };
+    });
+
+    this.casesService.broadcastCaseEvent('case_updated', {
+      caseId: result.caseRecord.id, assignmentId: result.assignment.id,
+      eta: result.assignment.etaMinutes, formType: result.assignment.formType,
+      updatedAt: new Date(), items, choices, description, tmpAreas
+    }, result.assignment.userId ?? undefined);
+    
+    this.casesService.broadcastLeaderboardUpdate(result.assignment);
+
+    return result.assignment;
+  }
+
 }

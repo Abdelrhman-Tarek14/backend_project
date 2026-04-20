@@ -17,20 +17,27 @@ export interface FormattedCase {
 // ==========================================
 //  Helper: Unified Data Mapping & Fallbacks
 // ==========================================
-const formatCaseData = (caseItem: any): FormattedCase => {
-    const activeAssignment = caseItem.assignments?.[0] || {};
+const formatCaseData = (item: any): FormattedCase => {
+    // Handle both Flat Assignment objects and Case objects with nested assignments
+    // If item.assignments is missing, assume item IS the assignment
+    const isFlatAssignment = !item.assignments;
+    const assignment = isFlatAssignment ? item : (item.assignments?.[0] || {});
+    const parentCase = isFlatAssignment ? (item.case || {}) : item;
+
+    console.debug('[timerService] Mapping item:', { isFlatAssignment, id: item.id, caseNumber: parentCase.caseNumber });
 
     return {
-        ...caseItem,
-        assignmentId: activeAssignment.id,
-        case_number: caseItem.caseNumber || 'Not Found',
-        case_type: activeAssignment.formType || activeAssignment.caseType || 'Not Found',
-        ownerEmail: activeAssignment.user?.email || activeAssignment.ownerEmail || null,
-        start_time: activeAssignment.startTime || null,
-        eta: activeAssignment.etaMinutes || null,
-        assignedBy: activeAssignment.assignedBy || null,
-        tl_name: activeAssignment.user?.leader?.name || 'Not Found',
-        timestamp: activeAssignment.startTime || caseItem.createdAt || null,
+        ...item,
+        assignmentId: assignment.id,
+        case_number: parentCase.caseNumber || item.caseNumber || 'Not Found',
+        case_type: assignment.formType || assignment.caseType || 'Not Found',
+        owner_name: assignment.user?.name || assignment.ownerName || 'Not Found',
+        ownerEmail: assignment.user?.email || assignment.ownerEmail || null,
+        start_time: assignment.startTime || null,
+        eta: assignment.etaMinutes || null,
+        assignedBy: assignment.assignedBy || null,
+        tl_name: assignment.user?.leader?.name || 'Not Found',
+        timestamp: assignment.startTime || item.createdAt || null,
     };
 };
 
@@ -93,8 +100,12 @@ export const timerService = {
             if (email) params.agentEmail = email;
 
             const response = await casesApi.getCases(params);
-
-            const cases = Array.isArray(response.data) ? response.data : [];
+            
+            // Handle { data: [], meta: {} } or raw []
+            const rawData = (response.data as any)?.data || response.data;
+            const cases = Array.isArray(rawData) ? rawData : [];
+            
+            console.log(`[timerService] getActiveCases: Received ${cases.length} cases`, cases);
             return cases.map(formatCaseData);
         } catch (error) {
             console.error("Error fetching active cases:", error);
@@ -110,7 +121,12 @@ export const timerService = {
             try {
                 const response = await casesApi.getCases({ status: 'OPEN', limit: 100 });
 
-                const cases = Array.isArray(response.data) ? response.data : [];
+                // Handle { data: [], meta: {} } or raw []
+                const rawData = (response.data as any)?.data || response.data;
+                const cases = Array.isArray(rawData) ? rawData : [];
+                
+                console.log(`[timerService] subscribeToAllOpenCases: Received ${cases.length} cases`, cases);
+                
                 const formattedCases = cases.map(formatCaseData);
                 callback(formattedCases);
             } catch (error) {
