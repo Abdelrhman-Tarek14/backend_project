@@ -13,6 +13,7 @@ export interface TimerDisplayProps {
     isWaitingEta?: boolean | null;
     isNearExceeded?: boolean | null;
     isScheduled?: boolean | null;
+    isBacklog?: boolean | null;
 }
 
 export const TimerDisplay = React.memo(({
@@ -20,7 +21,8 @@ export const TimerDisplay = React.memo(({
     isExceeded,
     isWaitingEta,
     isNearExceeded,
-    isScheduled
+    isScheduled,
+    isBacklog
 }: TimerDisplayProps) => {
     const [timeStr, setTimeStr] = useState<string>('--:--');
 
@@ -71,7 +73,8 @@ export const TimerDisplay = React.memo(({
     };
 
     let timerClass = styles.timerOnTime;
-    if (isWaitingEta) timerClass = styles.timerWaitingEta;
+    if (isBacklog) timerClass = styles.timerBacklog;
+    else if (isWaitingEta) timerClass = styles.timerWaitingEta;
     else if (isExceeded) timerClass = styles.timerExceeding;
     else if (isNearExceeded) timerClass = styles.timerNearExceeded;
 

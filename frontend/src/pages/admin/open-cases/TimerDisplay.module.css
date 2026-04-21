@@ -1,29 +1,65 @@
 .timerDisplay {
-    font-size: 1.1rem;
-    font-weight: 850;
+    font-size: 1.15rem;
+    font-weight: 900;
     font-family: 'Inter', monospace;
     line-height: 1;
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.3s ease;
 }
 
 .timerOnTime {
-    color: #ff825d;
+    color: var(--color-primary);
+    text-shadow: 0 0 8px rgba(255, 87, 34, 0.2);
 }
 
 .timerExceeding {
-    color: #762520;
-    animation: pulse 2s infinite;
+    color: #ff5252;
+    background: rgba(255, 82, 82, 0.1);
+    border-color: rgba(255, 82, 82, 0.2);
+    animation: timerAlertPulse 1.5s infinite ease-in-out;
 }
 
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
+/* @keyframes timerAlertPulse {
+    0%, 100% { 
+        transform: scale(1);
+        text-shadow: 0 0 10px rgba(255, 82, 82, 0.6);
+        box-shadow: 0 0 5px rgba(255, 82, 82, 0.2);
+    }
+    50% { 
+        transform: scale(1.03);
+        text-shadow: 0 0 20px rgba(255, 82, 82, 0.9);
+        box-shadow: 0 0 15px rgba(255, 82, 82, 0.4);
+    }
+} */
+
+@keyframes timerNearPulse {
+    0%, 100% { 
+        text-shadow: 0 0 8px rgba(255, 152, 0, 0.4);
+        box-shadow: 0 0 4px rgba(255, 152, 0, 0.1);
+    }
+    50% { 
+        text-shadow: 0 0 15px rgba(255, 152, 0, 0.7);
+        box-shadow: 0 0 10px rgba(255, 152, 0, 0.3);
+    }
 }
 
 .timerWaitingEta {
-    color: #673ab7;
+    color: #9575cd;
+    background: rgba(103, 58, 183, 0.08);
 }
 
 .timerNearExceeded {
-    color: #FF9800;
+    color: #ffb74d;
+    background: rgba(255, 183, 77, 0.08);
+    border-color: rgba(255, 183, 77, 0.2);
+}
+
+.timerBacklog {
+    color: #ff8a65;
+    background: rgba(255, 87, 34, 0.08);
 }

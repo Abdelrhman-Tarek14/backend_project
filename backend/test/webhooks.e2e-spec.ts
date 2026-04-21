@@ -91,7 +91,7 @@ describe('WebhooksController (e2e)', () => {
     expect(assignment!.caseType).toBe('Menu Typing');
   });
 
-  it('/cases/webhook/gas-form (POST) - Update ETA', async () => {
+  it('/cases/webhook/sheet-form (POST) - Update ETA', async () => {
     const payload = {
       caseNumber: testCaseNumber,
       caseOwner: testOwner,
@@ -101,7 +101,7 @@ describe('WebhooksController (e2e)', () => {
     };
 
     await request(app.getHttpServer())
-      .post('/cases/webhook/gas-form')
+      .post('/cases/webhook/sheet-form')
       .set('x-webhook-signature', sign(payload))
       .send(payload)
       .expect(202);
@@ -112,7 +112,7 @@ describe('WebhooksController (e2e)', () => {
       where: { caseId: caseRec!.id },
       orderBy: { startTime: 'desc' },
     });
-    
+
     expect(assignment!.etaMinutes).toBe(15);
     expect(assignment!.formType).toBe('Manual');
   });
@@ -135,7 +135,7 @@ describe('WebhooksController (e2e)', () => {
       where: { caseId: caseRec!.id },
       orderBy: { startTime: 'desc' },
     });
-    
+
     expect(assignment!.status).toBe('CLOSED');
   });
 

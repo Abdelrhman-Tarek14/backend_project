@@ -4,7 +4,7 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "nodemon --ignore data/ --watch src --watch index.ts --ext ts,json --exec node --import @swc-node/register/esm-register index.ts",
+    "dev": "nodemon --ignore data/ --watch src --ext ts,json --exec \"node --import @swc-node/register/esm-register src/index.ts\"",
     "build:swc": "swc . -d dist --ignore node_modules,dist,data",
     "typecheck": "tsc --noEmit",
     "build": "npm run typecheck && npm run build:swc",
@@ -14,17 +14,18 @@
   },
   "dependencies": {
     "axios": "^1.15.1",
-    "dotenv": "^17.4.1"
+    "dotenv": "^17.4.2",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@swc-node/register": "^1.11.1",
     "@swc/cli": "^0.8.1",
     "@swc/core": "^1.15.30",
-    "@types/axios": "^0.9.36",
-    "@types/dotenv": "^6.1.1",
+    "@types/axios": "^0.14.4",
+    "@types/dotenv": "^8.2.3",
     "@types/node": "^25.6.0",
-    "nodemon": "^3.0.1",
+    "nodemon": "^3.1.14",
     "ts-node": "^10.9.2",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.3"
   }
 }

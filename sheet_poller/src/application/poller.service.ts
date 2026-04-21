@@ -6,8 +6,9 @@ import { toCairoISO } from '../utils/date.utils.js';
 import { Logger } from '../core/logger.js';
 
 export class PollerService {
-  private isSyncing = false;
+  public isSyncing = false;
   private logger = new Logger('PollerService');
+
 
   constructor(
     private sheetsService: GoogleSheetsService,
@@ -124,19 +125,21 @@ export class PollerService {
       caseOwner: rawOwner,
       formType: rawFormType || 'Unknown',
       formSubmitTime: toCairoISO(rawTimestamp),
-      breakMins: this.parseSafeInt(row[6]),
-      items: this.parseSafeInt(row[7]),
-      choices: this.parseSafeInt(row[8]),
-      description: this.parseSafeInt(row[9]),
-      images: this.parseSafeInt(row[10]),
-      tmpAreas: this.parseSafeInt(row[11]),
-      eta: row[12] && row[12].trim() !== '' ? this.parseSafeInt(row[12]) : null,
+      breakMins: this.parseOptionalInt(row[6]),
+      items: this.parseOptionalInt(row[7]),
+      choices: this.parseOptionalInt(row[8]),
+      description: this.parseOptionalInt(row[9]),
+      images: this.parseOptionalInt(row[10]),
+      tmpAreas: this.parseOptionalInt(row[11]),
+      eta: this.parseOptionalInt(row[12]),
     };
+
   }
 
-  private parseSafeInt(val: any): number {
-    if (val === undefined || val === null || String(val).trim() === '') return 0;
+  private parseOptionalInt(val: any): number | undefined {
+    if (val === undefined || val === null || String(val).trim() === '') return undefined;
     const parsed = Number(val);
-    return isNaN(parsed) ? 0 : Math.floor(parsed);
+    return isNaN(parsed) ? undefined : Math.floor(parsed);
   }
+
 }

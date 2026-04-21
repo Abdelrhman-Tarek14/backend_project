@@ -3,17 +3,17 @@ import * as dotenv from 'dotenv';
 import { SalesforceWebhookDto } from '../src/modules/cases/dto/salesforce-webhook.dto';
 import { SheetFormDto } from '../src/modules/cases/dto/sheet-form.dto';
 import { CloseCaseWebhookDto } from '../src/modules/cases/dto/close-case-webhook.dto';
-import { GasValidatedWebhookDto } from '../src/modules/cases/dto/gas-validated-webhook.dto';
-import { GasEvaluationWebhookDto } from '../src/modules/cases/dto/gas-evaluation-webhook.dto';
+import { SheetValidatedWebhookDto } from '../src/modules/cases/dto/sheet-validated-webhook.dto';
+import { SheetEvaluationWebhookDto } from '../src/modules/cases/dto/sheet-evaluation-webhook.dto';
 
 dotenv.config();
 
-const GAS_SECRET = process.env.GAS_WEBHOOK_SECRET || 'gas-fallback';
+const Sheet_SECRET = process.env.SHEET_WEBHOOK_SECRET || 'sheet-fallback';
 const SF_SECRET = process.env.SALESFORCE_WEBHOOK_SECRET || 'sf-fallback';
 const BASE_URL = `http://localhost:${process.env.PORT || 3000}/cases/webhook`;
 
 async function signAndSend(path: string, payload: any) {
-  const secret = path.includes('salesforce') ? SF_SECRET : GAS_SECRET;
+  const secret = path.includes('salesforce') ? SF_SECRET : Sheet_SECRET;
   const body = JSON.stringify(payload);
   const signature = crypto
     .createHmac('sha256', secret)
@@ -63,7 +63,7 @@ async function main() {
       await signAndSend('/salesforce/close', closePayload);
       break;
 
-    case 'gas-form':
+    case 'sheet-form':
       const sheetPayload: SheetFormDto = {
         caseNumber,
         caseOwner,
@@ -80,8 +80,8 @@ async function main() {
       await signAndSend('/sheet-open-cases', sheetPayload);
       break;
 
-    case 'gas-validated':
-      const validatedPayload: GasValidatedWebhookDto = {
+    case 'sheet-validated':
+      const validatedPayload: SheetValidatedWebhookDto = {
         caseNumber,
         caseOwner,
         formType: 'TypeA',
@@ -94,18 +94,18 @@ async function main() {
         formValidation: 'valid',
         isOnTime: true,
       };
-      await signAndSend('/gas-validated', validatedPayload);
+      await signAndSend('/sheet-validated', validatedPayload);
       break;
 
-    case 'gas-evaluation':
-      const evaluationPayload: GasEvaluationWebhookDto = {
+    case 'sheet-evaluation':
+      const evaluationPayload: SheetEvaluationWebhookDto = {
         caseNumber,
         caseOwner,
         evaluationTime: new Date().toISOString(),
         qualityScore: true,
         finalCheckScore: true,
       };
-      await signAndSend('/gas-evaluation', evaluationPayload);
+      await signAndSend('/sheet-evaluation', evaluationPayload);
       break;
 
     case 'sf-heartbeat':
@@ -119,9 +119,9 @@ async function main() {
       console.log('- sf-create      : Simulate Salesforce case creation');
       console.log('- sf-close       : Simulate Salesforce case closure');
       console.log('- sf-heartbeat   : Simulate Salesforce heartbeat');
-      console.log('- gas-form       : Simulate Sheet Form (Unified) submission');
-      console.log('- gas-validated  : Simulate GAS Form Validation (Metrics)');
-      console.log('- gas-evaluation : Simulate GAS Final Evaluation');
+      console.log('- sheet-form       : Simulate Sheet Form (Unified) submission');
+      console.log('- sheet-validated  : Simulate Sheet Form Validation (Metrics)');
+      console.log('- sheet-evaluation : Simulate Sheet Final Evaluation');
       console.log('\nExample:');
       console.log('npx tsx scripts/mock-webhooks.ts sf-create 12345678 agent@test.com');
   }

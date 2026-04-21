@@ -1,7 +1,7 @@
 import { IsString, IsNotEmpty, IsEmail, IsOptional, IsInt, IsBoolean, IsDateString } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export class GasValidatedWebhookDto {
+export class SheetValidatedWebhookDto {
   @ApiProperty({ example: '12345678', description: 'Unique case number' })
   @IsString()
   @IsNotEmpty()
@@ -12,7 +12,7 @@ export class GasValidatedWebhookDto {
   @IsNotEmpty()
   caseOwner: string;
 
-  @ApiPropertyOptional({ example: 'TypeA', description: 'Form Type from GAS' })
+  @ApiPropertyOptional({ example: 'TypeA', description: 'Form Type from sheet' })
   @IsOptional()
   @IsString()
   formType?: string;

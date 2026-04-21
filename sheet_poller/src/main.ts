@@ -18,25 +18,70 @@ const stateManager = new StateManager();
 // Bootstrap application
 const poller = new PollerService(sheetsService, backendClient, stateManager);
 
-logger.info(`Scheduling polling job: ${CONFIG.POLLING_INTERVAL_CRON}`);
+let isShuttingDown = false;
 
-// Schedule cron
-cron.schedule(CONFIG.POLLING_INTERVAL_CRON, async () => {
-  await poller.runSync();
-});
+// Scheduling function
+const scheduleJob = () => {
+  logger.info(`Scheduling polling job: ${CONFIG.POLLING_INTERVAL_CRON}`);
+  
+  cron.schedule(CONFIG.POLLING_INTERVAL_CRON, async () => {
+    if (isShuttingDown) {
+      logger.debug('Skipping schedule: system is shutting down.');
+      return;
+    }
+    await poller.runSync();
+  });
+};
 
-// Initial sync on startup
-(async () => {
-  logger.info('Performing initial sync on startup...');
-  await poller.runSync();
-})();
+// Shutdown handler
+const shutdown = async (signal: string) => {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+  
+  logger.info(`Received ${signal}. Starting graceful shutdown...`);
+  
+  const checkInterval = setInterval(() => {
+    if (!poller.isSyncing) {
+      clearInterval(checkInterval);
+      logger.info('Poller is idle. Exiting now.');
+      process.exit(0);
+    } else {
+      logger.info('Sync in progress... waiting to finish before exiting.');
+    }
+  }, 1000);
 
-// Process Event Handlers
+  // Force exit after 30 seconds
+  setTimeout(() => {
+    logger.error('Shutdown timed out. Forcing exit.');
+    process.exit(1);
+  }, 30000);
+};
+
+// Signal listeners
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
+
+// Process Global Error Handling
 process.on('uncaughtException', (err) => {
-  logger.error('Uncaught Exception', err.message);
+  logger.error('Uncaught Exception', { message: err.message, stack: err.stack });
   process.exit(1);
 });
 
 process.on('unhandledRejection', (reason) => {
-  logger.error('Unhandled Rejection', String(reason));
+  logger.error('Unhandled Rejection', { reason: String(reason) });
 });
+
+// Start the service
+(async () => {
+  try {
+    // Initial sync
+    logger.info('Performing initial sync on startup...');
+    await poller.runSync();
+    
+    // Start cron
+    scheduleJob();
+  } catch (err: any) {
+    logger.error('Failed to start service', err.message);
+    process.exit(1);
+  }
+})();

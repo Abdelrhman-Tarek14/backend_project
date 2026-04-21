@@ -64,12 +64,12 @@ The system uses a **two-table session model** that separates static case identit
 | :--- | :--- | :--- |
 | `status` | System / Admin | `OPEN` or `CLOSED` — tracks the agent's work session. |
 | `caseType` | Salesforce | Type of case (e.g., "Menu Typing"). |
-| `formType` | GAS (Form) | Form type as filled by the agent. |
-| `formSubmitTime` | GAS (Form) | Exact time the GAS form was submitted. |
+| `formType` | sheet (Form) | Form type as filled by the agent. |
+| `formSubmitTime` | sheet (Form) | Exact time the sheet form was submitted. |
 | `startTime` | Salesforce | When the agent started working on the case. |
-| `etaMinutes` | GAS (Form) | Estimated time to completion in minutes. |
-| `items`, `choices`, `description`, `images`, `tmpAreas`, `isValid`, `isOnTime` | GAS (Validated) | Evaluation metrics from the final GAS validation phase. |
-| `userId` | GAS / SF | The registered agent assigned to the case (Optional). |
+| `etaMinutes` | sheet (Form) | Estimated time to completion in minutes. |
+| `items`, `choices`, `description`, `images`, `tmpAreas`, `isValid`, `isOnTime` | sheet (Validated) | Evaluation metrics from the final sheet validation phase. |
+| `userId` | sheet / SF | The registered agent assigned to the case (Optional). |
 | `ownerEmail` | Salesforce | The email of the case owner from Salesforce. |
 
 #### 🔢 `QueueRecord` Table — Server-side State
@@ -89,7 +89,7 @@ The system uses a **two-table session model** that separates static case identit
 ## 🛠 Internal Services
 
 - **`CasesService`**: Handles core operations, manual updates, and unified case history fetching.
-- **`CasesWebhookService`**: Manages all high-frequency external integrations (Salesforce & GAS).
+- **`CasesWebhookService`**: Manages all high-frequency external integrations (Salesforce & sheet).
 - **`RealtimeGateway`**: Manages live WebSocket rooms (`user:{userId}` and `management_dashboard`).
 
 ### 🔐 Webhook Security (Zero-Trust)
@@ -111,9 +111,9 @@ The system uses a **two-table session model** that separates static case identit
 | **Auth** | `POST` | `/auth/logout` | JWT | Logout |
 | **Cases** | `POST` | `/cases/webhook/salesforce` | HMAC | Ingest Case & Create Initial Assignment |
 | **Cases** | `POST` | `/cases/webhook/salesforce/close` | HMAC | Close all OPEN assignments |
-| **Cases** | `POST` | `/cases/webhook/gas-form` | HMAC | Update Case ETA/Session from GAS Form |
-| **Cases** | `POST` | `/cases/webhook/gas-validated` | HMAC | Receive validation details from GAS |
-| **Cases** | `POST` | `/cases/webhook/gas-evaluation` | HMAC | Receive quality & final check scores |
+| **Cases** | `POST` | `/cases/webhook/sheet-form` | HMAC | Update Case ETA/Session from sheet Form |
+| **Cases** | `POST` | `/cases/webhook/sheet-validated` | HMAC | Receive validation details from sheet |
+| **Cases** | `POST` | `/cases/webhook/sheet-evaluation` | HMAC | Receive quality & final check scores |
 | **Cases** | `POST` | `/cases/webhook/salesforce/heartbeat` | HMAC | Salesforce Heartbeat |
 | **Cases** | `GET` | `/cases/system/status` | JWT | System Connectivity Status |
 | **Cases** | `GET` | `/cases` | JWT | Get cases with dynamic filters |
@@ -139,15 +139,15 @@ The project includes a utility script in `scripts/security.ts` for generating se
 
 ## 🧪 Webhook Simulator (Mocking)
 
-You can simulate incoming webhooks from Salesforce and GAS to test the system's end-to-end flow.
+You can simulate incoming webhooks from Salesforce and sheet to test the system's end-to-end flow.
 
 | Action | Command |
 | :--- | :--- |
 | **Simulate SF Case Create** | `npm run mock sf-create 12345678 agent@test.com` |
 | **Simulate SF Case Close** | `npm run mock sf-close 12345678 agent@test.com` |
-| **Simulate GAS ETA Form** | `npm run mock gas-form 12345678 agent@test.com` |
-| **Simulate GAS Validation** | `npm run mock gas-validated 12345678 agent@test.com` |
-| **Simulate GAS Evaluation** | `npm run mock gas-evaluation 12345678 agent@test.com` |
+| **Simulate sheet ETA Form** | `npm run mock sheet-form 12345678 agent@test.com` |
+| **Simulate sheet Validation** | `npm run mock sheet-validated 12345678 agent@test.com` |
+| **Simulate sheet Evaluation** | `npm run mock sheet-evaluation 12345678 agent@test.com` |
 
 ---
 

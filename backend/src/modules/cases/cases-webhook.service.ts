@@ -4,8 +4,8 @@ import { PrismaService } from '../../database/prisma.service';
 import { AssignmentStatus } from '@prisma/client';
 import { SalesforceWebhookDto } from './dto/salesforce-webhook.dto';
 import { CloseCaseWebhookDto } from './dto/close-case-webhook.dto';
-import { GasValidatedWebhookDto } from './dto/gas-validated-webhook.dto';
-import { GasEvaluationWebhookDto } from './dto/gas-evaluation-webhook.dto';
+import { SheetValidatedWebhookDto } from './dto/sheet-validated-webhook.dto';
+import { SheetEvaluationWebhookDto } from './dto/sheet-evaluation-webhook.dto';
 import { SheetFormDto } from './dto/sheet-form.dto';
 import { CasesService } from './cases.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
@@ -118,12 +118,12 @@ export class CasesWebhookService {
       if (!caseRecord) throw new NotFoundException(`Case ${caseNumber} not found`);
 
       const user = await tx.user.findUnique({ where: { email: caseOwner } });
-      
+
       const openAssignments = await tx.assignment.findMany({
-        where: { 
-          caseId: caseRecord.id, 
-          ownerEmail: caseOwner, 
-          status: AssignmentStatus.OPEN 
+        where: {
+          caseId: caseRecord.id,
+          ownerEmail: caseOwner,
+          status: AssignmentStatus.OPEN
         },
       });
 
@@ -141,11 +141,11 @@ export class CasesWebhookService {
 
       for (const a of openAssignments) {
         await tx.caseLog.create({
-          data: { 
-            assignmentId: a.id, 
-            action: 'SALESFORCE_CASE_CLOSED', 
-            userId: user?.id, 
-            changes: { oldStatus: a.status, newStatus: 'CLOSED' } 
+          data: {
+            assignmentId: a.id,
+            action: 'SALESFORCE_CASE_CLOSED',
+            userId: user?.id,
+            changes: { oldStatus: a.status, newStatus: 'CLOSED' }
           },
         });
       }
@@ -163,7 +163,7 @@ export class CasesWebhookService {
     return { count: result.count };
   }
 
-  async handleGasValidatedWebhook(payload: GasValidatedWebhookDto) {
+  async handleSheetValidatedWebhook(payload: SheetValidatedWebhookDto) {
     const { caseNumber, caseOwner, formType, formSubmitTime, items, choices, description, images, tmpAreas, formValidation, isOnTime } = payload;
     if (!caseNumber || !caseOwner) throw new BadRequestException('caseNumber and caseOwner are required');
 
@@ -183,10 +183,10 @@ export class CasesWebhookService {
       }
 
       const updateData: any = { items, choices, description, images, tmpAreas, formValidation };
-      
+
       // Update ETA if provided
       if (payload.eta !== undefined) {
-          updateData.etaMinutes = payload.eta;
+        updateData.etaMinutes = payload.eta;
       }
 
       // Calculate isOnTime on server based on startTime (Business Rule: Start Time = startTime)
@@ -195,11 +195,11 @@ export class CasesWebhookService {
       const submitTime = formSubmitTime ? new Date(formSubmitTime) : assignment.formSubmitTime;
 
       if (baseStartTime && currentEta && submitTime) {
-          const limit = new Date(baseStartTime.getTime() + currentEta * 60000);
-          updateData.isOnTime = submitTime <= limit;
+        const limit = new Date(baseStartTime.getTime() + currentEta * 60000);
+        updateData.isOnTime = submitTime <= limit;
       } else {
-          // Fallback if we can't calculate but it was provided in payload
-          if (isOnTime !== undefined) updateData.isOnTime = isOnTime;
+        // Fallback if we can't calculate but it was provided in payload
+        if (isOnTime !== undefined) updateData.isOnTime = isOnTime;
       }
 
 
@@ -211,25 +211,25 @@ export class CasesWebhookService {
       });
 
       await tx.caseLog.create({
-        data: { assignmentId: assignment.id, action: 'GAS_EVALUATION_ADDED', userId: user?.id, changes: updateData as any }
+        data: { assignmentId: assignment.id, action: 'SHEET_EVALUATION_ADDED', userId: user?.id, changes: updateData as any }
       });
 
 
       return { updatedAssignment, caseId: caseRecord.id, userId: user?.id, updateData };
     });
 
-    this.casesService.broadcastCaseEvent('case_updated', { 
-      ...result.updateData, 
-      eta: result.updatedAssignment.etaMinutes, 
-      assignmentId: result.updatedAssignment.id, 
-      caseId: result.caseId 
+    this.casesService.broadcastCaseEvent('case_updated', {
+      ...result.updateData,
+      eta: result.updatedAssignment.etaMinutes,
+      assignmentId: result.updatedAssignment.id,
+      caseId: result.caseId
     }, result.userId);
     this.casesService.broadcastLeaderboardUpdate(result.updatedAssignment);
 
     return result.updatedAssignment;
   }
 
-  async handleGasEvaluationWebhook(payload: GasEvaluationWebhookDto) {
+  async handleSheetEvaluationWebhook(payload: SheetEvaluationWebhookDto) {
     const { caseNumber, caseOwner, qualityScore, finalCheckScore, evaluationTime } = payload;
     if (!caseNumber || !caseOwner) throw new BadRequestException('caseNumber and caseOwner are required');
 
@@ -256,16 +256,16 @@ export class CasesWebhookService {
       });
 
       await tx.caseLog.create({
-        data: { assignmentId: assignment.id, action: 'GAS_EVALUATION_ADDED', userId: user?.id, changes: { evaluationTime, ...updateData } as any }
+        data: { assignmentId: assignment.id, action: 'SHEET_EVALUATION_ADDED', userId: user?.id, changes: { evaluationTime, ...updateData } as any }
       });
 
       return { updatedAssignment, caseId: caseRecord.id, userId: user?.id, updateData };
     });
 
-    this.casesService.broadcastCaseEvent('case_updated', { 
-      ...result.updateData, 
-      assignmentId: result.updatedAssignment.id, 
-      caseId: result.caseId 
+    this.casesService.broadcastCaseEvent('case_updated', {
+      ...result.updateData,
+      assignmentId: result.updatedAssignment.id,
+      caseId: result.caseId
     }, result.userId);
     this.casesService.broadcastLeaderboardUpdate(result.updatedAssignment);
 
@@ -285,10 +285,10 @@ export class CasesWebhookService {
   }
 
   async handleSheetOpenCases(payload: SheetFormDto) {
-    const { 
-        caseNumber, caseOwner, formType, formSubmitTime, 
-        items, choices, description, images, tmpAreas, 
-        formValidation, eta 
+    const {
+      caseNumber, caseOwner, formType, formSubmitTime,
+      items, choices, description, images, tmpAreas,
+      formValidation, eta
     } = payload;
 
     if (!caseNumber || !caseOwner) throw new BadRequestException('caseNumber and caseOwner are required');
@@ -323,8 +323,8 @@ export class CasesWebhookService {
         const submitTime = commonData.formSubmitTime;
 
         if (baseStartTime && currentEta) {
-            const limit = new Date(baseStartTime.getTime() + currentEta * 60000);
-            commonData.isOnTime = submitTime <= limit;
+          const limit = new Date(baseStartTime.getTime() + currentEta * 60000);
+          commonData.isOnTime = submitTime <= limit;
         }
 
         if (eta === undefined) delete commonData.etaMinutes;
@@ -360,7 +360,7 @@ export class CasesWebhookService {
       eta: result.assignment.etaMinutes, formType: result.assignment.formType,
       updatedAt: new Date(), items, choices, description, tmpAreas
     }, result.assignment.userId ?? undefined);
-    
+
     this.casesService.broadcastLeaderboardUpdate(result.assignment);
 
     return result.assignment;

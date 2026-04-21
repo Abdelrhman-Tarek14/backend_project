@@ -38,6 +38,7 @@ const formatCaseData = (item: any): FormattedCase => {
         assignedBy: assignment.assignedBy || null,
         tl_name: assignment.user?.leader?.name || 'Not Found',
         timestamp: assignment.startTime || item.createdAt || null,
+        queueRecord: assignment.queueRecord || null, // Flattened for easy access and sorting
     };
 };
 

@@ -94,7 +94,7 @@ async function bootstrap() {
       .addBearerAuth()
       .addApiKey({ type: 'apiKey', name: 'x-csrf-token', in: 'header' }, 'CsrfToken')
       .addApiKey({ type: 'apiKey', name: 'x-sf-api-key', in: 'header' }, 'SfApiKey')
-      .addApiKey({ type: 'apiKey', name: 'x-gas-api-key', in: 'header' }, 'GasApiKey')
+      .addApiKey({ type: 'apiKey', name: 'x-sheet-api-key', in: 'header' }, 'sheetApiKey')
       .build();
 
     const document = SwaggerModule.createDocument(app, config);

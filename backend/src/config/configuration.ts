@@ -18,10 +18,10 @@ export default () => ({
       callbackUrl: process.env.GOOGLE_CALLBACK_URL,
     },
     enableLocalAuth: process.env.ENABLE_LOCAL_AUTH === 'true',
-    csrfSecret: process.env.CSRF_SECRET || 'default-csrf-secret-change-me',
+    csrfSecret: process.env.CSRF_SECRET,
   },
   integrations: {
-    gasWebhookSecret: process.env.GAS_WEBHOOK_SECRET,
+    sheetWebhookSecret: process.env.SHEET_WEBHOOK_SECRET,
     salesforceWebhookSecret: process.env.SALESFORCE_WEBHOOK_SECRET,
     allowedWebhookIps: process.env.ALLOWED_WEBHOOK_IPS?.split(',') || [],
   },

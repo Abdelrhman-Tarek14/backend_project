@@ -42,7 +42,7 @@ socket.on('event_name', (payload) => { ... })
 | Event | Trigger | Payload |
 | :--- | :--- | :--- |
 | \`case_assigned\` | New assignment distributed to agent | \`{ caseId, assignmentId, status, caseNumber }\` |
-| \`eta_updated\` | ETA update received from GAS Form | \`{ assignmentId, etaMinutes, updatedAt }\` |
+| \`eta_updated\` | ETA update received from sheet Form | \`{ assignmentId, etaMinutes, updatedAt }\` |
 | \`case_closed\` | Case resolved via Salesforce webhook | \`{ caseId, caseNumber, closedCount }\` |
 | \`case_updated\` | Manual admin data correction | \`{ caseId, assignmentId, ...changes }\` |
 | \`user_status_changed\` | A user connects or disconnects | \`{ userId, isOnline: boolean }\` |

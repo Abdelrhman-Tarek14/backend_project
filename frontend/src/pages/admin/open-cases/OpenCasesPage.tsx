@@ -20,6 +20,7 @@ import { OpenCasesHeader } from './components/OpenCasesHeader';
 import { OpenCasesStats } from './components/OpenCasesStats';
 import { OpenCasesGrid } from './components/OpenCasesGrid';
 import { OpenCasesGrouped } from './components/OpenCasesGrouped';
+import { OpenCasesAgentGrouped } from './components/OpenCasesAgentGrouped';
 import { OpenCasesOverlay } from './components/OpenCasesOverlay';
 
 // State & Types
@@ -125,9 +126,10 @@ const OpenCasesPage: React.FC = () => {
         dispatch({ type: 'SET_ACTIVE_ID', payload: null });
     };
 
-    const { caseNumberCounts, agentCaseCounts } = useMemo(() => {
+    const { caseNumberCounts, agentCaseCounts, agentEmailCounts } = useMemo(() => {
         const numCounts: Record<string, number> = {};
         const agentCounts: Record<string, number> = {};
+        const emailCounts: Record<string, number> = {};
 
         cases.forEach(c => {
             if (c.case_number) {
@@ -138,8 +140,11 @@ const OpenCasesPage: React.FC = () => {
                 const owner = c.owner_name.trim();
                 agentCounts[owner] = (agentCounts[owner] || 0) + 1;
             }
+            // Use email as the reliable unique key for counting
+            const emailKey = c.ownerEmail ? c.ownerEmail.trim().toLowerCase() : (c.owner_name?.trim() || '__unknown__');
+            emailCounts[emailKey] = (emailCounts[emailKey] || 0) + 1;
         });
-        return { caseNumberCounts: numCounts, agentCaseCounts: agentCounts };
+        return { caseNumberCounts: numCounts, agentCaseCounts: agentCounts, agentEmailCounts: emailCounts };
     }, [cases]);
 
     useEffect(() => {
@@ -198,17 +203,26 @@ const OpenCasesPage: React.FC = () => {
             const hasEta = c.eta && c.eta.toString().trim() !== '' && Number(c.eta) > 0;
             const isSharedCase = c.case_number && caseNumberCounts[c.case_number.toString().trim()] > 1 || (c.case_type && c.case_type.includes('Assigned by SME'));
 
+            // Queue detection: check name OR email for 'queue'
+            const ownerNameLower = (c.owner_name || '').toLowerCase();
+            const ownerEmailLower = (c.ownerEmail || '').toLowerCase();
+            const isQueueCase = ownerNameLower.includes('queue') || ownerEmailLower.includes('queue');
+
             if (filterTab === 'exceeded') return info.isExceeded && hasEta;
             if (filterTab === 'near-exceeded') return !info.isExceeded && info.progress >= 75 && hasEta;
-            if (filterTab === 'waiting-eta') return !hasEta && !(c.owner_name?.toLowerCase().includes('queue'));
+            if (filterTab === 'waiting-eta') return !hasEta && !isQueueCase;
             if (filterTab === 'shared-cases') return isSharedCase;
             if (filterTab === 'overloaded-agents') {
-                const owner = c.owner_name ? c.owner_name.trim() : '';
-                return (owner && agentCaseCounts[owner] > 1) || owner.toLowerCase().includes('queue');
+                // Queue cases always included
+                if (isQueueCase) return true;
+                // Agents with more than 1 case (identified by email)
+                const emailKey = c.ownerEmail ? c.ownerEmail.trim().toLowerCase() : null;
+                if (emailKey && agentEmailCounts[emailKey] > 1) return true;
+                return false;
             }
             return true;
         });
-    }, [cases, filterTab, agentCaseCounts, caseNumberCounts, tick]);
+    }, [cases, filterTab, agentCaseCounts, agentEmailCounts, caseNumberCounts, tick]);
 
     const filteredCases = useMemo(() => {
         if (!searchTerm) return tabFilteredCases;
@@ -240,14 +254,23 @@ const OpenCasesPage: React.FC = () => {
                 const info = getCaseStatusInfo(c);
                 return !info.isExceeded && info.progress >= 75 && c.eta && Number(c.eta) > 0;
             }).length,
-            waitingEta: cases.filter(c => (!c.eta || Number(c.eta) <= 0) && !(c.owner_name?.toLowerCase().includes('queue'))).length,
+            waitingEta: cases.filter(c => {
+                const ownerNameLower = (c.owner_name || '').toLowerCase();
+                const ownerEmailLower = (c.ownerEmail || '').toLowerCase();
+                const isQueueCase = ownerNameLower.includes('queue') || ownerEmailLower.includes('queue');
+                return (!c.eta || Number(c.eta) <= 0) && !isQueueCase;
+            }).length,
             sharedCases: sharedCount,
             overloadedAgents: cases.filter(c => {
-                const owner = c.owner_name ? c.owner_name.trim() : '';
-                return (owner && agentCaseCounts[owner] > 1) || owner.toLowerCase().includes('queue');
+                const ownerNameLower = (c.owner_name || '').toLowerCase();
+                const ownerEmailLower = (c.ownerEmail || '').toLowerCase();
+                const isQueueCase = ownerNameLower.includes('queue') || ownerEmailLower.includes('queue');
+                if (isQueueCase) return true;
+                const emailKey = c.ownerEmail ? c.ownerEmail.trim().toLowerCase() : null;
+                return emailKey ? agentEmailCounts[emailKey] > 1 : false;
             }).length
         };
-    }, [cases, caseNumberCounts, agentCaseCounts, tick]);
+    }, [cases, caseNumberCounts, agentCaseCounts, agentEmailCounts, tick]);
 
     const groupedSharedCases = useMemo(() => {
         if (filterTab !== 'shared-cases') return [];
@@ -258,6 +281,52 @@ const OpenCasesPage: React.FC = () => {
             groups[num].push(c);
         });
         return Object.entries(groups).sort((a, b) => b[1].length - a[1].length) as [string, OpenCase[]][];
+    }, [filteredCases, filterTab]);
+
+    // Group Overloaded Agents: separate queue cases and agents with multiple cases by agent name
+    const groupedOverloadedAgents = useMemo(() => {
+        if (filterTab !== 'overloaded-agents') return [];
+
+        const queueGroups: Record<string, OpenCase[]> = {};
+        const agentGroups: Record<string, OpenCase[]> = {}; // keyed by email
+        const agentLabelMap: Record<string, string> = {};   // email -> display name
+
+        filteredCases.forEach(c => {
+            const ownerNameLower = (c.owner_name || '').toLowerCase();
+            const ownerEmailLower = (c.ownerEmail || '').toLowerCase();
+            const isQueueCase = ownerNameLower.includes('queue') || ownerEmailLower.includes('queue');
+
+            if (isQueueCase) {
+                // Use the owner name or email as the queue group key
+                const queueKey = c.owner_name && c.owner_name !== 'Not Found'
+                    ? c.owner_name.trim()
+                    : (c.ownerEmail || 'Queue');
+                if (!queueGroups[queueKey]) queueGroups[queueKey] = [];
+                queueGroups[queueKey].push(c);
+            } else {
+                // Use email as reliable key, display name as label
+                const emailKey = c.ownerEmail ? c.ownerEmail.trim().toLowerCase() : `__name_${c.owner_name || 'unknown'}__`;
+                const displayLabel = c.owner_name && c.owner_name !== 'Not Found'
+                    ? c.owner_name.trim()
+                    : (c.ownerEmail || 'Unknown Agent');
+
+                if (!agentGroups[emailKey]) agentGroups[emailKey] = [];
+                agentGroups[emailKey].push(c);
+                agentLabelMap[emailKey] = displayLabel;
+            }
+        });
+
+        // Queue groups first, then agents sorted by case count desc
+        const queueEntries: [string, OpenCase[], boolean][] = Object.entries(queueGroups)
+            .sort((a, b) => b[1].length - a[1].length)
+            .map(([name, cases]) => [name, cases, true]);
+
+        const agentEntries: [string, OpenCase[], boolean][] = Object.entries(agentGroups)
+            .filter(([, cases]) => cases.length > 1)
+            .sort((a, b) => b[1].length - a[1].length)
+            .map(([emailKey, cases]) => [agentLabelMap[emailKey] || emailKey, cases, false]);
+
+        return [...queueEntries, ...agentEntries] as [string, OpenCase[], boolean][];
     }, [filteredCases, filterTab]);
 
     const Descriptions: Record<string, string> = {
@@ -308,6 +377,8 @@ const OpenCasesPage: React.FC = () => {
 
                 {filterTab === 'shared-cases' ? (
                     <OpenCasesGrouped groupedSharedCases={groupedSharedCases} />
+                ) : filterTab === 'overloaded-agents' ? (
+                    <OpenCasesAgentGrouped groupedAgentCases={groupedOverloadedAgents} />
                 ) : (
                     <OpenCasesGrid
                         cases={filteredCases}

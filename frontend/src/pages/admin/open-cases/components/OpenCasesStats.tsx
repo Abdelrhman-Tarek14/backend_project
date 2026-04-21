@@ -26,22 +26,42 @@ export const OpenCasesStats: React.FC<OpenCasesStatsProps> = ({
     return (
         <div className={styles.filterTabs}>
             <button className={`${styles.tabBtn} ${filterTab === 'all' ? styles.active : ''}`} onClick={() => onTabChange('all')}>
-                All <span className={styles.tabCount}>{counts.all}</span>
+                All <span className={`${styles.tabCount} ${styles.countAll}`}>{counts.all}</span>
             </button>
-            <button className={`${styles.tabBtn} ${styles.exceededTab} ${filterTab === 'exceeded' ? styles.active : ''}`} onClick={() => onTabChange('exceeded')}>
-                Exceeded <span className={`${styles.tabCount} ${counts.exceeded > 0 ? styles.pulse : ''}`}>{counts.exceeded}</span>
+
+            <button
+                className={`${styles.tabBtn} ${filterTab === 'exceeded' ? styles.active : ''}`}
+                onClick={() => onTabChange('exceeded')}
+            >
+                Exceeded <span className={`${styles.tabCount} ${filterTab !== 'exceeded' && counts.exceeded > 0 ? styles.countExceeded : ''}`}>{counts.exceeded}</span>
             </button>
-            <button className={`${styles.tabBtn} ${styles.nearExceededTab} ${filterTab === 'near-exceeded' ? styles.active : ''}`} onClick={() => onTabChange('near-exceeded')}>
-                Near Exceeded <span className={`${styles.tabCount} ${counts.nearExceeded > 0 ? styles.pulse : ''}`}>{counts.nearExceeded}</span>
+
+            <button
+                className={`${styles.tabBtn} ${filterTab === 'near-exceeded' ? styles.active : ''}`}
+                onClick={() => onTabChange('near-exceeded')}
+            >
+                Near Exceeded <span className={`${styles.tabCount} ${filterTab !== 'near-exceeded' && counts.nearExceeded > 0 ? styles.countNear : ''}`}>{counts.nearExceeded}</span>
             </button>
-            <button className={`${styles.tabBtn} ${filterTab === 'waiting-eta' ? styles.active : ''}`} onClick={() => onTabChange('waiting-eta')}>
-                Waiting for Form <span className={`${styles.tabCount} ${counts.waitingEta > 0 ? styles.pulse : ''}`}>{counts.waitingEta}</span>
+
+            <button
+                className={`${styles.tabBtn} ${filterTab === 'waiting-eta' ? styles.active : ''}`}
+                onClick={() => onTabChange('waiting-eta')}
+            >
+                Waiting for Form <span className={`${styles.tabCount} ${filterTab !== 'waiting-eta' && counts.waitingEta > 0 ? styles.countWaiting : ''}`}>{counts.waitingEta}</span>
             </button>
-            <button className={`${styles.tabBtn} ${filterTab === 'shared-cases' ? styles.active : ''}`} onClick={() => onTabChange('shared-cases')}>
-                Shared Cases <span className={`${styles.tabCount} ${counts.sharedCases > 0 ? styles.pulse : ''}`}>{counts.sharedCases}</span>
+
+            <button
+                className={`${styles.tabBtn} ${filterTab === 'shared-cases' ? styles.active : ''}`}
+                onClick={() => onTabChange('shared-cases')}
+            >
+                Shared Cases <span className={`${styles.tabCount} ${filterTab !== 'shared-cases' && counts.sharedCases > 0 ? styles.countShared : ''}`}>{counts.sharedCases}</span>
             </button>
-            <button className={`${styles.tabBtn} ${filterTab === 'overloaded-agents' ? styles.active : ''}`} onClick={() => onTabChange('overloaded-agents')}>
-                Queue <span className={`${styles.tabCount} ${counts.overloadedAgents > 0 ? styles.pulse : ''}`}>{counts.overloadedAgents}</span>
+
+            <button
+                className={`${styles.tabBtn} ${filterTab === 'overloaded-agents' ? styles.active : ''}`}
+                onClick={() => onTabChange('overloaded-agents')}
+            >
+                Queue <span className={`${styles.tabCount} ${filterTab !== 'overloaded-agents' && counts.overloadedAgents > 0 ? styles.countQueue : ''}`}>{counts.overloadedAgents}</span>
             </button>
 
             <div className={`${styles.connectionStatus} ${isSalesforceConnected ? styles.statusConnected : styles.statusDisconnected}`}>

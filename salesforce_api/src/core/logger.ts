@@ -32,11 +32,17 @@ export class Logger {
     this.minLevel = this.isProduction ? LogLevel.INFO : LogLevel.DEBUG;
   }
 
-  private log(level: LogLevel, message: string, metadata?: any) {
+  private log(level: LogLevel, message: string, ...args: any[]) {
     if (level < this.minLevel) return;
 
     const timestamp = new Date().toISOString();
     const levelName = LogLevelNames[level];
+
+    // Combine args into metadata object for JSON logging
+    let metadata: any = undefined;
+    if (args.length > 0) {
+      metadata = args.length === 1 ? args[0] : { args };
+    }
 
     if (this.isProduction) {
       // Structured Logging (JSON)
@@ -45,7 +51,7 @@ export class Logger {
         level: levelName,
         context: this.context,
         message,
-        ...(metadata && typeof metadata === 'object' ? metadata : { data: metadata }),
+        ...(metadata && typeof metadata === 'object' && !Array.isArray(metadata) ? metadata : { data: metadata }),
       }));
     } else {
       // Pretty Logging (Colors)
@@ -67,19 +73,19 @@ export class Logger {
     }
   }
 
-  debug(message: string, metadata?: any) {
-    this.log(LogLevel.DEBUG, message, metadata);
+  debug(message: string, ...args: any[]) {
+    this.log(LogLevel.DEBUG, message, ...args);
   }
 
-  info(message: string, metadata?: any) {
-    this.log(LogLevel.INFO, message, metadata);
+  info(message: string, ...args: any[]) {
+    this.log(LogLevel.INFO, message, ...args);
   }
 
-  warn(message: string, metadata?: any) {
-    this.log(LogLevel.WARN, message, metadata);
+  warn(message: string, ...args: any[]) {
+    this.log(LogLevel.WARN, message, ...args);
   }
 
-  error(message: string, metadata?: any) {
-    this.log(LogLevel.ERROR, message, metadata);
+  error(message: string, ...args: any[]) {
+    this.log(LogLevel.ERROR, message, ...args);
   }
 }

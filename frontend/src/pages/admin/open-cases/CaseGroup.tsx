@@ -13,7 +13,7 @@ export const CaseGroup: React.FC<CaseGroupProps> = ({ caseNumber, cases }) => {
     const agentCount = cases.length;
 
     return (
-        <div className={styles.caseGroup}>
+        <div className={`${styles.caseGroup} ${styles.sharedGroup}`}>
             <div className={styles.groupHeader}>
                 <div className={styles.groupInfo}>
                     <span className={styles.groupCaseNumber}>Case #{caseNumber}</span>

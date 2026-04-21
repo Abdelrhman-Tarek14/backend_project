@@ -1,19 +1,21 @@
 .searchWrapper {
     display: flex;
     align-items: center;
-    background: var(--color-bg-base, white);
-    border: 1px solid var(--color-border);
-    border-radius: 10px;
-    padding: 0.3rem 0.6rem;
-    width: 180px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 0.5rem 0.8rem;
+    width: 200px;
     margin-left: auto;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(4px);
 }
 
 .searchWrapper:focus-within {
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 2px rgba(255, 87, 34, 0.1);
+    background: rgba(255, 87, 34, 0.05);
+    box-shadow: 0 0 15px rgba(255, 87, 34, 0.2), inset 0 0 5px rgba(255, 87, 34, 0.1);
+    width: 240px;
 }
 
 .searchIcon {

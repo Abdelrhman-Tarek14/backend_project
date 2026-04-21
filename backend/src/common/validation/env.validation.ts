@@ -35,7 +35,7 @@ export const envValidationSchema = Joi.object({
   ALLOWED_GOOGLE_DOMAINS: Joi.string().optional(),
 
   // Webhooks
-  GAS_WEBHOOK_SECRET: Joi.string().required(),
+  SHEET_WEBHOOK_SECRET: Joi.string().required(),
   SALESFORCE_WEBHOOK_SECRET: Joi.string().required(),
   ALLOWED_WEBHOOK_IPS: Joi.string().required(),
 

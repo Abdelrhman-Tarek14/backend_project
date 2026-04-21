@@ -30,37 +30,35 @@ enum AssignmentStatus {
 // 1. Users Table
 // =======================
 model User {
-  id                 String       @id @default(uuid())
-  name               String
-  displayName        String?      
-  email              String       @unique
-  passwordHash       String?      
-  googleId           String?      @unique
-  pictureUrl         String? 
-  role               Role         @default(NEW_USER)
-  isActive           Boolean      @default(false)
-  
+  id           String  @id @default(uuid())
+  name         String
+  displayName  String?
+  email        String  @unique
+  passwordHash String?
+  googleId     String? @unique
+  pictureUrl   String?
+  role         Role    @default(NEW_USER)
+  isActive     Boolean @default(false)
 
-  hashedRefreshToken String?      @map("hashed_refresh_token")
-  isOnline           Boolean      @default(false)
+  hashedRefreshToken String?   @map("hashed_refresh_token")
+  isOnline           Boolean   @default(false)
   lastActive         DateTime?
 
   // -- User Preferences --
-  appearance         String       @default("light")
-  theme              String       @default("orange")
+  appearance String @default("light")
+  theme      String @default("orange")
 
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
-
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // -- Team Hierarchy (Self-Referencing) --
-  leaderId           String?
-  leader             User?        @relation("TeamHierarchy", fields: [leaderId], references: [id])
-  team               User[]       @relation("TeamHierarchy")
+  leaderId String?
+  leader   User?   @relation("TeamHierarchy", fields: [leaderId], references: [id])
+  team     User[]  @relation("TeamHierarchy")
 
-  assignments        Assignment[] @relation("UserAssignments")
-  userLogs           UserLog[]
-  caseLogs           CaseLog[]
+  assignments Assignment[] @relation("UserAssignments")
+  userLogs    UserLog[]
+  caseLogs    CaseLog[]
 
   @@index([role, isActive])
   @@index([leaderId])
@@ -70,21 +68,19 @@ model User {
 // 2. Cases Table (Static Identity)
 // =======================
 model Case {
-  id                String       @id @default(uuid())
-  caseNumber        String       @unique
-  
+  id         String @id @default(uuid())
+  caseNumber String @unique
+
   // -- Static Fields from Salesforce --
-  accountName       String?
-  country           String?      
-  
-  receiveCount      Int          @default(1)
-  lastClosedAt      DateTime?    
-  
-  createdAt         DateTime     @default(now())
+  accountName String?
+  country     String?
 
+  receiveCount Int       @default(1)
+  lastClosedAt DateTime?
 
+  createdAt DateTime @default(now())
 
-  assignments       Assignment[]
+  assignments Assignment[]
 
   @@index([createdAt])
 }
@@ -93,41 +89,40 @@ model Case {
 // 3. Assignments Table (Dynamic Session)
 // =======================
 model Assignment {
-  id           String           @id @default(uuid())
-  caseId       String
-  userId       String?
-  ownerEmail   String?
-  
+  id         String  @id @default(uuid())
+  caseId     String
+  userId     String?
+  ownerEmail String?
+
   // -- Dynamic Fields --
-  status       AssignmentStatus @default(OPEN)
-  caseType     String?          // from Salesforce (can change per session)
-  formType     String?          // from GAS (agent input)
-  
-  // -- GAS Validation Fields --
-  items        Int?
-  choices      Int?
-  description  Int?
-  images       Int?
-  tmpAreas     Int?
-  formValidation String?
-  isOnTime     Boolean?
-  formSubmitTime DateTime?
-  qualityScore Boolean?
+  status   AssignmentStatus @default(OPEN)
+  caseType String? // from Salesforce (can change per session)
+  formType String? // from sheet (agent input)
+
+  // -- sheet Validation Fields --
+  items           Int?
+  choices         Int?
+  description     Int?
+  images          Int?
+  tmpAreas        Int?
+  formValidation  String?
+  isOnTime        Boolean?
+  formSubmitTime  DateTime?
+  qualityScore    Boolean?
   finalCheckScore Boolean?
-  
-  etaMinutes   Int?             // ETA provided by GAS
-  
-  closedAt     DateTime?
-  startTime    DateTime?
-  
-  assignedBy   String?
 
-  case         Case             @relation(fields: [caseId], references: [id], onDelete: Cascade)
-  user         User?            @relation("UserAssignments", fields: [userId], references: [id])
-  caseLogs     CaseLog[]
+  etaMinutes Int? // ETA provided by sheet
 
+  closedAt  DateTime?
+  startTime DateTime?
 
-  queueRecord  QueueRecord?
+  assignedBy String?
+
+  case     Case      @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  user     User?     @relation("UserAssignments", fields: [userId], references: [id])
+  caseLogs CaseLog[]
+
+  queueRecord QueueRecord?
 
   @@index([userId, startTime])
   @@index([caseId])
@@ -138,13 +133,13 @@ model Assignment {
 // 4. Queue Records Table (Server-side Queue Tracker)
 // =======================
 model QueueRecord {
-  id           String     @id @default(uuid())
-  assignmentId String     @unique
+  id           String   @id @default(uuid())
+  assignmentId String   @unique
   position     Int
-  updatedAt    DateTime   @updatedAt
+  updatedAt    DateTime @updatedAt
 
-  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
-  
+  assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
   @@index([position])
 }
 
@@ -153,11 +148,11 @@ model QueueRecord {
 // =======================
 model IntegrationStatus {
   id             String   @id @default(uuid())
-  system         String   @unique  // e.g., "salesforce"
-  status         String            // e.g., "OK", "ERROR"
-  lastSyncStatus Int?              // Last HTTP status from POST /webhook/salesforce (e.g., 202, 401, 500)
+  system         String   @unique // e.g., "salesforce"
+  status         String // e.g., "OK", "ERROR"
+  lastSyncStatus Int? // Last HTTP status from POST /webhook/salesforce (e.g., 202, 401, 500)
   updatedAt      DateTime @updatedAt
-  
+
   @@index([system])
 }
 
@@ -165,16 +160,15 @@ model IntegrationStatus {
 // 6. Case Logs Table
 // =======================
 model CaseLog {
-  id           String     @id @default(uuid())
+  id           String   @id @default(uuid())
   assignmentId String
-  action       String        
+  action       String
   userId       String?
-  changes      Json?      
-  createdAt    DateTime   @default(now())
+  changes      Json?
+  createdAt    DateTime @default(now())
 
-
-  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
-  user         User?      @relation(fields: [userId], references: [id])
+  assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  user       User?      @relation(fields: [userId], references: [id])
 
   @@index([assignmentId, createdAt])
   @@index([userId, createdAt])
@@ -184,13 +178,13 @@ model CaseLog {
 // 7. User Logs Table
 // =======================
 model UserLog {
-  id           String     @id @default(uuid())
-  userId       String
-  state        String     // "LOGGED_IN", "LOGGED_OUT", "ONLINE", "OFFLINE"
-  createdAt    DateTime   @default(now())
+  id        String   @id @default(uuid())
+  userId    String
+  state     String // "LOGGED_IN", "LOGGED_OUT", "ONLINE", "OFFLINE"
+  createdAt DateTime @default(now())
 
   // Relations
-  user         User       @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
   @@index([userId, createdAt])
 }

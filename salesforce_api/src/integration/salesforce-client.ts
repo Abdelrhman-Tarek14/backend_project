@@ -6,9 +6,10 @@ import {
     COOKIE,
     X_SFDC_Page_Scope_Id,
     REPORT_ID,
-    ALLOWED_CASE_TYPES_RAW
+    ALLOWED_CASE_TYPES
 } from '../config/env.js';
 import { formatToTalabatEmail } from '../utils/formatters.js';
+import { Logger } from '../core/logger.js';
 
 interface SalesforceCase {
     caseNumber: string;
@@ -21,6 +22,7 @@ interface SalesforceCase {
 
 class SalesforceClient {
     private messageTemplate: any;
+    private logger = new Logger('SalesforceClient');
 
     constructor() {
         this.messageTemplate = {
@@ -53,7 +55,7 @@ class SalesforceClient {
                                 presentationOptions: { hasStackedSummaries: true },
                                 reportBooleanFilter: null,
                                 reportFilters: [
-                                    { column: "STATUS", filterType: "fieldValue", isRunPageEditable: true, operator: "equals", value: ALLOWED_CASE_TYPES_RAW },
+                                    { column: "STATUS", filterType: "fieldValue", isRunPageEditable: true, operator: "equals", value: ALLOWED_CASE_TYPES },
                                     { column: "SUBJECT", filterType: "fieldValue", isRunPageEditable: true, operator: "equals", value: "Menu Processing" },
                                     { column: "Case.Country__c", filterType: "fieldValue", isRunPageEditable: true, operator: "notEqual", value: "Iraq" },
                                     { column: "ACCOUNT.NAME", filterType: "fieldValue", isRunPageEditable: true, operator: "notEqual", value: "TEST LEAD,Production Test Restaurants - Test,test" },
@@ -95,7 +97,7 @@ class SalesforceClient {
         for (let attempt = 1; attempt <= retries; attempt++) {
             try {
                 if (attempt > 1) {
-                    console.log(`\n   🔄 [SalesforceClient] Retrying report fetch (Attempt ${attempt}/${retries})...`);
+                    this.logger.warn(`Retrying report fetch (Attempt ${attempt}/${retries})...`);
                     await new Promise(resolve => setTimeout(resolve, 3000 * attempt));
                 }
 
@@ -130,7 +132,7 @@ class SalesforceClient {
                 return this.parseReportData(responseData.actions[0].returnValue);
             } catch (err: any) {
                 const status = err.response?.status;
-                console.error(`   ❌ [SalesforceClient] Attempt ${attempt} failed: ${status || err.message}`);
+                this.logger.error(`❌ Attempt ${attempt} failed: ${status || err.message}`);
 
                 if (attempt === retries) {
                     throw err; // Re-throw on last attempt

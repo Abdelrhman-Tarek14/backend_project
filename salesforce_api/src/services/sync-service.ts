@@ -1,11 +1,16 @@
 import salesforceClient from '../integration/salesforce-client.js';
 import backendClient from '../integration/backend-client.js';
 import stateManager from '../core/state-manager.js';
-import { POLL_INTERVAL, HEARTBEAT_INTERVAL, ALLOWED_CASE_TYPES } from '../config/env.js';
+import { POLL_INTERVAL, HEARTBEAT_INTERVAL, PARSED_ALLOWED_CASE_TYPES } from '../config/env.js';
+import { Logger } from '../core/logger.js';
 
 class SyncService {
     private isSyncing: boolean;
     private sfSessionStatus: string | null;
+    private logger = new Logger('SyncService');
+    private syncInterval: NodeJS.Timeout | null = null;
+    private heartbeatInterval: NodeJS.Timeout | null = null;
+    public isStopping: boolean = false;
 
     constructor() {
         this.isSyncing = false;
@@ -14,36 +19,45 @@ class SyncService {
     }
 
     public async start(): Promise<void> {
-        console.log(`[SyncService] Started. Polling every ${POLL_INTERVAL / 1000}s. Heartbeat every ${HEARTBEAT_INTERVAL / 1000}s.`);
-        
+        this.logger.info(`Started. Polling every ${POLL_INTERVAL / 1000}s. Heartbeat every ${HEARTBEAT_INTERVAL / 1000}s.`);
+
         // Initial sync
         await this.sync();
         await this.sendHeartbeat();
 
         // Intervals
-        setInterval(() => this.sync(), POLL_INTERVAL);
-        setInterval(() => this.sendHeartbeat(), HEARTBEAT_INTERVAL);
+        this.syncInterval = setInterval(() => this.sync(), POLL_INTERVAL);
+        this.heartbeatInterval = setInterval(() => this.sendHeartbeat(), HEARTBEAT_INTERVAL);
     }
 
+    public stop(): void {
+        this.logger.info("Stopping intervals and initiating graceful shutdown...");
+        this.isStopping = true;
+        if (this.syncInterval) clearInterval(this.syncInterval);
+        if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
+    }
+
+
     public async sync(): Promise<void> {
-        if (this.isSyncing) return;
+        if (this.isSyncing || this.isStopping) return;
         this.isSyncing = true;
 
         try {
-            console.log(`\n[${new Date().toLocaleTimeString()}] 🔄 Syncing with Salesforce...`);
-            
+            this.logger.info('🔄 Syncing with Salesforce...');
+
             const allOpenCases = await salesforceClient.fetchOpenCasesReport();
 
             // --- SF Session is healthy ---
             await this.reportSfSession('OK');
-            
+
             // Filter only the required types as defined in the config/env
-            const currentOpenCases = allOpenCases.filter(c => 
-                ALLOWED_CASE_TYPES.includes(c.caseType)
+            const currentOpenCases = allOpenCases.filter(c =>
+                PARSED_ALLOWED_CASE_TYPES.includes(c.caseType)
             );
 
+
             const previousState = stateManager.getCases();
-            
+
             const currentMap: Record<string, any> = {};
             currentOpenCases.forEach(c => currentMap[c.caseNumber] = c);
 
@@ -71,54 +85,51 @@ class SyncService {
 
             // 2. Execute Actions: CLOSE FIRST (Cleanup phase)
             if (toClose.length > 0) {
-                console.log(`📉 Found ${toClose.length} cases to close or reset.`);
+                this.logger.info(`📉 Found ${toClose.length} cases to close or reset.`);
                 for (const { item, reason } of toClose) {
                     const success = await backendClient.closeCase(item);
                     if (success) {
                         if (reason === 'GONE') stateManager.removeCase(item.caseNumber);
-                        console.log(`   ✅ [CLOSE:${reason}] Case ${item.caseNumber} closed.`);
+                        this.logger.info(`✅ [CLOSE:${reason}] Case ${item.caseNumber} closed.`);
                     } else {
-                        console.error(`   ⚠️ [CLOSE:${reason}] Case ${item.caseNumber} failed to close.`);
+                        this.logger.error(`⚠️ [CLOSE:${reason}] Case ${item.caseNumber} failed to close.`);
                     }
                 }
             }
 
             // 3. Execute Actions: SYNC SECOND (Creation/Update phase)
             if (toSync.length > 0) {
-                console.log(`🚀 Found ${toSync.length} cases to sync.`);
+                this.logger.info(`🚀 Found ${toSync.length} cases to sync.`);
                 for (const { item, reason } of toSync) {
                     const success = await backendClient.syncCase(item);
                     if (success) {
                         stateManager.updateCase(item.caseNumber, item);
-                        console.log(`   ✅ [SYNC:${reason}] Case ${item.caseNumber} synced.`);
+                        this.logger.info(`✅ [SYNC:${reason}] Case ${item.caseNumber} synced.`);
                     } else {
-                        console.error(`   ⚠️ [SYNC:${reason}] Case ${item.caseNumber} failed to sync.`);
+                        this.logger.error(`⚠️ [SYNC:${reason}] Case ${item.caseNumber} failed to sync.`);
                     }
                 }
             }
 
             if (toSync.length === 0 && toClose.length === 0) {
-                console.log('✅ No changes detected in open cases.');
+                this.logger.info('✅ No changes detected in open cases.');
             }
 
             // Update only the last sync timestamp
             stateManager.updateLastSync();
-            
-            console.log(`✨ Sync completed. Total Open in Salesforce: ${currentOpenCases.length}`);
+
+            this.logger.info(`✨ Sync completed. Total Open in Salesforce: ${currentOpenCases.length}`);
 
         } catch (err: any) {
-            console.error('[SyncService] Sync failed:', err.message);
+            this.logger.error(`Sync failed: ${err.message}`);
             // --- SF Session is down (expired or unreachable) ---
             await this.reportSfSession('SESSION_EXPIRED');
+
         } finally {
             this.isSyncing = false;
         }
     }
 
-    /**
-     * Reports the Salesforce session status to the backend via heartbeat.
-     * Only sends a heartbeat when the status CHANGES (OK -> SESSION_EXPIRED or vice versa).
-     */
     private async reportSfSession(newStatus: string): Promise<void> {
         if (this.sfSessionStatus === newStatus) return; // No change, skip
 
@@ -126,9 +137,9 @@ class SyncService {
         this.sfSessionStatus = newStatus;
 
         if (newStatus === 'OK') {
-            console.log(`💚 [SfSession] Salesforce session is ${previousStatus === null ? 'confirmed OK' : 'RESTORED'}. Notifying backend.`);
+            this.logger.info(`💚 [SfSession] Salesforce session is ${previousStatus === null ? 'confirmed OK' : 'RESTORED'}. Notifying backend.`);
         } else {
-            console.warn(`🔴 [SfSession] Salesforce session STATUS CHANGED: ${previousStatus ?? 'unknown'} → ${newStatus}. Notifying backend.`);
+            this.logger.warn(`🔴 [SfSession] Salesforce session STATUS CHANGED: ${previousStatus ?? 'unknown'} → ${newStatus}. Notifying backend.`);
         }
 
         await backendClient.sendHeartbeat(newStatus);
@@ -138,14 +149,20 @@ class SyncService {
         try {
             const success = await backendClient.sendHeartbeat(this.sfSessionStatus ?? 'OK');
             if (success) {
-                console.log(`💓 [${new Date().toLocaleTimeString()}] Heartbeat sent to backend.`);
+                this.logger.info(`💓 Heartbeat sent to backend.`);
             } else {
-                console.error(`💔 [${new Date().toLocaleTimeString()}] Heartbeat failed after retries. Backend might be unreachable.`);
+                this.logger.error(`💔 Heartbeat failed after retries. Backend might be unreachable.`);
             }
         } catch (err: any) {
-            console.error('[SyncService] Heartbeat error:', err.message);
+            this.logger.error(`Heartbeat error: ${err.message}`);
         }
     }
+
+    // Add explicitly returning isSyncing so gracefully shutdown can wait
+    public get IsSyncing(): boolean {
+        return this.isSyncing;
+    }
+
 
     private hasChanged(oldCase: any, newCase: any): boolean {
         // Compare key fields that determine if it's a "significant" change

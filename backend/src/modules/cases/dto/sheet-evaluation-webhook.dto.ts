@@ -1,7 +1,7 @@
 import { IsString, IsNotEmpty, IsEmail, IsOptional, IsBoolean, IsISO8601 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export class GasEvaluationWebhookDto {
+export class SheetEvaluationWebhookDto {
   @ApiProperty({ example: '12345678', description: 'Unique case number' })
   @IsString()
   @IsNotEmpty()

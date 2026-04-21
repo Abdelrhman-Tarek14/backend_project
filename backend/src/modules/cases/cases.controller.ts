@@ -12,8 +12,8 @@ import { GetCasesDto } from './dto/get-cases.dto';
 import { UpdateAssignmentDto } from './dto/update-assignment.dto';
 import { SalesforceWebhookDto } from './dto/salesforce-webhook.dto';
 import { CloseCaseWebhookDto } from './dto/close-case-webhook.dto';
-import { GasValidatedWebhookDto } from './dto/gas-validated-webhook.dto';
-import { GasEvaluationWebhookDto } from './dto/gas-evaluation-webhook.dto';
+import { SheetValidatedWebhookDto } from './dto/sheet-validated-webhook.dto';
+import { SheetEvaluationWebhookDto } from './dto/sheet-evaluation-webhook.dto';
 import { SheetFormDto } from './dto/sheet-form.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiHeader, ApiSecurity } from '@nestjs/swagger';
 
@@ -115,29 +115,29 @@ export class CasesController {
   }
 
 
-  @Post('webhook/gas-validated')
+  @Post('webhook/sheet-validated')
   @Throttle({ webhook: { limit: 200, ttl: 60000 } })
   @UseGuards(WebhookSecurityGuard)
   @HttpCode(HttpStatus.ACCEPTED)
-  @ApiSecurity('GasApiKey')
+  @ApiSecurity('SheetApiKey')
   @ApiHeader({ name: 'x-webhook-signature', description: 'HMAC SHA256 Signature', required: true })
-  @ApiOperation({ summary: 'GAS: Form Validation (Metrics)' })
+  @ApiOperation({ summary: 'Sheet: Form Validation (Metrics)' })
   @ApiResponse({ status: 202, description: 'Webhook received and processed successfully.' })
-  async handleGasValidatedWebhook(@Body() payload: GasValidatedWebhookDto) {
-    await this.casesWebhookService.handleGasValidatedWebhook(payload);
+  async handleSheetValidatedWebhook(@Body() payload: SheetValidatedWebhookDto) {
+    await this.casesWebhookService.handleSheetValidatedWebhook(payload);
     return { status: 'processed', message: 'Webhook received and processed synchronously' };
   }
 
-  @Post('webhook/gas-evaluation')
+  @Post('webhook/sheet-evaluation')
   @Throttle({ webhook: { limit: 200, ttl: 60000 } })
   @UseGuards(WebhookSecurityGuard)
   @HttpCode(HttpStatus.ACCEPTED)
-  @ApiSecurity('GasApiKey')
+  @ApiSecurity('SheetApiKey')
   @ApiHeader({ name: 'x-webhook-signature', description: 'HMAC SHA256 Signature', required: true })
-  @ApiOperation({ summary: 'GAS: Evaluation Submission' })
+  @ApiOperation({ summary: 'Sheet: Evaluation Submission' })
   @ApiResponse({ status: 202, description: 'Webhook received and processed successfully.' })
-  async handleGasEvaluationWebhook(@Body() payload: GasEvaluationWebhookDto) {
-    await this.casesWebhookService.handleGasEvaluationWebhook(payload);
+  async handleSheetEvaluationWebhook(@Body() payload: SheetEvaluationWebhookDto) {
+    await this.casesWebhookService.handleSheetEvaluationWebhook(payload);
     return { status: 'processed', message: 'Webhook received and processed synchronously' };
   }
 
@@ -146,7 +146,7 @@ export class CasesController {
   @Throttle({ webhook: { limit: 200, ttl: 60000 } })
   @UseGuards(WebhookSecurityGuard)
   @HttpCode(HttpStatus.ACCEPTED)
-  @ApiSecurity('GasApiKey')
+  @ApiSecurity('SheetApiKey')
   @ApiHeader({ name: 'x-webhook-signature', description: 'HMAC SHA256 Signature', required: true })
   @ApiOperation({
     summary: 'Sheet Poller: Unified Open-Case Form Submission',

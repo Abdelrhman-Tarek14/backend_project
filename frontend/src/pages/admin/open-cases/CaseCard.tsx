@@ -124,7 +124,9 @@ export const CaseCard: FC<CaseCardProps> = React.memo(({ data, isOpen, dragHandl
         }
     };
 
-    const isOwnerQueue = data.owner_name?.toLowerCase().includes('queue');
+    const ownerNameLower = (data.owner_name || '').toLowerCase();
+    const ownerEmailLower = (data.ownerEmail || '').toLowerCase();
+    const isOwnerQueue = ownerNameLower.includes('queue') || ownerEmailLower.includes('queue');
     const isBacklog = !!isOwnerQueue;
     const effectiveIsWaitingEta = isWaitingEta && !isOwnerQueue;
 
@@ -135,7 +137,7 @@ export const CaseCard: FC<CaseCardProps> = React.memo(({ data, isOpen, dragHandl
     return (
         <div className={styles.card}>
             <div className={styles.cardHeader}>
-                <div style={{ display: 'flex', alignItems: 'center'}}>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
                     <div className={styles.caseNumber}>{data.case_number}</div>
                 </div>
                 <div className={styles.cardGrap} {...dragHandleProps}></div>
@@ -174,7 +176,7 @@ export const CaseCard: FC<CaseCardProps> = React.memo(({ data, isOpen, dragHandl
                     <>
                         <div className={styles.detailRow}>
                             <span>Started:</span>
-                            <div style={{ display: 'flex', alignItems: 'center'}}>
+                            <div style={{ display: 'flex', alignItems: 'center' }}>
                                 {badge && (
                                     <span className={styles.caseBadgeDynamic} style={{
                                         fontSize: badge.label.length > 18 ? '0.50rem' : '0.55rem',
@@ -186,7 +188,7 @@ export const CaseCard: FC<CaseCardProps> = React.memo(({ data, isOpen, dragHandl
                                     </span>
                                 )}
                             </div>
-                                <span style={{ color: '#666', fontSize: '0.60rem' }}>{formattedStartTime}</span>
+                            <span style={{ color: '#666', fontSize: '0.60rem' }}>{formattedStartTime}</span>
                         </div>
 
                         <div className={styles.detailRow}>
@@ -202,13 +204,16 @@ export const CaseCard: FC<CaseCardProps> = React.memo(({ data, isOpen, dragHandl
                         </div>
 
                         <div className={styles.timerRow}>
-                            <TimerDisplay
-                                timeDetails={timeDetails}
-                                isScheduled={isScheduled}
-                                isExceeded={isExceeded}
-                                isWaitingEta={isWaitingEta}
-                                isNearExceeded={isNearExceeded}
-                            />
+                            <div style={{ flex: 1 }}>
+                                <TimerDisplay
+                                    timeDetails={timeDetails}
+                                    isScheduled={isScheduled}
+                                    isExceeded={isExceeded}
+                                    isWaitingEta={isWaitingEta}
+                                    isNearExceeded={isNearExceeded}
+                                    isBacklog={isBacklog}
+                                />
+                            </div>
 
                             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                 {isManagement && (

@@ -1,15 +1,18 @@
 import axios from 'axios';
-import { BACKEND_URL, SALESFORCE_WEBHOOK_SECRET } from '../config/env.js';
+import { ACTIVE_BACKEND_URL, SALESFORCE_WEBHOOK_SECRET } from '../config/env.js';
 import { generateSignature } from '../utils/crypto.js';
+import { Logger } from '../core/logger.js';
 
 class BackendClient {
     private baseUrl: string | undefined;
     private secret: string | undefined;
     private lastSyncStatus: number | null;
+    private logger = new Logger('BackendClient');
 
     constructor() {
-        this.baseUrl = BACKEND_URL;
+        this.baseUrl = ACTIVE_BACKEND_URL;
         this.secret = SALESFORCE_WEBHOOK_SECRET;
+
         this.lastSyncStatus = null;
     }
 
@@ -49,10 +52,10 @@ class BackendClient {
         for (let attempt = 1; attempt <= retries; attempt++) {
             try {
                 if (attempt > 1) {
-                    console.log(`   🔄 [BackendClient] Retrying ${endpoint} (Attempt ${attempt}/${retries})...`);
+                    this.logger.warn(`Retrying ${endpoint} (Attempt ${attempt}/${retries})...`);
                     await new Promise(resolve => setTimeout(resolve, 2000 * attempt)); // Exponential backoff
                 } else {
-                    console.log(`\n📤 [BackendClient] Sending ${method} to ${endpoint}`);
+                    this.logger.info(`📤 Sending ${method} to ${endpoint}`);
                 }
 
                 const response = await axios({
@@ -76,7 +79,7 @@ class BackendClient {
                 // Track failed sync status
                 if (isSyncEndpoint && status) this.lastSyncStatus = status;
 
-                console.error(`   ❌ [BackendClient] Attempt ${attempt} failed: ${message}`);
+                this.logger.error(`❌ Attempt ${attempt} failed: ${message}`);
 
                 // Don't retry if it's a client error (4xx) except 429
                 if (status >= 400 && status < 500 && status !== 429) {
@@ -84,7 +87,7 @@ class BackendClient {
                 }
 
                 if (attempt === retries) {
-                    console.error(`   🛑 [BackendClient] All ${retries} attempts failed for ${endpoint}.`);
+                    this.logger.error(`🛑 All ${retries} attempts failed for ${endpoint}.`);
                 }
             }
         }

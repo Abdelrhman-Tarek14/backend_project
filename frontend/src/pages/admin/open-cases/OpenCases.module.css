@@ -8,6 +8,31 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes badgeGlowPulse {
+    0% {
+        box-shadow: 0 0 0 0 var(--badge-glow-color);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(244, 67, 54, 0); /* This color will be overridden by the variable logic if possible, or we follow the user exactly */
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(244, 67, 54, 0);
+    }
+}
+
+/* More flexible version using variables for all categories */
+@keyframes badgeCustomGlow {
+    0% {
+        box-shadow: 0 0 0 0 var(--badge-glow-start);
+    }
+    70% {
+        box-shadow: 0 0 0 6px var(--badge-glow-end);
+    }
+    100% {
+        box-shadow: 0 0 0 0 var(--badge-glow-end);
+    }
+}
+
 .headerContainer {
     display: flex;
     justify-content: space-between;
@@ -78,11 +103,58 @@
     border-radius: 10px;
     font-size: 0.7rem;
     font-weight: 700;
+    transition: background 0.2s, box-shadow 0.2s;
 }
 
 .tabBtn.active .tabCount {
     background: rgba(255, 255, 255, 0.2);
 }
+
+/* Updated solid colored badges for other tabs with combined pulse/glow */
+.tabCount.countExceeded { 
+    background: #ff5252; 
+    color: #fff; 
+    --badge-glow-start: rgba(244, 67, 54, 0.7);
+    --badge-glow-end: rgba(244, 67, 54, 0);
+    animation: badgeCustomGlow 2s ease-in-out infinite; 
+}
+.tabCount.countNear { 
+    background: #ffa726; 
+    color: #fff; 
+    --badge-glow-start: rgba(255, 152, 0, 0.7);
+    --badge-glow-end: rgba(255, 152, 0, 0);
+    animation: badgeCustomGlow 2s ease-in-out infinite; 
+}
+.tabCount.countWaiting { 
+    background: #673ab7; 
+    color: #fff; 
+    --badge-glow-start: rgba(103, 58, 183, 0.7);
+    --badge-glow-end: rgba(103, 58, 183, 0);
+    animation: badgeCustomGlow 2s ease-in-out infinite; 
+}
+.tabCount.countShared { 
+    background: #42a5f5; 
+    color: #fff; 
+    --badge-glow-start: rgba(33, 150, 243, 0.7);
+    --badge-glow-end: rgba(33, 150, 243, 0);
+    animation: badgeCustomGlow 2s ease-in-out infinite; 
+}
+.tabCount.countQueue { 
+    background: #ff7043; 
+    color: #fff; 
+    --badge-glow-start: rgba(255, 87, 34, 0.7);
+    --badge-glow-end: rgba(255, 87, 34, 0);
+    animation: badgeCustomGlow 2s ease-in-out infinite; 
+}
+
+/* Neutral solid badge for ALL tab */
+.tabCount.countAll { 
+    background: rgba(255, 255, 255, 0.15); 
+    color: #fff; 
+}
+
+/* Updated solid colored badges for other tabs */
+
 
 .connectionStatus {
     margin-left: auto;

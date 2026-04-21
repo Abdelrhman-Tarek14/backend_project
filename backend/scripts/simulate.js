@@ -9,11 +9,11 @@ const envPath = process.env.NODE_ENV === 'production' ? '.env' : '.env.developme
 dotenv.config({ path: path.resolve(process.cwd(), envPath), quiet: false });
 
 const BACKEND_URL = process.env.BACKEND_URL;
-const GAS_SECRET = process.env.GAS_WEBHOOK_SECRET;
+const Sheet_SECRET = process.env.SHEET_WEBHOOK_SECRET;
 const SF_SECRET = process.env.SALESFORCE_WEBHOOK_SECRET;
 
-if (!GAS_SECRET || !SF_SECRET) {
-  console.error(chalk.red('Error: Both GAS_WEBHOOK_SECRET and SALESFORCE_WEBHOOK_SECRET must be defined in .env'));
+if (!Sheet_SECRET || !SF_SECRET) {
+  console.error(chalk.red('Error: Both SHEET_WEBHOOK_SECRET and SALESFORCE_WEBHOOK_SECRET must be defined in .env'));
   process.exit(1);
 }
 
@@ -32,7 +32,7 @@ function calculateSignature(payload, secret) {
  * Sends a POST request to the backend with the required signature header
  */
 async function sendWebhook(endpoint, payload) {
-  const secret = endpoint.includes('salesforce') ? SF_SECRET : GAS_SECRET;
+  const secret = endpoint.includes('salesforce') ? SF_SECRET : Sheet_SECRET;
   const signature = calculateSignature(payload, secret);
   const url = `${BACKEND_URL}${endpoint}`;
 
@@ -68,8 +68,8 @@ let lastCase = {
  * Main Interactive Menu
  */
 async function mainMenu() {
-  console.log(chalk.yellow.bold('\n--- GAS/Salesforce API Simulation ---'));
-  
+  console.log(chalk.yellow.bold('\n--- Sheet/Salesforce API Simulation ---'));
+
   const { action } = await inquirer.prompt([
     {
       type: 'list',
@@ -77,9 +77,9 @@ async function mainMenu() {
       message: 'What would you like to simulate?',
       choices: [
         { name: '1. [SF] Create New Case', value: 'sf-new' },
-        { name: '2. [Sheet] Submit Form (Unified)', value: 'gas-form' },
-        { name: '3. [GAS] Submit Validation (Metrics)', value: 'gas-validated' },
-        { name: '4. [GAS] Submit Evaluation (Quality)', value: 'gas-evaluation' },
+        { name: '2. [Sheet] Submit Form (Unified)', value: 'sheet-form' },
+        { name: '3. [Sheet] Submit Validation (Metrics)', value: 'sheet-validated' },
+        { name: '4. [Sheet] Submit Evaluation (Quality)', value: 'sheet-evaluation' },
         { name: '5. [SF] Close Case', value: 'sf-close' },
         { name: '6. Update Case/Agent Defaults', value: 'update-defaults' },
         { name: 'Exit', value: 'exit' },
@@ -91,14 +91,14 @@ async function mainMenu() {
     case 'sf-new':
       await simulateSfNew();
       break;
-    case 'gas-form':
-      await simulateGasForm();
+    case 'sheet-form':
+      await simulateSheetForm();
       break;
-    case 'gas-validated':
-      await simulateGasValidated();
+    case 'sheet-validated':
+      await simulateSheetValidated();
       break;
-    case 'gas-evaluation':
-      await simulateGasEvaluation();
+    case 'sheet-evaluation':
+      await simulateSheetEvaluation();
       break;
     case 'sf-close':
       await simulateSfClose();
@@ -134,7 +134,7 @@ async function simulateSfNew() {
   await sendWebhook('/cases/webhook/salesforce', payload);
 }
 
-async function simulateGasForm() {
+async function simulateSheetForm() {
   const answers = await inquirer.prompt([
     { name: 'caseNumber', message: 'Case Number:', default: lastCase.caseNumber },
     { name: 'caseOwner', message: 'Agent Email:', default: lastCase.caseOwner },
@@ -156,7 +156,7 @@ async function simulateGasForm() {
   await sendWebhook('/cases/webhook/sheet-open-cases', payload);
 }
 
-async function simulateGasValidated() {
+async function simulateSheetValidated() {
   const answers = await inquirer.prompt([
     { name: 'caseNumber', message: 'Case Number:', default: lastCase.caseNumber },
     { name: 'caseOwner', message: 'Agent Email:', default: lastCase.caseOwner },
@@ -173,10 +173,10 @@ async function simulateGasValidated() {
     formSubmitTime: new Date().toISOString(),
   };
 
-  await sendWebhook('/cases/webhook/gas-validated', payload);
+  await sendWebhook('/cases/webhook/sheet-validated', payload);
 }
 
-async function simulateGasEvaluation() {
+async function simulateSheetEvaluation() {
   const answers = await inquirer.prompt([
     { name: 'caseNumber', message: 'Case Number:', default: lastCase.caseNumber },
     { name: 'caseOwner', message: 'Agent Email:', default: lastCase.caseOwner },
@@ -189,7 +189,7 @@ async function simulateGasEvaluation() {
     evaluationTime: new Date().toISOString(),
   };
 
-  await sendWebhook('/cases/webhook/gas-evaluation', payload);
+  await sendWebhook('/cases/webhook/sheet-evaluation', payload);
 }
 async function simulateSfClose() {
   const answers = await inquirer.prompt([

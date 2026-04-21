@@ -19,13 +19,13 @@ export class WebhookSecurityGuard implements CanActivate {
 
   private getSecretForRoute(request: Request): string | undefined {
     const url = request.url;
-    
+
     if (url.includes('salesforce')) {
       return this.configService.get<string>('integrations.salesforceWebhookSecret');
     }
-    
-    if (url.includes('gas') || url.includes('sheet-open-cases')) {
-      return this.configService.get<string>('integrations.gasWebhookSecret');
+
+    if (url.includes('sheet') || url.includes('sheet-open-cases')) {
+      return this.configService.get<string>('integrations.sheetWebhookSecret');
     }
 
     return undefined;

@@ -24,7 +24,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
     let styleClass = styles.statusOnTime;
 
     if (isBacklog) {
-        label = 'Backlog';
+        label = 'Back Log';
         styleClass = styles.statusBacklog;
     } else if (isWaitingEta) {
         label = 'Waiting for ETA';
