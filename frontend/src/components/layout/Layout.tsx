@@ -10,7 +10,7 @@ export function Layout({ children, isOnline }: { children: React.ReactNode, isOn
                 {children}
             </main>
             <footer className={styles.footer}>
-                <p>TermHub Tool © {new Date().getFullYear()} <span className={styles.tag}>V 1.0</span></p>
+                <p>Cases Management System © {new Date().getFullYear()} <span className={styles.tag}>V 1.0</span></p>
                 <p className={styles.subFooter}>Designed for internal use | Developed by Abdelrhman Tarek</p>
             </footer>
         </div>

@@ -1,5 +1,4 @@
 import styles from './LoginPage.module.css';
-import { BiLayer } from 'react-icons/bi';
 import { FcGoogle } from 'react-icons/fc';
 
 export function LoginPage() {
@@ -12,11 +11,11 @@ export function LoginPage() {
         <div className={styles.container}>
             <div className={styles.card}>
                 <div className={styles.logo}>
-                    <BiLayer size={60} color="#FF5722" />
+                    <img src="/logo3.svg" alt="CMS Logo" className={styles.logoImage} />
                 </div>
                 <h1 className={styles.title}>Welcome!</h1>
                 <p className={styles.subtitle}>
-                    Log in to <strong>TermHub</strong> to access the terminology database.
+                    Log in to <strong>Cases Management System</strong> to access the dashboard.
                 </p>
 
                 <div className={styles.loginBtnWrapper}>
@@ -30,7 +29,7 @@ export function LoginPage() {
                 </div>
             </div>
 
-            <div className={styles.footer}><p>TermHub Tool © {new Date().getFullYear()} <span style={{ color: '#FF5722' }}>V 1.0</span></p></div>
+            <div className={styles.footer}><p>Cases Management System © {new Date().getFullYear()} <span style={{ color: '#FF5722' }}>V 1.0</span></p></div>
         </div>
     );
 }

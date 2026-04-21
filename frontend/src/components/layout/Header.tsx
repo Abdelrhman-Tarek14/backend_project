@@ -2,7 +2,6 @@ import { useState } from 'react';
 import type { FC } from 'react';
 import { NavLink } from 'react-router-dom';
 import { UserMenu } from './UserMenu';
-import { BiLayer } from 'react-icons/bi';
 import { HiOutlineMoon, HiOutlineSun, HiMenu, HiX } from 'react-icons/hi';
 import { m, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../../hooks/useTheme';
@@ -27,9 +26,9 @@ export const Header: FC<HeaderProps> = ({ isOnline }) => {
                 {/* Logo Section */}
                 <NavLink to="/" className={styles.logoSection}>
                     <div className={styles.logoIconWrapper}>
-                        <BiLayer size={32} />
+                        <img src="/logo3.svg" alt="CMS Logo" className={styles.logoImage} />
                     </div>
-                    <span className={styles.logoTitle}>TermHub</span>
+                    <span className={styles.logoTitle}>Cases Management</span>
                 </NavLink>
 
                 {/* Actions & Nav */}

@@ -28,8 +28,9 @@
 }
 
 .logo {
-    font-size: 4rem;
-    color: #FF5722;
+    width: 5rem;
+    height: 5rem;
+    object-fit: contain;
 }
 
 .textWrapper {

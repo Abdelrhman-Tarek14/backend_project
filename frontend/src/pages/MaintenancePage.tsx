@@ -41,7 +41,7 @@ export const MaintenancePage = () => {
                 
                 <p className={styles.message}>
                     We're currently performing some scheduled optimizations to improve your experience. 
-                    TermHub will be back online shortly. Thank you for your patience!
+                    Cases Management System will be back online shortly. Thank you for your patience!
                 </p>
 
                 <div className={styles.actions}>

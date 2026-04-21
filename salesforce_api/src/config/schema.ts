@@ -12,8 +12,8 @@ export const configSchema = z.object({
     INTERNAL_BACKEND_URL: z.string().url().optional(), // Fallback handled in logic
     SALESFORCE_WEBHOOK_SECRET: z.string().min(1, 'SALESFORCE_WEBHOOK_SECRET is required'),
     
-    POLL_INTERVAL: z.coerce.number().default(45000),
-    HEARTBEAT_INTERVAL: z.coerce.number().default(300000),
+    SYNC_CRON: z.string().default('*/30 * * * * *'),       // Default: every 30 seconds
+    HEARTBEAT_CRON: z.string().default('*/5 * * * *'),      // Default: every 5 minutes
     
     ALLOWED_CASE_TYPES: z.string().min(1, 'ALLOWED_CASE_TYPES is required'),
     

@@ -1,7 +1,6 @@
 
 import { useEffect, useReducer } from 'react';
 import styles from './IntroAnimation.module.css';
-import { BiLayer } from 'react-icons/bi';
 
 type AnimationState = {
     exiting: boolean;
@@ -61,10 +60,10 @@ export function IntroAnimation({ onComplete, isLoading = false }: { onComplete: 
         <div className={`${styles.container} ${exiting ? styles.exit : ''}`}>
             <div className={styles.content}>
                 <div className={styles.logoWrapper}>
-                    <BiLayer className={styles.logo} />
+                    <img src="/logo3.svg" alt="CMS Logo" className={styles.logo} />
                 </div>
                 <div className={styles.textWrapper}>
-                    <span className={styles.title}>TermHub</span>
+                    <span className={styles.title}>Cases Management System</span>
                 </div>
             </div>
         </div>

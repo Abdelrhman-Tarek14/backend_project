@@ -1,15 +1,16 @@
+import cron, { ScheduledTask } from 'node-cron';
 import salesforceClient from '../integration/salesforce-client.js';
 import backendClient from '../integration/backend-client.js';
 import stateManager from '../core/state-manager.js';
-import { POLL_INTERVAL, HEARTBEAT_INTERVAL, PARSED_ALLOWED_CASE_TYPES } from '../config/env.js';
+import { SYNC_CRON, HEARTBEAT_CRON, PARSED_ALLOWED_CASE_TYPES } from '../config/env.js';
 import { Logger } from '../core/logger.js';
 
 class SyncService {
     private isSyncing: boolean;
     private sfSessionStatus: string | null;
     private logger = new Logger('SyncService');
-    private syncInterval: NodeJS.Timeout | null = null;
-    private heartbeatInterval: NodeJS.Timeout | null = null;
+    private syncTask: ScheduledTask | null = null;
+    private heartbeatTask: ScheduledTask | null = null;
     public isStopping: boolean = false;
 
     constructor() {
@@ -19,22 +20,36 @@ class SyncService {
     }
 
     public async start(): Promise<void> {
-        this.logger.info(`Started. Polling every ${POLL_INTERVAL / 1000}s. Heartbeat every ${HEARTBEAT_INTERVAL / 1000}s.`);
+        this.logger.info(`Starting scheduler. Sync CRON: [${SYNC_CRON}] | Heartbeat CRON: [${HEARTBEAT_CRON}]`);
 
-        // Initial sync
+        // Initial sync on startup before scheduling
         await this.sync();
         await this.sendHeartbeat();
 
-        // Intervals
-        this.syncInterval = setInterval(() => this.sync(), POLL_INTERVAL);
-        this.heartbeatInterval = setInterval(() => this.sendHeartbeat(), HEARTBEAT_INTERVAL);
+        // Schedule recurring sync
+        this.syncTask = cron.schedule(SYNC_CRON, async () => {
+            if (this.isStopping) {
+                this.logger.debug('Skipping scheduled sync: system is shutting down.');
+                return;
+            }
+            await this.sync();
+        });
+
+        // Schedule recurring heartbeat
+        this.heartbeatTask = cron.schedule(HEARTBEAT_CRON, async () => {
+            if (this.isStopping) {
+                this.logger.debug('Skipping scheduled heartbeat: system is shutting down.');
+                return;
+            }
+            await this.sendHeartbeat();
+        });
     }
 
     public stop(): void {
-        this.logger.info("Stopping intervals and initiating graceful shutdown...");
+        this.logger.info('Stopping scheduled tasks and initiating graceful shutdown...');
         this.isStopping = true;
-        if (this.syncInterval) clearInterval(this.syncInterval);
-        if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
+        this.syncTask?.stop();
+        this.heartbeatTask?.stop();
     }
 
 
