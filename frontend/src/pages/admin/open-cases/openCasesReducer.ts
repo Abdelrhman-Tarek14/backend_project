@@ -27,7 +27,7 @@ export const initialState: OpenCasesState = {
     loading: true,
     searchTerm: '',
     activeId: null,
-    filterTab: 'all',
+    filterTab: 'on-time',
     systemStatus: [],
     tick: 0
 };

@@ -4,7 +4,7 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-color: white;
+    background-color: var(--color-bg-dark);
     z-index: 9999;
     display: flex;
     justify-content: center;
@@ -20,40 +20,44 @@
 .content {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 20px;
 }
 
 .logoWrapper {
-    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    animation: popIn 0.5s var(--expo-out) forwards;
 }
 
 .logo {
-    width: 5rem;
-    height: 5rem;
+    width: 6rem;
+    height: 6rem;
     object-fit: contain;
+    filter: drop-shadow(0 0 20px rgba(255, 87, 34, 0.4));
 }
 
 .textWrapper {
     overflow: hidden;
-    /* Hide text initially */
     white-space: nowrap;
 }
 
 .title {
     display: inline-block;
-    font-size: 3rem;
+    font-family: 'Outfit', sans-serif;
+    font-size: 3.5rem;
     font-weight: 800;
-    color: #333;
+    color: white;
     transform: translateX(-100%);
     opacity: 0;
-    animation: slideRight 0.5s ease-out forwards;
-    animation-delay: 0.2s;
-    /* Wait for logo to pop */
+    animation: slideRight 0.6s var(--expo-out) forwards;
+    animation-delay: 0.3s;
+    background: linear-gradient(135deg, #fff 0%, var(--color-primary) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 @keyframes popIn {
     0% {
-        transform: scale(0) rotate(-45deg);
+        transform: scale(0) rotate(-15deg);
         opacity: 0;
     }
 
@@ -65,7 +69,7 @@
 
 @keyframes slideRight {
     0% {
-        transform: translateX(-20px);
+        transform: translateX(-30px);
         opacity: 0;
     }
 

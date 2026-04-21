@@ -1,21 +1,11 @@
-import { useUserContext } from '../context/UserContext';
 
 export function useTheme() {
-    const { appearance: theme, updateAppearance } = useUserContext();
+    // Forced unified dark theme
+    const theme = 'dark';
 
-    // Toggle Function with View Transition
+    // Toggle Function disabled
     const toggleTheme = () => {
-        const nextTheme = theme === 'light' ? 'dark' : 'light';
-
-        // Fallback for browsers without View Transition API
-        if (!document.startViewTransition) {
-            updateAppearance(nextTheme);
-            return;
-        }
-
-        document.startViewTransition(() => {
-            updateAppearance(nextTheme);
-        });
+        console.warn('Theme switching is disabled: Application is forced to premium Dark Mode.');
     };
 
     return { theme, toggleTheme };

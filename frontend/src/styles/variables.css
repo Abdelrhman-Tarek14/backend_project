@@ -1,19 +1,20 @@
 :root {
-  /* Default Theme (Orange) */
+  /* Core Colors (Inspired by Docks) */
   --color-primary: #FF5722;
   --color-primary-hover: #F4511E;
   --color-primary-rgb: 255, 87, 34;
 
-  /* Global Colors */
-  --color-bg-light: #f0f2f5;
-  --color-bg-white: #FFFFFF;
-
+  /* Global Colors - Unified Dark Theme */
+  --color-bg-dark: #0f172a;
+  --color-bg-light: #0f172a; /* Same as dark for consistency */
+  --color-bg-white: #1e293b;
+  
   /* Text Colors */
-  --color-text-main: #212529;
-  --color-text-muted: #6C757D;
+  --color-text-main: #f8fafc;
+  --color-text-muted: #94a3b8;
 
   /* Borders */
-  --color-border: #DEE2E6;
+  --color-border: rgba(255, 255, 255, 0.1);
 
   /* Spacing */
   --spacing-xs: 0.25rem;
@@ -25,77 +26,51 @@
   /* Radius */
   --radius-sm: 4px;
   --radius-md: 8px;
-  --radius-lg: 12px;
+  --radius-lg: 16px;
   --radius-full: 9999px;
 
   /* State Colors */
-  --color-success: #4CAF50;
-  --color-danger: #F44336;
-  --color-warning: #FF9800;
-  --color-danger-bg: #FFF5F5;
-  --color-success-bg: rgba(76, 175, 80, 0.08);
+  --color-success: #10b981;
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
+  --color-danger-bg: rgba(239, 68, 68, 0.15);
+  --color-success-bg: rgba(16, 185, 129, 0.15);
 
-  /* Glassmorphism Defaults */
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(0, 0, 0, 0.05);
+  /* Glassmorphism - Premium Docks Style */
+  --glass-bg: rgba(30, 41, 59, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-blur: 12px;
 
   /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-}
-
-[data-theme="dark"] {
-  --color-bg-light: #0a0a0b;
-  --color-bg-white: #141417;
-  --color-text-main: #f8fafc;
-  --color-text-muted: #94a3b8;
-  --color-border: rgba(255, 255, 255, 0.08);
-
-  /* Dark Mode Semantic overrides */
-  --color-danger-bg: rgba(244, 67, 54, 0.2);
-  --color-success-bg: rgba(76, 175, 80, 0.2);
-
-  /* Glassmorphism for Dark Mode */
-  --glass-bg: rgba(20, 20, 23, 0.85);
-  --glass-border: rgba(255, 255, 255, 0.1);
-
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6);
   --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.7);
+  
+  /* Animations */
+  --expo-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Color Themes */
-[data-color-theme="baby-blue"] {
-  --color-primary: #03A9F4;
-  --color-primary-hover: #039BE5;
-  --color-primary-rgb: 3, 169, 244;
+/* Force Dark Theme Styles globally */
+body {
+  background-color: var(--color-bg-dark);
+  color: var(--color-text-main);
+  font-family: 'Outfit', 'Inter', sans-serif;
 }
 
-[data-color-theme="orange"] {
-  --color-primary: #FF5722;
-  --color-primary-hover: #F4511E;
-  --color-primary-rgb: 255, 87, 34;
-}
-
-/* Global Premium Scrollbar */
+/* Global Premium Scrollbar (Dark Style) */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-bg-light);
+  background: var(--color-bg-dark);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 10px;
-  border: 2px solid var(--color-bg-light);
-}
-
-[data-theme="dark"] ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  border: 2px solid var(--color-bg-dark);
 }
 
 ::-webkit-scrollbar-thumb:hover {

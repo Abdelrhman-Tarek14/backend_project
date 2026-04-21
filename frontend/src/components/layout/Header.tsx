@@ -2,9 +2,8 @@ import { useState } from 'react';
 import type { FC } from 'react';
 import { NavLink } from 'react-router-dom';
 import { UserMenu } from './UserMenu';
-import { HiOutlineMoon, HiOutlineSun, HiMenu, HiX } from 'react-icons/hi';
+import { HiMenu, HiX } from 'react-icons/hi';
 import { m, AnimatePresence } from 'framer-motion';
-import { useTheme } from '../../hooks/useTheme';
 import { useUserRole } from '../../hooks/useUserRole';
 import styles from './Header.module.css';
 
@@ -14,7 +13,6 @@ interface HeaderProps {
 
 export const Header: FC<HeaderProps> = ({ isOnline }) => {
     const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
-    const { theme, toggleTheme } = useTheme() as { theme: string; toggleTheme: () => void };
     const { isAdminLevel } = useUserRole();
 
     const toggleMenu = () => setIsMenuOpen(prev => !prev);
@@ -38,22 +36,6 @@ export const Header: FC<HeaderProps> = ({ isOnline }) => {
                     </button>
 
                     <div className={styles.actions}>
-                        <button
-                            className={styles.themeTogglePill}
-                            onClick={(e) => {
-                                e.preventDefault();
-                                toggleTheme();
-                            }}
-                            aria-label="Toggle Dark Mode"
-                        >
-                            <div className={styles.toggleSlider} />
-                            <div className={`${styles.toggleIcon} ${theme === 'light' ? styles.activeTheme : ''}`}>
-                                <HiOutlineSun size={16} />
-                            </div>
-                            <div className={`${styles.toggleIcon} ${theme === 'dark' ? styles.activeTheme : ''}`}>
-                                <HiOutlineMoon size={16} />
-                            </div>
-                        </button>
                         <UserMenu isOnline={isOnline} />
                     </div>
                 </div>

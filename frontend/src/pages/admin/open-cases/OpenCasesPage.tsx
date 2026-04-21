@@ -208,6 +208,7 @@ const OpenCasesPage: React.FC = () => {
             const ownerEmailLower = (c.ownerEmail || '').toLowerCase();
             const isQueueCase = ownerNameLower.includes('queue') || ownerEmailLower.includes('queue');
 
+            if (filterTab === 'on-time') return !info.isExceeded && info.progress < 75 && hasEta;
             if (filterTab === 'exceeded') return info.isExceeded && hasEta;
             if (filterTab === 'near-exceeded') return !info.isExceeded && info.progress >= 75 && hasEta;
             if (filterTab === 'waiting-eta') return !hasEta && !isQueueCase;
@@ -249,6 +250,10 @@ const OpenCasesPage: React.FC = () => {
             exceeded: cases.filter(c => {
                 const info = getCaseStatusInfo(c);
                 return info.isExceeded && c.eta && Number(c.eta) > 0;
+            }).length,
+            onTime: cases.filter(c => {
+                const info = getCaseStatusInfo(c);
+                return !info.isExceeded && info.progress < 75 && c.eta && Number(c.eta) > 0;
             }).length,
             nearExceeded: cases.filter(c => {
                 const info = getCaseStatusInfo(c);
@@ -332,6 +337,7 @@ const OpenCasesPage: React.FC = () => {
     const Descriptions: Record<string, string> = {
         exceeded: "Cases that have passed their ETA limits.",
         'near-exceeded': "Cases reaching 75% or more of their ETA.",
+        'on-time': "Cases currently within their ETA limits.",
         'waiting-eta': "Cases that haven't been submitted an ETA form yet.",
         'shared-cases': "Cases being worked on by multiple agents at once.",
         'overloaded-agents': "Unassigned queue cases and agents with multiple active cases.",
@@ -341,6 +347,7 @@ const OpenCasesPage: React.FC = () => {
     const Titles: Record<string, string> = {
         exceeded: "Exceeded Cases",
         'near-exceeded': "Near Exceeded Cases",
+        'on-time': "On Time Cases",
         'waiting-eta': "Cases Waiting For The ETA Form",
         'shared-cases': "Shared Cases",
         'overloaded-agents': "Queue And Multiple Cases",

@@ -1,6 +1,11 @@
 import styles from './LoginPage.module.css';
 import { FcGoogle } from 'react-icons/fc';
+import { m } from 'framer-motion';
 
+/**
+ * Premium Login Page redesigned with the Docks aesthetic.
+ * Features glassmorphism, floating animations, and a modern layout.
+ */
 export function LoginPage() {
     const handleLogin = () => {
         const apiBaseUrl = import.meta.env.VITE_API_URL;
@@ -9,13 +14,32 @@ export function LoginPage() {
 
     return (
         <div className={styles.container}>
-            <div className={styles.card}>
-                <div className={styles.logo}>
+            {/* Background decorative elements */}
+            <div className={styles.bgGlow1} />
+            <div className={styles.bgGlow2} />
+
+            <m.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                className={styles.card}
+            >
+                <m.div 
+                    animate={{ y: [0, -10, 0] }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                    className={styles.logo}
+                >
                     <img src="/logo3.svg" alt="CMS Logo" className={styles.logoImage} />
-                </div>
-                <h1 className={styles.title}>Welcome!</h1>
+                </m.div>
+
+                <h1 className={styles.title}>
+                    <span className={styles.gradientText}>Cases Management</span>
+                    <br />
+                    <span className={styles.subTitle}>System</span>
+                </h1>
+                
                 <p className={styles.subtitle}>
-                    Log in to <strong>Cases Management System</strong> to access the dashboard.
+                    Secure access to your internal operations dashboard.
                 </p>
 
                 <div className={styles.loginBtnWrapper}>
@@ -23,13 +47,18 @@ export function LoginPage() {
                         onClick={handleLogin}
                         className={styles.googleBtn}
                     >
-                        <FcGoogle size={22} />
+                        <div className={styles.googleIconWrapper}>
+                            <FcGoogle size={24} />
+                        </div>
                         <span>Continue with Google</span>
                     </button>
                 </div>
-            </div>
 
-            <div className={styles.footer}><p>Cases Management System © {new Date().getFullYear()} <span style={{ color: '#FF5722' }}>V 1.0</span></p></div>
+                <div className={styles.footer}>
+                    <p>© {new Date().getFullYear()} CMS Team | Internal Use Only</p>
+                    <div className={styles.versionBadge}>V 1.2</div>
+                </div>
+            </m.div>
         </div>
     );
 }

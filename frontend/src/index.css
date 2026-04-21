@@ -7,8 +7,8 @@
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: var(--color-bg-light);
+  font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--color-bg-dark);
   color: var(--color-text-main);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;

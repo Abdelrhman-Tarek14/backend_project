@@ -8,6 +8,7 @@ interface OpenCasesStatsProps {
     onTabChange: (tab: string) => void;
     counts: {
         all: number;
+        onTime: number;
         exceeded: number;
         nearExceeded: number;
         waitingEta: number;
@@ -25,8 +26,11 @@ export const OpenCasesStats: React.FC<OpenCasesStatsProps> = ({
 }) => {
     return (
         <div className={styles.filterTabs}>
-            <button className={`${styles.tabBtn} ${filterTab === 'all' ? styles.active : ''}`} onClick={() => onTabChange('all')}>
-                All <span className={`${styles.tabCount} ${styles.countAll}`}>{counts.all}</span>
+            <button
+                className={`${styles.tabBtn} ${filterTab === 'on-time' ? styles.active : ''}`}
+                onClick={() => onTabChange('on-time')}
+            >
+                On Time <span className={`${styles.tabCount} ${filterTab !== 'on-time' && counts.onTime > 0 ? styles.countOnTime : ''}`}>{counts.onTime}</span>
             </button>
 
             <button
@@ -62,6 +66,10 @@ export const OpenCasesStats: React.FC<OpenCasesStatsProps> = ({
                 onClick={() => onTabChange('overloaded-agents')}
             >
                 Queue <span className={`${styles.tabCount} ${filterTab !== 'overloaded-agents' && counts.overloadedAgents > 0 ? styles.countQueue : ''}`}>{counts.overloadedAgents}</span>
+            </button>
+
+            <button className={`${styles.tabBtn} ${filterTab === 'all' ? styles.active : ''}`} onClick={() => onTabChange('all')}>
+                All <span className={`${styles.tabCount} ${styles.countAll}`}>{counts.all}</span>
             </button>
 
             <div className={`${styles.connectionStatus} ${isSalesforceConnected ? styles.statusConnected : styles.statusDisconnected}`}>

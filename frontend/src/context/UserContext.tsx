@@ -87,7 +87,7 @@ export const UserProvider: FC<UserProviderProps> = ({ children }) => {
     const [state, dispatch] = React.useReducer(userReducer, {
         role: null,
         loading: true,
-        appearance: localStorage.getItem('termhub_appearance') || 'light',
+        appearance: 'dark', // Forced dark mode
         colorTheme: localStorage.getItem('termhub_color_theme') || 'orange'
     });
 
@@ -110,7 +110,7 @@ export const UserProvider: FC<UserProviderProps> = ({ children }) => {
             payload: {
                 role: newRole,
                 theme: user.theme,
-                appearance: user.appearance
+                appearance: 'dark'
             }
         });
     }, [user, authLoading]);
@@ -130,15 +130,8 @@ export const UserProvider: FC<UserProviderProps> = ({ children }) => {
         localStorage.setItem('termhub_color_theme', colorTheme);
     }, [appearance, colorTheme]);
 
-    const updateAppearance = async (newAppearance: string) => {
-        dispatch({ type: 'SET_APPEARANCE', payload: newAppearance });
-        if (user) {
-            try {
-                await usersApi.updateUserPreferences({ appearance: newAppearance } as any);
-            } catch (err) {
-                console.error("Failed to update appearance in backend:", err);
-            }
-        }
+    const updateAppearance = async () => {
+        // No-op to disable switching
     };
 
     const updateColorTheme = async (newTheme: string) => {

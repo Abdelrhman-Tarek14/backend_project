@@ -146,6 +146,13 @@
     --badge-glow-end: rgba(255, 87, 34, 0);
     animation: badgeCustomGlow 2s ease-in-out infinite; 
 }
+.tabCount.countOnTime { 
+    background: #66bb6a; 
+    color: #fff; 
+    --badge-glow-start: rgba(102, 187, 106, 0.7);
+    --badge-glow-end: rgba(102, 187, 106, 0);
+    animation: badgeCustomGlow 2s ease-in-out infinite; 
+}
 
 /* Neutral solid badge for ALL tab */
 .tabCount.countAll { 
