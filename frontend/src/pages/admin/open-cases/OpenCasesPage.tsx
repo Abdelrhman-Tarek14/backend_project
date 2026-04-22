@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useReducer } from 'react';
+import React, { useEffect, useMemo, useReducer, useRef, useState, useCallback } from 'react';
+import type { UIEvent } from 'react';
 import {
     DndContext,
     closestCenter,
@@ -32,16 +33,29 @@ const OpenCasesPage: React.FC = () => {
     const [state, dispatch] = useReducer(openCasesReducer, initialState);
     const { cases, loading, searchTerm, activeId, filterTab, systemStatus, tick } = state;
 
+    // Scroll Animation States
+    const listRef = useRef<HTMLDivElement>(null);
+    const [topGradientOpacity, setTopGradientOpacity] = useState<number>(0);
+    const [bottomGradientOpacity, setBottomGradientOpacity] = useState<number>(1);
+
+    const handleScroll = useCallback((e: UIEvent<HTMLDivElement>) => {
+        const target = e.target as HTMLDivElement;
+        const { scrollTop, scrollHeight, clientHeight } = target;
+        setTopGradientOpacity(Math.min(scrollTop / 50, 1));
+        const bottomDistance = scrollHeight - (scrollTop + clientHeight);
+        setBottomGradientOpacity(scrollHeight <= clientHeight ? 0 : Math.min(bottomDistance / 50, 1));
+    }, []);
+
     useEffect(() => {
         const fetchStatus = async () => {
             try {
                 const response = await casesApi.getSalesforceSyncStatus();
                 // console.log('SF Status Response:', response);
-                
+
                 // response.data could be an array of status objects or a single one depending on endpoint
                 // CasesService.findAll returns an array of IntegrationStatus
-                const data = Array.isArray(response.data) 
-                    ? response.data.find((s: any) => s.system === 'salesforce') 
+                const data = Array.isArray(response.data)
+                    ? response.data.find((s: any) => s.system === 'salesforce')
                     : response.data;
 
                 if (!data) return;
@@ -83,7 +97,7 @@ const OpenCasesPage: React.FC = () => {
             const lastUpdate = new Date(sf.updatedAt).getTime();
             const now = Date.now();
             const diffMinutes = (now - lastUpdate) / (1000 * 60);
-            
+
             // If the heartbeat is strictly older than 6 minutes, consider it stale/offline
             if (diffMinutes > 6) {
                 return false;
@@ -229,7 +243,7 @@ const OpenCasesPage: React.FC = () => {
     const filteredCases = useMemo(() => {
         if (!searchTerm) return tabFilteredCases;
         const term = searchTerm.trim().toLowerCase();
-        
+
         // When searching, we look through ALL cases regardless of tab
         return cases.filter(c => {
             const caseNum = c.case_number ? c.case_number.toString().toLowerCase() : '';
@@ -238,13 +252,13 @@ const OpenCasesPage: React.FC = () => {
             const formattedAgent = c.ownerEmail ? formatAgentName(c.ownerEmail).toLowerCase() : '';
             const caseType = c.case_type ? c.case_type.toLowerCase() : '';
             const country = c.country ? c.country.toLowerCase() : '';
-            
-            return caseNum.includes(term) || 
-                   agentName.includes(term) || 
-                   agentEmail.includes(term) || 
-                   formattedAgent.includes(term) || 
-                   caseType.includes(term) ||
-                   country.includes(term);
+
+            return caseNum.includes(term) ||
+                agentName.includes(term) ||
+                agentEmail.includes(term) ||
+                formattedAgent.includes(term) ||
+                caseType.includes(term) ||
+                country.includes(term);
         });
     }, [cases, tabFilteredCases, searchTerm]);
 
@@ -369,54 +383,67 @@ const OpenCasesPage: React.FC = () => {
     if (loading) return <div className={styles.emptyState}>Loading active cases...</div>;
 
     return (
-        <div className={styles.casesSection}>
-            <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragStart={handleDragStart}
-                onDragEnd={handleDragEnd}
-                onDragCancel={handleDragCancel}
-            >
-                <OpenCasesHeader
-                    title={Titles[filterTab]}
-                    description={Descriptions[filterTab]}
-                    searchTerm={searchTerm}
-                    onSearchChange={(val) => {
-                        dispatch({ type: 'SET_SEARCH_TERM', payload: val });
-                        if (val.trim() !== '') {
-                            dispatch({ type: 'SET_FILTER_TAB', payload: 'all' });
-                        }
-                    }}
-                    count={filteredCases.length}
-                />
+        <div className={styles.pageContainer}>
+            <OpenCasesHeader
+                title={Titles[filterTab]}
+                description={Descriptions[filterTab]}
+                searchTerm={searchTerm}
+                onSearchChange={(val) => {
+                    dispatch({ type: 'SET_SEARCH_TERM', payload: val });
+                    if (val.trim() !== '') {
+                        dispatch({ type: 'SET_FILTER_TAB', payload: 'all' });
+                    }
+                }}
+                count={filteredCases.length}
+            />
 
-                <OpenCasesStats
-                    filterTab={filterTab}
-                    onTabChange={(tab) => {
-                        dispatch({ type: 'SET_FILTER_TAB', payload: tab });
-                        if (tab !== 'all') {
-                            dispatch({ type: 'SET_SEARCH_TERM', payload: '' });
-                        }
-                    }}
-                    counts={counts}
-                    isSalesforceConnected={isSalesforceConnected}
-                />
+            <OpenCasesStats
+                filterTab={filterTab}
+                onTabChange={(tab) => {
+                    dispatch({ type: 'SET_FILTER_TAB', payload: tab });
+                    if (tab !== 'all') {
+                        dispatch({ type: 'SET_SEARCH_TERM', payload: '' });
+                    }
+                }}
+                counts={counts}
+                isSalesforceConnected={isSalesforceConnected}
+            />
 
-                {filterTab === 'shared-cases' ? (
-                    <OpenCasesGrouped groupedSharedCases={groupedSharedCases} />
-                ) : filterTab === 'overloaded-agents' ? (
-                    <OpenCasesAgentGrouped groupedAgentCases={groupedOverloadedAgents} />
-                ) : (
-                    <OpenCasesGrid
-                        cases={filteredCases}
-                        sortableItemIds={sortableItemIds}
-                        isDragEnabled={!['shared-cases', 'overloaded-agents'].includes(filterTab)}
-                        getSafeId={getSafeId}
-                    />
-                )}
+            <div className={styles.scrollWrapper}>
+                <div
+                    ref={listRef}
+                    className={styles.scrollContainer}
+                    onScroll={handleScroll}
+                >
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragStart={handleDragStart}
+                        onDragEnd={handleDragEnd}
+                        onDragCancel={handleDragCancel}
+                    >
+                        {filterTab === 'shared-cases' ? (
+                            <OpenCasesGrouped groupedSharedCases={groupedSharedCases} />
+                        ) : filterTab === 'overloaded-agents' ? (
+                            <OpenCasesAgentGrouped groupedAgentCases={groupedOverloadedAgents} />
+                        ) : (
+                            <OpenCasesGrid
+                                cases={filteredCases}
+                                sortableItemIds={sortableItemIds}
+                                isDragEnabled={!['shared-cases', 'overloaded-agents'].includes(filterTab)}
+                                getSafeId={getSafeId}
+                                shouldAnimate={filterTab !== 'all'}
+                            />
+                        )}
 
-                <OpenCasesOverlay activeId={activeId} cases={cases} getSafeId={getSafeId} />
-            </DndContext>
+                        <OpenCasesOverlay activeId={activeId} cases={cases} getSafeId={getSafeId} />
+                    </DndContext>
+                </div>
+
+                {/* Scroll Gradients - Now correctly positioned relative to scrollWrapper */}
+                <div className={styles.topGradient} style={{ opacity: topGradientOpacity }}></div>
+                <div className={styles.bottomGradient} style={{ opacity: bottomGradientOpacity }}></div>
+            </div>
         </div>
     );
 };
