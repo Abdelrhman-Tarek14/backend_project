@@ -1,0 +1,291 @@
+.container {
+    padding: 1.5rem 2rem;
+    width: 100%;
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.header {
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.titleSection h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--color-text-main);
+    letter-spacing: -0.02em;
+    margin-bottom: 0.5rem;
+}
+
+.titleSection p {
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+}
+
+.controls {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.searchBox {
+    position: relative;
+    flex: 1;
+    max-width: 600px;
+}
+
+.searchIcon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-text-muted);
+    font-size: 1.2rem;
+}
+
+.searchInput {
+    width: 100%;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 0.75rem 1rem 0.75rem 3rem;
+    color: var(--color-text-main);
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.searchInput:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 4px rgba(255, 87, 34, 0.1);
+}
+
+.tableCard {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+}
+
+.tableWrapper {
+    overflow-x: auto;
+}
+
+.userTable {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.userTable th {
+    padding: 1.25rem 1.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--color-text-muted);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.userTable td {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: var(--color-text-main);
+}
+
+.userTable tr:last-child td {
+    border-bottom: none;
+}
+
+.userTable tr:hover td {
+    background: rgba(255, 255, 255, 0.01);
+}
+
+.userInfo {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: white;
+    text-transform: uppercase;
+    font-size: 1.1rem;
+}
+
+.userDetails {
+    display: flex;
+    flex-direction: column;
+}
+
+.userName {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.userEmail {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
+.roleSelect {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 0.6rem 1rem;
+    color: var(--color-text-main);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s var(--expo-out);
+    min-width: 140px;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 2.5rem;
+}
+
+.roleSelect:hover:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.roleSelect:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.15);
+}
+
+.roleSelect:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.roleSelect option {
+    background-color: #1e293b;
+    color: var(--color-text-main);
+    padding: 10px;
+}
+
+.statusToggle {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+.statusToggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.1);
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: var(--color-success);
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 1px var(--color-success);
+}
+
+input:checked + .slider:before {
+    transform: translateX(20px);
+}
+
+.disabledSlider {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(0.5);
+}
+
+.pagination {
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--glass-border);
+}
+
+.pageInfo {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+}
+
+.pageActions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.pageBtn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    color: var(--color-text-main);
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.pageBtn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.pageBtn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.loadingOverlay {
+    padding: 4rem;
+    text-align: center;
+    color: var(--color-text-muted);
+}
+
+.emptyState {
+    padding: 4rem;
+    text-align: center;
+    color: var(--color-text-muted);
+}

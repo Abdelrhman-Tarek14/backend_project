@@ -20,7 +20,14 @@ export const OpenCasesOverlay: React.FC<OpenCasesOverlayProps> = ({
     return (
         <DragOverlay dropAnimation={null}>
             {activeCase ? (
-                <div style={{ opacity: 0.9, cursor: 'grabbing', transform: 'scale(1.02)' }}>
+                <div style={{ 
+                    opacity: 0.95, 
+                    cursor: 'grabbing', 
+                    transform: 'scale(1.05)',
+                    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1)',
+                    borderRadius: '16px',
+                    pointerEvents: 'none'
+                }}>
                     <CaseCard data={activeCase} isOpen={true} />
                 </div>
             ) : null}

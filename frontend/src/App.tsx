@@ -148,7 +148,7 @@ function AppContent() {
           <Route path="/restricted" element={
             user ? (
               (user.isActive !== false && user.role !== ROLES.NEW_USER)
-                ? <Navigate to="/timer" replace />
+                ? <Navigate to={isAdminLevel ? "/admin/open-cases" : "/timer"} replace />
                 : <RestrictedPage />
             ) : <Navigate to="/login" replace />
           } />
@@ -156,7 +156,7 @@ function AppContent() {
           <Route path="/" element={
             user ? (
               (user.isActive !== false && user.role !== ROLES.NEW_USER)
-                ? <Navigate to="/timer" replace />
+                ? <Navigate to={isAdminLevel ? "/admin/open-cases" : "/timer"} replace />
                 : <Navigate to="/restricted" replace />
             ) : <Navigate to="/login" replace />
           } />
@@ -204,7 +204,7 @@ function AppContent() {
                         )
                       } />
 
-                      <Route path="*" element={<Navigate to="/timer" replace />} />
+                      <Route path="*" element={<Navigate to={isAdminLevel ? "/admin/open-cases" : "/timer"} replace />} />
                     </Routes>
                   </AnimatePresence>
                 </main>

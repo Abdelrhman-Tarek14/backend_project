@@ -50,18 +50,19 @@ export const useCaseTimer = (caseData: TimerCaseData, durationMinutes: number = 
             start = new Date(startTime);
         } else if (startDate && startTime) {
             start = new Date(`${startDate}T${startTime}`);
-        } else if (caseData.timestamp) {
-            start = new Date(caseData.timestamp);
         }
 
         if (!start || isNaN(start.getTime())) return null;
+
+        // Floor to the minute to match UI display (HH:mm) and user expectations
+        start.setSeconds(0, 0);
 
         const effectiveDuration = Number(eta) || Number(durationMinutes) || 0;
         const totalDurationMs = effectiveDuration * 60000;
         const end = new Date(start.getTime() + totalDurationMs);
 
         return { start, end, totalDurationMs };
-    }, [startDate, startTime, eta, durationMinutes, caseData.timestamp]);
+    }, [startDate, startTime, eta, durationMinutes]);
 
     useEffect(() => {
         if (!timeDetails) return;

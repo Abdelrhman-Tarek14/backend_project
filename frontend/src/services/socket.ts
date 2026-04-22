@@ -23,11 +23,11 @@ class SocketService {
         });
 
         this.socket.on('connect', () => {
-            console.log('Connected to Realtime Gateway');
+            // console.log('Connected to Realtime Gateway');
         });
 
         this.socket.on('disconnect', () => {
-            console.log('Disconnected from Realtime Gateway');
+            // console.log('Disconnected from Realtime Gateway');
         });
 
         this.socket.on('connect_error', (error: Error) => {

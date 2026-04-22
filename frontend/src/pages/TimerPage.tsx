@@ -7,7 +7,6 @@ import { ActiveCase } from '../features/timer/components/ActiveCase';
 import { usePiP } from '../context/PiPContext';
 import { BiWindows, BiCheckCircle } from 'react-icons/bi';
 
-// 1. تعريف واجهة بيانات الـ Case
 export interface TimerCase {
     id?: string | number;
     case_number: string | number;
@@ -27,20 +26,19 @@ export function TimerPage() {
     const { user } = useAuth();
     const { openPiP } = usePiP();
 
-    const [activeCase, setActiveCase] = useState<TimerCase | null>(null);
+    const [activeCases, setActiveCases] = useState<TimerCase[]>([]);
     const [showToast, setShowToast] = useState<boolean>(false);
 
     useEffect(() => {
         if (!user?.email) return;
 
         const unsubActive = timerService.subscribeToActiveCases(user.email, (cases) => {
-            const newActiveCase = cases && cases.length > 0 ? (cases[0] as unknown as TimerCase) : null;
-
-            setActiveCase((prevCase) => {
-                if (prevCase && !newActiveCase) {
+            setActiveCases((prevCases) => {
+                const newCases = cases ? (cases as unknown as TimerCase[]) : [];
+                if (prevCases.length > 0 && newCases.length < prevCases.length) {
                     handleCaseCompleted();
                 }
-                return newActiveCase;
+                return newCases;
             });
         });
 
@@ -74,14 +72,23 @@ export function TimerPage() {
 
             {/* Active Case Section */}
             <div className={styles.activeCaseContainer}>
-                {activeCase ? (
-                    <ActiveCase
-                        key={activeCase.case_number}
-                        caseData={activeCase}
-                    />
+                {activeCases.length > 0 ? (
+                    activeCases.map((caseData) => (
+                        <ActiveCase
+                            key={caseData.case_number}
+                            caseData={caseData}
+                        />
+                    ))
                 ) : (
-                    <div className={styles.emptyState}>
-                        <p>No active case right now. Waiting for new form submission...</p>
+                    <div className={styles.emptyActiveCase}>
+                        <div className={styles.emptyIcon}>
+                            <div className={`${styles.z} ${styles.z1}`}>Z</div>
+                            <div className={`${styles.z} ${styles.z2}`}>Z</div>
+                            <div className={`${styles.z} ${styles.z3}`}>Z</div>
+                            <div className={`${styles.z} ${styles.z4}`}>Z</div>
+                        </div>
+                        <h3>No Active Cases</h3>
+                        <p>Waiting for new case assignments...</p>
                     </div>
                 )}
             </div>

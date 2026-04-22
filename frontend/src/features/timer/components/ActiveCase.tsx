@@ -25,7 +25,8 @@ export const ActiveCase: React.FC<ActiveCaseProps> = ({ caseData }) => {
         isScheduled
     } = useCaseTimer(caseData);
 
-    if (!startTime || !endTime) return <div className={styles.loading}>Loading Case Data...</div>;
+    // Removed forced loading state to allow rendering fallback --:-- if start time is missing
+    // if (!startTime || !endTime) return <div className={styles.loading}>Loading Case Data...</div>;
 
     return (
         <div className={`${styles.container} ${isExceeded ? styles.overdue : ''}`}>
@@ -70,7 +71,12 @@ export const ActiveCase: React.FC<ActiveCaseProps> = ({ caseData }) => {
                 <div className={styles.metaItem}>
                     <span className={styles.label}>Start Time</span>
                     <div className={styles.lockedTime}>
-                        <span>{startTime.getDate().toString().padStart(2, '0')}/${(startTime.getMonth() + 1).toString().padStart(2, '0')} - {startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+                        <span>
+                            {startTime 
+                                ? `${startTime.getDate().toString().padStart(2, '0')}/${(startTime.getMonth() + 1).toString().padStart(2, '0')} - ${startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}`
+                                : '--:--'
+                            }
+                        </span>
                     </div>
                 </div>
                 <div className={styles.metaItem}>
@@ -80,7 +86,7 @@ export const ActiveCase: React.FC<ActiveCaseProps> = ({ caseData }) => {
                 <div className={styles.metaItem}>
                     <span className={styles.label}>Expected End</span>
                     <span className={styles.value}>
-                        {endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {endTime ? endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                     </span>
                 </div>
             </div>

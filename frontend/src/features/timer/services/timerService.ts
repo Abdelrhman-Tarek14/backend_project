@@ -17,14 +17,14 @@ export interface FormattedCase {
 // ==========================================
 //  Helper: Unified Data Mapping & Fallbacks
 // ==========================================
-const formatCaseData = (item: any): FormattedCase => {
-    // Handle both Flat Assignment objects and Case objects with nested assignments
-    // If item.assignments is missing, assume item IS the assignment
+const formatCaseData = (item: any, specificAssignment?: any): FormattedCase => {
+    // If specificAssignment is provided, we use it. 
+    // Otherwise, we try to extract from item.assignments[0] (backward compatibility)
     const isFlatAssignment = !item.assignments;
-    const assignment = isFlatAssignment ? item : (item.assignments?.[0] || {});
+    const assignment = specificAssignment || (isFlatAssignment ? item : (item.assignments?.[0] || {}));
     const parentCase = isFlatAssignment ? (item.case || {}) : item;
 
-    console.debug('[timerService] Mapping item:', { isFlatAssignment, id: item.id, caseNumber: parentCase.caseNumber });
+    // console.debug('[timerService] Mapping item:', { isFlatAssignment, id: item.id, caseNumber: parentCase.caseNumber });
 
     return {
         ...item,
@@ -38,8 +38,21 @@ const formatCaseData = (item: any): FormattedCase => {
         assignedBy: assignment.assignedBy || null,
         tl_name: assignment.user?.leader?.name || 'Not Found',
         timestamp: assignment.startTime || item.createdAt || null,
-        queueRecord: assignment.queueRecord || null, // Flattened for easy access and sorting
+        queueRecord: assignment.queueRecord || null,
     };
+};
+
+/**
+ * Utility to flatten a response that might contain Cases with multiple Assignments.
+ * Each assignment becomes a separate FormattedCase card.
+ */
+const flattenAssignments = (items: any[]): FormattedCase[] => {
+    return items.flatMap(item => {
+        if (item.assignments && Array.isArray(item.assignments) && item.assignments.length > 0) {
+            return item.assignments.map(assignment => formatCaseData(item, assignment));
+        }
+        return [formatCaseData(item)];
+    });
 };
 
 export const timerService = {
@@ -106,8 +119,8 @@ export const timerService = {
             const rawData = (response.data as any)?.data || response.data;
             const cases = Array.isArray(rawData) ? rawData : [];
             
-            console.log(`[timerService] getActiveCases: Received ${cases.length} cases`, cases);
-            return cases.map(formatCaseData);
+            // console.log(`[timerService] getActiveCases: Received ${cases.length} cases`, cases);
+            return flattenAssignments(cases);
         } catch (error) {
             console.error("Error fetching active cases:", error);
             return [];
@@ -126,9 +139,9 @@ export const timerService = {
                 const rawData = (response.data as any)?.data || response.data;
                 const cases = Array.isArray(rawData) ? rawData : [];
                 
-                console.log(`[timerService] subscribeToAllOpenCases: Received ${cases.length} cases`, cases);
+                // console.log(`[timerService] subscribeToAllOpenCases: Received ${cases.length} cases`, cases);
                 
-                const formattedCases = cases.map(formatCaseData);
+                const formattedCases = flattenAssignments(cases);
                 callback(formattedCases);
             } catch (error) {
                 console.error("Error fetching all cases:", error);

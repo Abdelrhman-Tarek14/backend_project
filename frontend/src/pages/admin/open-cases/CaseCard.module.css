@@ -57,7 +57,7 @@
 }
 
 .caseNumber {
-    font-weight: 800;
+    font-weight: 700;
     font-size: 0.85rem;
     color: var(--color-text-main);
 }
@@ -91,7 +91,7 @@
 .detailRow strong {
     font-size: 0.68rem;
     color: var(--color-text-main);
-    font-weight: 800;
+    font-weight: 600;
 }
 
 .timerRow {
@@ -139,7 +139,7 @@
     gap: 4px;
     color: var(--color-text-main);
     font-size: 0.78rem;
-    font-weight: 800;
+    font-weight: 700;
 }
 
 .tlBadge {

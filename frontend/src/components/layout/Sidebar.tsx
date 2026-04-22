@@ -7,10 +7,12 @@ import {
     BiLogOut,
     BiChevronLeft,
     BiChevronRight,
-    BiShieldQuarter
+    BiShieldQuarter,
+    BiGroup
 } from 'react-icons/bi';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { useUserRole } from '../../hooks/useUserRole';
+import { ROLES } from '../../constants/roles';
 import { m, AnimatePresence } from 'framer-motion';
 import styles from './Sidebar.module.css';
 
@@ -33,11 +35,13 @@ interface SidebarLinkProps {
  */
 export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
     const { logout } = useAuth();
-    const { isAdminLevel } = useUserRole();
+    const { role, isSuperAdmin, isAdminLevel } = useUserRole();
+
+    const canManageUsers = isSuperAdmin || role === ROLES.ADMIN || role === ROLES.SUPERVISOR;
 
     const sidebarVariants = {
         expanded: { width: 240 },
-        collapsed: { width: 70 }
+        collapsed: { width: 60 }
     };
 
     return (
@@ -65,11 +69,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                                 label="System Status"
                                 isCollapsed={isCollapsed}
                             />
+                            {canManageUsers && (
+                                <SidebarLink
+                                    to="/admin/users"
+                                    icon={<BiGroup size={22} />}
+                                    label="User Management"
+                                    isCollapsed={isCollapsed}
+                                />
+                            )}
                             <div className={styles.navDivider} />
                         </>
                     )}
                     <SidebarLink
-                        to="/"
+                        to="/timer"
                         icon={<BiTimeFive size={22} />}
                         label="Timer"
                         isCollapsed={isCollapsed}

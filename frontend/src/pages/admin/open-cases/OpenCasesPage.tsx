@@ -36,7 +36,7 @@ const OpenCasesPage: React.FC = () => {
         const fetchStatus = async () => {
             try {
                 const response = await casesApi.getSalesforceSyncStatus();
-                console.log('SF Status Response:', response);
+                // console.log('SF Status Response:', response);
                 
                 // response.data could be an array of status objects or a single one depending on endpoint
                 // CasesService.findAll returns an array of IntegrationStatus
@@ -160,11 +160,11 @@ const OpenCasesPage: React.FC = () => {
         return () => { unsubscribe(); };
     }, []);
 
-    useEffect(() => {
-        if (cases.length > 0) {
-            console.log('OpenCasesPage: Fetched Cases:', cases);
-        }
-    }, [cases]);
+    // useEffect(() => {
+    //     if (cases.length > 0) {
+    //         console.log('OpenCasesPage: Fetched Cases:', cases);
+    //     }
+    // }, [cases]);
 
     useEffect(() => {
         const timer = setInterval(() => dispatch({ type: 'INCREMENT_TICK' }), 1000);
@@ -177,11 +177,12 @@ const OpenCasesPage: React.FC = () => {
             start = new Date(c.start_time);
         } else if (c.start_date && c.start_time) {
             start = new Date(`${c.start_date}T${c.start_time}`);
-        } else if (c.timestamp) {
-            start = new Date(c.timestamp);
         }
 
         if (!start || isNaN(start.getTime())) return { isExceeded: false, progress: 0 };
+
+        // Floor to the minute to match UI display (HH:mm) and user expectations
+        start.setSeconds(0, 0);
 
         const now = new Date().getTime();
         const duration = Number(c.eta) || 0;
@@ -228,15 +229,24 @@ const OpenCasesPage: React.FC = () => {
     const filteredCases = useMemo(() => {
         if (!searchTerm) return tabFilteredCases;
         const term = searchTerm.trim().toLowerCase();
-        return tabFilteredCases.filter(c => {
+        
+        // When searching, we look through ALL cases regardless of tab
+        return cases.filter(c => {
             const caseNum = c.case_number ? c.case_number.toString().toLowerCase() : '';
             const agentName = c.owner_name ? c.owner_name.toLowerCase() : '';
             const agentEmail = c.ownerEmail ? c.ownerEmail.toLowerCase() : '';
             const formattedAgent = c.ownerEmail ? formatAgentName(c.ownerEmail).toLowerCase() : '';
             const caseType = c.case_type ? c.case_type.toLowerCase() : '';
-            return caseNum.includes(term) || agentName.includes(term) || agentEmail.includes(term) || formattedAgent.includes(term) || caseType.includes(term);
+            const country = c.country ? c.country.toLowerCase() : '';
+            
+            return caseNum.includes(term) || 
+                   agentName.includes(term) || 
+                   agentEmail.includes(term) || 
+                   formattedAgent.includes(term) || 
+                   caseType.includes(term) ||
+                   country.includes(term);
         });
-    }, [tabFilteredCases, searchTerm]);
+    }, [cases, tabFilteredCases, searchTerm]);
 
     const counts = useMemo(() => {
         const sharedCount = Object.keys(caseNumberCounts).filter(num => {
@@ -371,13 +381,23 @@ const OpenCasesPage: React.FC = () => {
                     title={Titles[filterTab]}
                     description={Descriptions[filterTab]}
                     searchTerm={searchTerm}
-                    onSearchChange={(val) => dispatch({ type: 'SET_SEARCH_TERM', payload: val })}
+                    onSearchChange={(val) => {
+                        dispatch({ type: 'SET_SEARCH_TERM', payload: val });
+                        if (val.trim() !== '') {
+                            dispatch({ type: 'SET_FILTER_TAB', payload: 'all' });
+                        }
+                    }}
                     count={filteredCases.length}
                 />
 
                 <OpenCasesStats
                     filterTab={filterTab}
-                    onTabChange={(tab) => dispatch({ type: 'SET_FILTER_TAB', payload: tab })}
+                    onTabChange={(tab) => {
+                        dispatch({ type: 'SET_FILTER_TAB', payload: tab });
+                        if (tab !== 'all') {
+                            dispatch({ type: 'SET_SEARCH_TERM', payload: '' });
+                        }
+                    }}
                     counts={counts}
                     isSalesforceConnected={isSalesforceConnected}
                 />
@@ -390,7 +410,7 @@ const OpenCasesPage: React.FC = () => {
                     <OpenCasesGrid
                         cases={filteredCases}
                         sortableItemIds={sortableItemIds}
-                        isDragEnabled={filterTab === 'all'}
+                        isDragEnabled={!['shared-cases', 'overloaded-agents'].includes(filterTab)}
                         getSafeId={getSafeId}
                     />
                 )}

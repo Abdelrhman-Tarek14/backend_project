@@ -2,7 +2,6 @@ import React, { useState, memo } from 'react';
 import styles from './EtaCalculator.module.css';
 import { calculateETA, CASE_TYPES } from '../services/etaLogic'; 
 import { BiCalculator, BiReset, BiPencil } from 'react-icons/bi';
-import { RiArrowDownDoubleFill, RiArrowUpDoubleFill } from 'react-icons/ri';
 
 export interface EtaData {
     eta: number;
@@ -41,7 +40,6 @@ export const EtaCalculator: React.FC<EtaCalculatorProps> = memo(function EtaCalc
 
     const [result, setResult] = useState<number>(0);
     const [finishTime, setFinishTime] = useState<string>("");
-    const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
     const [isEditingTime, setIsEditingTime] = useState<boolean>(false);
 
     const calculateResult = (newInputs: CalculatorInputs) => {
@@ -155,30 +153,12 @@ export const EtaCalculator: React.FC<EtaCalculatorProps> = memo(function EtaCalc
                 <div className={styles.titleWrapper}>
                     <BiCalculator className={styles.icon} />
                     <h3>ETA Calculator</h3>
-                    <button
-                        onClick={() => setIsCollapsed(!isCollapsed)}
-                        className={styles.collapseBtn}
-                        title={isCollapsed ? "Expand" : "Collapse"}
-                    >
-                        {isCollapsed ? (
-                            <>
-                                <span>Expand</span>
-                                <RiArrowDownDoubleFill />
-                            </>
-                        ) : (
-                            <>
-                                <span>Collapse</span>
-                                <RiArrowUpDoubleFill />
-                            </>
-                        )}
-                    </button>
                 </div>
                 <div className={styles.headerControls}>
                 </div>
             </div>
 
-            {!isCollapsed && (
-                <div className={styles.calculatorBody}>
+            <div className={styles.calculatorBody}>
                     <div className={styles.topControls}>
                         <div className={styles.selectContainer}>
                             <label className={styles.floatingLabel} htmlFor="caseTypeSelect">Case Type</label>
@@ -293,7 +273,6 @@ export const EtaCalculator: React.FC<EtaCalculatorProps> = memo(function EtaCalc
                         </div>
                     </div>
                 </div>
-            )}
         </div>
     );
 });

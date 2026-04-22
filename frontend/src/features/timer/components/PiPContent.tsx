@@ -31,16 +31,7 @@ export const PiPContent: React.FC<PiPContentProps> = ({
 
     return (
         <div className={styles.container}>
-            <div className={styles.header}>
-                <div className={styles.caseInfo}>
-                    <BiHash size={14} color="#FF5722" />
-                    <span className={styles.caseNumber}>{activeCase.case_number}</span>
-                </div>
-                <div className={styles.etaLabel}>
-                    ETA: {activeCase.eta || 0}m
-                </div>
-            </div>
-
+            {/* 1. Timer Display */}
             <div className={styles.mainDisplay}>
                 <div className={styles.timeLabel}>{isExceeded ? 'Exceeded' : 'Remaining'}</div>
                 <div className={`${styles.timeValue} ${isExceeded ? styles.overdue : ''}`}>
@@ -48,7 +39,20 @@ export const PiPContent: React.FC<PiPContentProps> = ({
                 </div>
             </div>
 
+            {/* 2. Case Number */}
+            <div className={styles.header}>
+                <div className={styles.caseInfo}>
+                    <BiHash size={14} color="#FF5722" />
+                    <span className={styles.caseNumber}>{activeCase.case_number}</span>
+                </div>
+            </div>
+
+            {/* 3. ETA & Start Time */}
             <div className={styles.footerGrid}>
+                <div className={styles.metaItem}>
+                    <span className={styles.metaLabel}>ETA</span>
+                    <span className={styles.metaValue}>{activeCase.eta || 0}m</span>
+                </div>
                 <div className={styles.metaItem}>
                     <span className={styles.metaLabel}>Start</span>
                     <span className={styles.metaValue}>

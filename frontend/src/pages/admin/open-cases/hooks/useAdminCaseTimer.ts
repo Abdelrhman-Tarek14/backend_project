@@ -22,7 +22,7 @@ export const useAdminCaseTimer = (
     fallbackDuration: number = 0
 ): AdminCaseTimerResult => {
     const data = caseData || {};
-    const { start_date: startDate, start_time: startTime, eta, timestamp } = data;
+    const { start_date: startDate, start_time: startTime, eta } = data;
 
     const [isExceeded, setIsExceeded] = useState<boolean>(false);
     const [isNearExceeded, setIsNearExceeded] = useState<boolean>(false);
@@ -41,18 +41,19 @@ export const useAdminCaseTimer = (
             start = new Date(startTime);
         } else if (startDate && startTime) {
             start = new Date(`${startDate}T${startTime}`);
-        } else if (timestamp) {
-            start = new Date(timestamp);
         }
 
         if (!start || isNaN(start.getTime())) return null;
+
+        // Floor to the minute to match UI display (HH:mm) and user expectations
+        start.setSeconds(0, 0);
 
         const effectiveDuration = !isWaitingEta ? Number(eta) : fallbackDuration;
         const totalDurationMs = effectiveDuration * 60000;
         const end = new Date(start.getTime() + totalDurationMs);
 
         return { start, end, totalDurationMs };
-    }, [startDate, startTime, eta, isWaitingEta, fallbackDuration, timestamp]);
+    }, [startDate, startTime, eta, isWaitingEta, fallbackDuration]);
 
     useEffect(() => {
         if (!timeDetails) return;

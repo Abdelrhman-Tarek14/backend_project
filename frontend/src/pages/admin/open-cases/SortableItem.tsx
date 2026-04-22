@@ -11,6 +11,11 @@ const itemVariants: Variants = {
         opacity: 1,
         scale: 1,
         transition: { type: "spring", stiffness: 300, damping: 25 }
+    },
+    exit: {
+        opacity: 0,
+        scale: 0.8,
+        transition: { duration: 0.2 }
     }
 };
 
@@ -32,10 +37,10 @@ export const SortableItem = ({ id, children }: SortableItemProps) => {
     const style: React.CSSProperties = {
         transform: CSS.Translate.toString(transform),
         transition,
-        opacity: isDragging ? 0.6 : 1,
+        opacity: isDragging ? 0.3 : 1,
         touchAction: 'none',
         position: 'relative',
-        zIndex: isDragging ? 999 : 'auto'
+        zIndex: isDragging ? 999 : 'auto',
     };
 
     return (
@@ -46,6 +51,12 @@ export const SortableItem = ({ id, children }: SortableItemProps) => {
             variants={itemVariants}
             initial="hidden"
             animate="visible"
+            exit="exit"
+            layout
+            transition={{
+                layout: { type: "spring", stiffness: 300, damping: 30 },
+                opacity: { duration: 0.2 }
+            }}
         >
             {typeof children === 'function' ? children(listeners) : children}
         </m.div>

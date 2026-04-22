@@ -4,6 +4,7 @@ import { lazy, Suspense } from 'react';
 // For AdminLayout, we use the named export correctly in the lazy import
 const OpenCasesPage = lazy(() => import('../open-cases/OpenCasesPage'));
 const SystemStatusPage = lazy(() => import('../system/SystemStatusPage'));
+const UsersManagementPage = lazy(() => import('../users/UsersManagementPage'));
 
 const AdminPageLoading = () => (
     <div style={{ padding: '2rem', textAlign: 'center', color: '#888' }}>
@@ -19,6 +20,7 @@ export default function AdminRoutes() {
                     <Route index element={<Navigate to="open-cases" replace />} />
                     <Route path="open-cases" element={<OpenCasesPage />} />
                     <Route path="system-status" element={<SystemStatusPage />} />
+                    <Route path="users" element={<UsersManagementPage />} />
                 </Route>
             </Routes>
         </Suspense>

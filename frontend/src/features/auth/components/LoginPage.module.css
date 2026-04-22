@@ -40,7 +40,7 @@
     border: 1px solid var(--glass-border);
     box-shadow: var(--shadow-lg);
     text-align: center;
-    max-width: 460px;
+    max-width: 540px;
     width: 100%;
     position: relative;
     z-index: 10;
@@ -133,6 +133,98 @@
 
 .googleBtn:active {
     transform: translateY(-1px);
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 2rem;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.divider::not(:empty)::before {
+    margin-right: .5em;
+}
+
+.divider::not(:empty)::after {
+    margin-left: .5em;
+}
+
+.localForm {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.inputGroup {
+    text-align: left;
+}
+
+.input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--color-text-main);
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 1rem;
+    transition: all 0.3s var(--expo-out);
+}
+
+.input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.15);
+}
+
+.input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.submitBtn {
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s var(--expo-out);
+    margin-top: 0.5rem;
+}
+
+.submitBtn:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 87, 34, 0.3);
+}
+
+.submitBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.errorMessage {
+    color: var(--color-danger);
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+    text-align: center;
+    background: rgba(239, 68, 68, 0.1);
+    padding: 0.5rem;
+    border-radius: 8px;
+    border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
 .footer {

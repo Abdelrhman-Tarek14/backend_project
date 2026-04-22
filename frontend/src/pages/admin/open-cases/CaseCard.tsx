@@ -140,7 +140,7 @@ export const CaseCard: FC<CaseCardProps> = React.memo(({ data, isOpen, dragHandl
                 <div style={{ display: 'flex', alignItems: 'center' }}>
                     <div className={styles.caseNumber}>{data.case_number}</div>
                 </div>
-                <div className={styles.cardGrap} {...dragHandleProps}></div>
+                {dragHandleProps && <div className={styles.cardGrap} {...dragHandleProps}></div>}
                 <StatusBadge
                     isExceeded={isExceeded}
                     isScheduled={isScheduled}

@@ -7,6 +7,9 @@ import type { SystemHealthResponse } from '../../../api/systemApi';
 import socketService from '../../../services/socket';
 import Swal from 'sweetalert2';
 import styles from './SystemStatusPage.module.css';
+import { useUserRole } from '../../../hooks/useUserRole';
+import { ROLES } from '../../../constants/roles';
+import { Navigate } from 'react-router-dom';
 
 const formatMemory = (mb: number) => {
     if (mb < 1024) return `${mb} MB`;
@@ -43,10 +46,14 @@ const StatusBadge = ({ status }: { status?: 'operational' | 'down' | 'degraded' 
 };
 
 const SystemStatusPage = () => {
+    const { role, loading: roleLoading } = useUserRole();
     const [isMaintenance, setIsMaintenance] = useState<boolean>(false);
     const [healthData, setHealthData] = useState<SystemHealthResponse | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [refreshing, setRefreshing] = useState<boolean>(false);
+
+    // Permission check
+    const isAuthorized = role && ([ROLES.SUPER_USER, ROLES.ADMIN, ROLES.CMD] as string[]).includes(role);
 
     const fetchData = useCallback(async (isManualRefresh = false) => {
         if (isManualRefresh) setRefreshing(true);
@@ -134,6 +141,9 @@ const SystemStatusPage = () => {
             }
         }
     };
+
+    if (roleLoading) return null;
+    if (!isAuthorized) return <Navigate to="/restricted" replace />;
 
     if (loading) {
         return (

@@ -18,7 +18,7 @@
 
 .mainContent {
     display: flex;
-    margin: 65px 10px 0px 85px;
+    margin: 60px 10px 0px 75px;
     width: calc(100% - 85px);
     transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1),
                 width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
