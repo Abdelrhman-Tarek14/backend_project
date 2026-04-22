@@ -1,11 +1,11 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import type { ReactNode } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
-import { m, useInView } from 'framer-motion';
+import { m } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 
 const itemVariants: Variants = {
-    hidden: { opacity: 0, scale: 0.8, y: 20 },
+    hidden: { opacity: 0, scale: 0.96, y: 10 },
     visible: {
         opacity: 1,
         scale: 1,
@@ -40,15 +40,6 @@ export const SortableItem = React.memo(({ id, children, index = 0, shouldAnimate
         isDragging
     } = useSortable({ id });
 
-    const ref = useRef<HTMLDivElement>(null);
-    const inView = useInView(ref, { amount: 0.2, once: false });
-
-    // Combine refs for dnd-kit and framer-motion
-    const setRefs = (el: HTMLDivElement | null) => {
-        setNodeRef(el);
-        (ref as any).current = el;
-    };
-
     const style: React.CSSProperties = {
         opacity: isDragging ? 0.4 : 1,
         touchAction: 'none',
@@ -58,16 +49,10 @@ export const SortableItem = React.memo(({ id, children, index = 0, shouldAnimate
 
     return (
         <m.div
-            ref={setRefs}
+            ref={setNodeRef}
             style={style}
             {...attributes}
-            // Animate only when in view (for the entrance effect)
-            animate={shouldAnimate ? (inView ? {
-                x: transform?.x ?? 0,
-                y: transform?.y ?? 0,
-                opacity: isDragging ? 0.4 : 1,
-                scale: 1,
-            } : { opacity: 0, scale: 0.8, y: 20 }) : {
+            animate={{
                 x: transform?.x ?? 0,
                 y: transform?.y ?? 0,
                 opacity: isDragging ? 0.4 : 1,
@@ -78,12 +63,12 @@ export const SortableItem = React.memo(({ id, children, index = 0, shouldAnimate
                 y: { type: "spring", stiffness: 500, damping: 50, mass: 1 },
                 layout: { type: "spring", stiffness: 400, damping: 40, mass: 0.8 },
                 opacity: { 
-                    duration: shouldAnimate ? 0.25 : 0, 
-                    delay: (shouldAnimate && !isDragging && inView) ? Math.min(index * 0.03, 0.2) : 0 
+                    duration: shouldAnimate ? 0.2 : 0, 
+                    delay: (shouldAnimate && !isDragging) ? Math.min(index * 0.03, 0.3) : 0 
                 },
                 scale: { 
-                    duration: shouldAnimate ? 0.25 : 0, 
-                    delay: (shouldAnimate && !isDragging && inView) ? Math.min(index * 0.03, 0.2) : 0 
+                    duration: shouldAnimate ? 0.2 : 0, 
+                    delay: (shouldAnimate && !isDragging) ? Math.min(index * 0.03, 0.3) : 0 
                 }
             }}
             variants={shouldAnimate ? itemVariants : undefined}

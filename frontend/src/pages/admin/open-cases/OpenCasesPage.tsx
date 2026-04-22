@@ -1,5 +1,4 @@
-import React, { useEffect, useMemo, useReducer, useRef, useState, useCallback } from 'react';
-import type { UIEvent } from 'react';
+import React, { useEffect, useMemo, useReducer } from 'react';
 import {
     DndContext,
     closestCenter,
@@ -32,19 +31,6 @@ import styles from './OpenCases.module.css';
 const OpenCasesPage: React.FC = () => {
     const [state, dispatch] = useReducer(openCasesReducer, initialState);
     const { cases, loading, searchTerm, activeId, filterTab, systemStatus, tick } = state;
-
-    // Scroll Animation States
-    const listRef = useRef<HTMLDivElement>(null);
-    const [topGradientOpacity, setTopGradientOpacity] = useState<number>(0);
-    const [bottomGradientOpacity, setBottomGradientOpacity] = useState<number>(1);
-
-    const handleScroll = useCallback((e: UIEvent<HTMLDivElement>) => {
-        const target = e.target as HTMLDivElement;
-        const { scrollTop, scrollHeight, clientHeight } = target;
-        setTopGradientOpacity(Math.min(scrollTop / 50, 1));
-        const bottomDistance = scrollHeight - (scrollTop + clientHeight);
-        setBottomGradientOpacity(scrollHeight <= clientHeight ? 0 : Math.min(bottomDistance / 50, 1));
-    }, []);
 
     useEffect(() => {
         const fetchStatus = async () => {
@@ -383,67 +369,55 @@ const OpenCasesPage: React.FC = () => {
     if (loading) return <div className={styles.emptyState}>Loading active cases...</div>;
 
     return (
-        <div className={styles.pageContainer}>
-            <OpenCasesHeader
-                title={Titles[filterTab]}
-                description={Descriptions[filterTab]}
-                searchTerm={searchTerm}
-                onSearchChange={(val) => {
-                    dispatch({ type: 'SET_SEARCH_TERM', payload: val });
-                    if (val.trim() !== '') {
-                        dispatch({ type: 'SET_FILTER_TAB', payload: 'all' });
-                    }
-                }}
-                count={filteredCases.length}
-            />
+        <div className={styles.casesSection}>
+            <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                onDragCancel={handleDragCancel}
+            >
+                <OpenCasesHeader
+                    title={Titles[filterTab]}
+                    description={Descriptions[filterTab]}
+                    searchTerm={searchTerm}
+                    onSearchChange={(val) => {
+                        dispatch({ type: 'SET_SEARCH_TERM', payload: val });
+                        if (val.trim() !== '') {
+                            dispatch({ type: 'SET_FILTER_TAB', payload: 'all' });
+                        }
+                    }}
+                    count={filteredCases.length}
+                />
 
-            <OpenCasesStats
-                filterTab={filterTab}
-                onTabChange={(tab) => {
-                    dispatch({ type: 'SET_FILTER_TAB', payload: tab });
-                    if (tab !== 'all') {
-                        dispatch({ type: 'SET_SEARCH_TERM', payload: '' });
-                    }
-                }}
-                counts={counts}
-                isSalesforceConnected={isSalesforceConnected}
-            />
+                <OpenCasesStats
+                    filterTab={filterTab}
+                    onTabChange={(tab) => {
+                        dispatch({ type: 'SET_FILTER_TAB', payload: tab });
+                        if (tab !== 'all') {
+                            dispatch({ type: 'SET_SEARCH_TERM', payload: '' });
+                        }
+                    }}
+                    counts={counts}
+                    isSalesforceConnected={isSalesforceConnected}
+                />
 
-            <div className={styles.scrollWrapper}>
-                <div
-                    ref={listRef}
-                    className={styles.scrollContainer}
-                    onScroll={handleScroll}
-                >
-                    <DndContext
-                        sensors={sensors}
-                        collisionDetection={closestCenter}
-                        onDragStart={handleDragStart}
-                        onDragEnd={handleDragEnd}
-                        onDragCancel={handleDragCancel}
-                    >
-                        {filterTab === 'shared-cases' ? (
-                            <OpenCasesGrouped groupedSharedCases={groupedSharedCases} />
-                        ) : filterTab === 'overloaded-agents' ? (
-                            <OpenCasesAgentGrouped groupedAgentCases={groupedOverloadedAgents} />
-                        ) : (
-                            <OpenCasesGrid
-                                cases={filteredCases}
-                                sortableItemIds={sortableItemIds}
-                                isDragEnabled={!['shared-cases', 'overloaded-agents'].includes(filterTab)}
-                                getSafeId={getSafeId}
-                                shouldAnimate={filterTab !== 'all'}
-                            />
-                        )}
+                {filterTab === 'shared-cases' ? (
+                    <OpenCasesGrouped groupedSharedCases={groupedSharedCases} />
+                ) : filterTab === 'overloaded-agents' ? (
+                    <OpenCasesAgentGrouped groupedAgentCases={groupedOverloadedAgents} />
+                ) : (
+                    <OpenCasesGrid
+                        cases={filteredCases}
+                        sortableItemIds={sortableItemIds}
+                        isDragEnabled={!['shared-cases', 'overloaded-agents'].includes(filterTab)}
+                        getSafeId={getSafeId}
+                        shouldAnimate={filterTab !== 'all'}
+                    />
+                )}
 
-                        <OpenCasesOverlay activeId={activeId} cases={cases} getSafeId={getSafeId} />
-                    </DndContext>
-                </div>
-
-                {/* Scroll Gradients - Now correctly positioned relative to scrollWrapper */}
-                <div className={styles.topGradient} style={{ opacity: topGradientOpacity }}></div>
-                <div className={styles.bottomGradient} style={{ opacity: bottomGradientOpacity }}></div>
-            </div>
+                <OpenCasesOverlay activeId={activeId} cases={cases} getSafeId={getSafeId} />
+            </DndContext>
         </div>
     );
 };
