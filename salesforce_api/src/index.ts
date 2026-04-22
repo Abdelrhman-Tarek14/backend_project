@@ -1,5 +1,6 @@
 import syncService from './services/sync-service.js';
 import { Logger } from './core/logger.js';
+import { credentialsManager } from './config/salesforce-credentials.js';
 
 const logger = new Logger('Main');
 
@@ -46,7 +47,14 @@ process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
 });
 
 // Start the service
-syncService.start().catch((err: Error) => {
-    logger.error('❌ Failed to start service:', err);
-    process.exit(1);
-});
+const start = async () => {
+    try {
+        await credentialsManager.init();
+        await syncService.start();
+    } catch (err: any) {
+        logger.error('❌ Failed to start service:', err);
+        process.exit(1);
+    }
+};
+
+start();

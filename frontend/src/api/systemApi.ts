@@ -27,4 +27,10 @@ export const systemApi = {
 
     getSystemHealth: () => 
         apiClient.get<SystemHealthResponse>('/system/health'),
+
+    getSalesforceConfig: () =>
+        apiClient.get('/system/config/salesforce'),
+
+    updateSalesforceConfig: (config: any) =>
+        apiClient.put('/system/config/salesforce', config),
 };

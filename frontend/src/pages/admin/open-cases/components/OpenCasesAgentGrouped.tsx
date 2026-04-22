@@ -4,9 +4,10 @@ import styles from '../OpenCases.module.css';
 
 interface OpenCasesAgentGroupedProps {
     groupedAgentCases: [string, any[], boolean?][];
+    tick?: number;
 }
 
-export const OpenCasesAgentGrouped: React.FC<OpenCasesAgentGroupedProps> = ({ groupedAgentCases }) => {
+export const OpenCasesAgentGrouped: React.FC<OpenCasesAgentGroupedProps> = ({ groupedAgentCases, tick = 0 }) => {
     return (
         <div className={styles.groupedSection}>
             {groupedAgentCases.map(([agentName, cases, isQueueGroup]) => (
@@ -15,6 +16,7 @@ export const OpenCasesAgentGrouped: React.FC<OpenCasesAgentGroupedProps> = ({ gr
                     agentName={agentName}
                     cases={cases}
                     isQueueGroup={isQueueGroup}
+                    tick={tick}
                 />
             ))}
             {groupedAgentCases.length === 0 && (

@@ -17,10 +17,6 @@ const env = parsedEnv.data;
 
 export default env;
 export const {
-    AURA_TOKEN,
-    AURA_CONTEXT,
-    COOKIE,
-    X_SFDC_Page_Scope_Id,
     BACKEND_URL,
     INTERNAL_BACKEND_URL,
     SALESFORCE_WEBHOOK_SECRET,

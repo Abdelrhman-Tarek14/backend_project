@@ -7,9 +7,10 @@ import { BiGroup } from 'react-icons/bi';
 interface CaseGroupProps {
     caseNumber: string | number;
     cases: CaseData[]; 
+    tick?: number;
 }
 
-export const CaseGroup: React.FC<CaseGroupProps> = ({ caseNumber, cases }) => {
+export const CaseGroup: React.FC<CaseGroupProps> = ({ caseNumber, cases, tick = 0 }) => {
     const agentCount = cases.length;
 
     return (
@@ -30,6 +31,7 @@ export const CaseGroup: React.FC<CaseGroupProps> = ({ caseNumber, cases }) => {
                         key={c.assignmentId || `${c.case_number}-${c.ownerEmail}`} 
                         data={c}
                         isOpen={true}
+                        tick={tick}
                     />
                 ))}
             </div>

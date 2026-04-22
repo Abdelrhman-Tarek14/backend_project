@@ -115,4 +115,37 @@ export class SystemService implements OnModuleInit {
       },
     };
   }
+
+  async getSalesforceConfig() {
+    const config = await this.prisma.systemConfig.findUnique({
+      where: { key: 'SALESFORCE_CREDENTIALS' },
+    });
+
+    if (!config) {
+      return {
+        auraToken: '',
+        cookie: '',
+        auraContext: '',
+        sfdcPageScopeId: '',
+      };
+    }
+
+    return config.value;
+  }
+
+  async updateSalesforceConfig(payload: any) {
+    const config = await this.prisma.systemConfig.upsert({
+      where: { key: 'SALESFORCE_CREDENTIALS' },
+      create: {
+        key: 'SALESFORCE_CREDENTIALS',
+        value: payload,
+      },
+      update: {
+        value: payload,
+      },
+    });
+
+    this.logger.log('Salesforce credentials updated in database');
+    return config.value;
+  }
 }

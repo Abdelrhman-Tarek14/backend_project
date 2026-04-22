@@ -6,12 +6,14 @@ interface OpenCasesOverlayProps {
     activeId: string | number | null;
     cases: any[];
     getSafeId: (c: any) => string;
+    tick?: number;
 }
 
 export const OpenCasesOverlay: React.FC<OpenCasesOverlayProps> = ({
     activeId,
     cases,
-    getSafeId
+    getSafeId,
+    tick = 0
 }) => {
     if (!activeId) return null;
 
@@ -28,7 +30,7 @@ export const OpenCasesOverlay: React.FC<OpenCasesOverlayProps> = ({
                     borderRadius: '16px',
                     pointerEvents: 'none'
                 }}>
-                    <CaseCard data={activeCase} isOpen={true} />
+                    <CaseCard data={activeCase} isOpen={true} tick={tick} />
                 </div>
             ) : null}
         </DragOverlay>

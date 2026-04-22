@@ -68,14 +68,18 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
+      - "443:443"
     env_file:
       - ./.env
     environment:
       - DOMAIN=${DOMAIN:-localhost}
+      - SSL_CERT_PATH=${SSL_CERT_PATH}
+      - SSL_KEY_PATH=${SSL_KEY_PATH}
     volumes:
       - ./backend/nginx/nginx.conf.template:/etc/nginx/nginx.conf.template:ro
+      - ./ssl:/etc/nginx/ssl:ro
     command: >
-      sh -c "envsubst '$$DOMAIN'
+      sh -c "envsubst '$$DOMAIN $$SSL_CERT_PATH $$SSL_KEY_PATH'
       < /etc/nginx/nginx.conf.template
       > /etc/nginx/nginx.conf
       && nginx -g 'daemon off;'"
@@ -96,7 +100,6 @@ services:
     restart: unless-stopped
     env_file:
       - ./.env
-      - ./sheet_poller/.env
     environment:
       - NODE_ENV=production
     depends_on:

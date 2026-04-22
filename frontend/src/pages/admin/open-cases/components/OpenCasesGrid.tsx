@@ -10,6 +10,7 @@ interface OpenCasesGridProps {
     isDragEnabled: boolean;
     getSafeId: (c: any) => string;
     shouldAnimate?: boolean;
+    tick?: number;
 }
 
 export const OpenCasesGrid: React.FC<OpenCasesGridProps> = ({
@@ -17,7 +18,8 @@ export const OpenCasesGrid: React.FC<OpenCasesGridProps> = ({
     sortableItemIds,
     isDragEnabled,
     getSafeId,
-    shouldAnimate = true
+    shouldAnimate = true,
+    tick = 0
 }) => {
     return (
         <SortableContext id="main-container" items={sortableItemIds} strategy={rectSortingStrategy} disabled={!isDragEnabled}>
@@ -27,7 +29,7 @@ export const OpenCasesGrid: React.FC<OpenCasesGridProps> = ({
                     return (
                         <SortableItem key={id} id={id} index={index} shouldAnimate={shouldAnimate}>
                             {(dragListeners) => (
-                                <CaseCard data={c} isOpen={true} dragHandleProps={dragListeners} />
+                                <CaseCard data={c} isOpen={true} dragHandleProps={dragListeners} tick={tick} />
                             )}
                         </SortableItem>
                     );

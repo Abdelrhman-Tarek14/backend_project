@@ -19,6 +19,7 @@ interface AdminCaseTimerResult {
 
 export const useAdminCaseTimer = (
     caseData: Partial<CaseData> | null | undefined,
+    tick: number = 0,
     fallbackDuration: number = 0
 ): AdminCaseTimerResult => {
     const data = caseData || {};
@@ -94,9 +95,7 @@ export const useAdminCaseTimer = (
         };
 
         checkThresholds();
-        const interval = setInterval(checkThresholds, 1000);
-        return () => clearInterval(interval);
-    }, [timeDetails, isWaitingEta, isExceeded, isNearExceeded, isScheduled]);
+    }, [timeDetails, isWaitingEta, tick]);
 
     return {
         startTime: timeDetails?.start || null,

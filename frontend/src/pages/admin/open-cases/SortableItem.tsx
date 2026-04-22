@@ -1,9 +1,14 @@
 import React from 'react';
 import type { ReactNode } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { m } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 
+/**
+ * Entry/Exit variants for cards. 
+ * We keep these simple to avoid layout thrashing.
+ */
 const itemVariants: Variants = {
     hidden: { opacity: 0, scale: 0.96, y: 10 },
     visible: {
@@ -31,20 +36,30 @@ export interface SortableItemProps {
     children: ReactNode | ((listeners: ReturnType<typeof useSortable>['listeners']) => ReactNode);
 }
 
+/**
+ * Optimized SortableItem component.
+ * Uses CSS transforms for dragging performance and Framer Motion only for entry animations.
+ */
 export const SortableItem = React.memo(({ id, children, index = 0, shouldAnimate = true }: SortableItemProps) => {
     const {
         attributes,
         listeners,
         setNodeRef,
         transform,
+        transition,
         isDragging
     } = useSortable({ id });
 
+    // Use CSS.Transform.toString for native browser performance
+    // dnd-kit's transform is much more efficient than animating via React state/props
     const style: React.CSSProperties = {
+        transform: CSS.Translate.toString(transform),
+        transition: isDragging ? 'none' : transition, // Disable transitions while dragging for responsiveness
         opacity: isDragging ? 0.4 : 1,
         touchAction: 'none',
         position: 'relative',
         zIndex: isDragging ? 999 : 'auto',
+        willChange: isDragging ? 'transform, opacity' : 'auto', // Hint to browser for GPU acceleration
     };
 
     return (
@@ -52,30 +67,15 @@ export const SortableItem = React.memo(({ id, children, index = 0, shouldAnimate
             ref={setNodeRef}
             style={style}
             {...attributes}
-            animate={{
-                x: transform?.x ?? 0,
-                y: transform?.y ?? 0,
-                opacity: isDragging ? 0.4 : 1,
-                scale: 1,
-            }}
-            transition={{
-                x: { type: "spring", stiffness: 500, damping: 50, mass: 1 },
-                y: { type: "spring", stiffness: 500, damping: 50, mass: 1 },
-                layout: { type: "spring", stiffness: 400, damping: 40, mass: 0.8 },
-                opacity: { 
-                    duration: shouldAnimate ? 0.2 : 0, 
-                    delay: (shouldAnimate && !isDragging) ? Math.min(index * 0.03, 0.3) : 0 
-                },
-                scale: { 
-                    duration: shouldAnimate ? 0.2 : 0, 
-                    delay: (shouldAnimate && !isDragging) ? Math.min(index * 0.03, 0.3) : 0 
-                }
-            }}
+            // We use Framer Motion only for the initial entrance of the card
             variants={shouldAnimate ? itemVariants : undefined}
             initial={shouldAnimate ? "hidden" : false}
-            layout="position"
+            animate="visible"
+            exit="exit"
         >
             {typeof children === 'function' ? children(listeners) : children}
         </m.div>
     );
 });
+
+SortableItem.displayName = 'SortableItem';

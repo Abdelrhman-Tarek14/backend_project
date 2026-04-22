@@ -22,9 +22,9 @@ let isShuttingDown = false;
 
 // Scheduling function
 const scheduleJob = () => {
-  logger.info(`Scheduling polling job: ${CONFIG.POLLING_INTERVAL_CRON}`);
+  logger.info(`Scheduling polling job: ${CONFIG.SYNC_CRON}`);
   
-  cron.schedule(CONFIG.POLLING_INTERVAL_CRON, async () => {
+  cron.schedule(CONFIG.SYNC_CRON, async () => {
     if (isShuttingDown) {
       logger.debug('Skipping schedule: system is shutting down.');
       return;

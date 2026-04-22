@@ -36,6 +36,7 @@ interface CaseCardProps {
     isOpen: boolean;
     dragHandleProps?: Record<string, any>;
     onUpdate?: () => void;
+    tick?: number;
 }
 
 interface BadgeStyle {
@@ -45,12 +46,12 @@ interface BadgeStyle {
     label: string;
 }
 
-export const CaseCard: FC<CaseCardProps> = React.memo(({ data, isOpen, dragHandleProps, onUpdate }) => {
+export const CaseCard: FC<CaseCardProps> = React.memo(({ data, isOpen, dragHandleProps, onUpdate, tick = 0 }) => {
     const { role } = useUserRole() as { role: UserRole | null };
 
     const {
         startTime, endTime, isExceeded, isScheduled, isWaitingEta, isNearExceeded, timeDetails
-    } = useAdminCaseTimer(data, 0);
+    } = useAdminCaseTimer(data, tick);
 
     const isManagement = role ? ([ROLES.SUPER_USER, ROLES.ADMIN, ROLES.CMD] as UserRole[]).includes(role) : false;
 

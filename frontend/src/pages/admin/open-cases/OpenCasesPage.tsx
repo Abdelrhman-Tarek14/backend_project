@@ -403,9 +403,9 @@ const OpenCasesPage: React.FC = () => {
                 />
 
                 {filterTab === 'shared-cases' ? (
-                    <OpenCasesGrouped groupedSharedCases={groupedSharedCases} />
+                    <OpenCasesGrouped groupedSharedCases={groupedSharedCases} tick={tick} />
                 ) : filterTab === 'overloaded-agents' ? (
-                    <OpenCasesAgentGrouped groupedAgentCases={groupedOverloadedAgents} />
+                    <OpenCasesAgentGrouped groupedAgentCases={groupedOverloadedAgents} tick={tick} />
                 ) : (
                     <OpenCasesGrid
                         cases={filteredCases}
@@ -413,10 +413,11 @@ const OpenCasesPage: React.FC = () => {
                         isDragEnabled={!['shared-cases', 'overloaded-agents'].includes(filterTab)}
                         getSafeId={getSafeId}
                         shouldAnimate={filterTab !== 'all'}
+                        tick={tick}
                     />
                 )}
 
-                <OpenCasesOverlay activeId={activeId} cases={cases} getSafeId={getSafeId} />
+                <OpenCasesOverlay activeId={activeId} cases={cases} getSafeId={getSafeId} tick={tick} />
             </DndContext>
         </div>
     );

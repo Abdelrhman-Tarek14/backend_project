@@ -9,9 +9,10 @@ interface AgentGroupProps {
     agentName: string;
     cases: CaseData[];
     isQueueGroup?: boolean;
+    tick?: number;
 }
 
-export const AgentGroup: React.FC<AgentGroupProps> = ({ agentName, cases, isQueueGroup }) => {
+export const AgentGroup: React.FC<AgentGroupProps> = ({ agentName, cases, isQueueGroup, tick = 0 }) => {
     const caseCount = cases.length;
     const displayName = formatAgentName(agentName);
 
@@ -35,6 +36,7 @@ export const AgentGroup: React.FC<AgentGroupProps> = ({ agentName, cases, isQueu
                         key={c.assignmentId || `${c.case_number}-${c.ownerEmail}`}
                         data={c}
                         isOpen={true}
+                        tick={tick}
                     />
                 ))}
             </div>

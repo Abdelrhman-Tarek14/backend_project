@@ -3,10 +3,10 @@ import { z } from 'zod';
 export const configSchema = z.object({
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
     
-    AURA_TOKEN: z.string().min(1, 'AURA_TOKEN is required'),
-    AURA_CONTEXT: z.string().min(1, 'AURA_CONTEXT is required'),
-    COOKIE: z.string().min(1, 'COOKIE is required'),
-    X_SFDC_Page_Scope_Id: z.string().min(1, 'X_SFDC_Page_Scope_Id is required'),
+    AURA_TOKEN: z.string().optional(),
+    AURA_CONTEXT: z.string().optional(),
+    COOKIE: z.string().optional(),
+    X_SFDC_Page_Scope_Id: z.string().optional(),
     
     BACKEND_URL: z.string().url('BACKEND_URL must be a valid URL'),
     INTERNAL_BACKEND_URL: z.string().url().optional(), // Fallback handled in logic

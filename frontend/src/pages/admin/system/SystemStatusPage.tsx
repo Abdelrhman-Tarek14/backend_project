@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
-import { BiServer, BiData, BiCloud, BiRefresh, BiWrench, BiLockAlt, BiLockOpenAlt, BiStats, BiPulse } from 'react-icons/bi';
+import { 
+    BiServer, BiData, BiCloud, BiRefresh, BiWrench, BiLockAlt, 
+    BiLockOpenAlt, BiStats, BiPulse, BiSave, BiShow, BiHide 
+} from 'react-icons/bi';
 import { TbApi } from 'react-icons/tb';
 import { systemApi } from '../../../api/systemApi';
 import type { SystemHealthResponse } from '../../../api/systemApi';
@@ -52,26 +55,39 @@ const SystemStatusPage = () => {
     const [loading, setLoading] = useState<boolean>(true);
     const [refreshing, setRefreshing] = useState<boolean>(false);
 
+    // Salesforce Config State
+    const [sfConfig, setSfConfig] = useState({
+        auraToken: '',
+        cookie: '',
+        auraContext: '',
+        sfdcPageScopeId: ''
+    });
+    const [showTokens, setShowTokens] = useState(false);
+    const [isSavingSfConfig, setIsSavingSfConfig] = useState(false);
+
     // Permission check
     const isAuthorized = role && ([ROLES.SUPER_USER, ROLES.ADMIN, ROLES.CMD] as string[]).includes(role);
 
     const fetchData = useCallback(async (isManualRefresh = false) => {
         if (isManualRefresh) setRefreshing(true);
         try {
-            const [maintenanceRes, healthRes] = await Promise.all([
+            const [maintenanceRes, healthRes, sfConfigRes] = await Promise.all([
                 systemApi.getMaintenanceStatus(),
-                systemApi.getSystemHealth()
+                systemApi.getSystemHealth(),
+                systemApi.getSalesforceConfig()
             ]);
             setIsMaintenance(maintenanceRes.data.enabled);
             setHealthData(healthRes.data);
+            if (sfConfigRes.data) {
+                setSfConfig(sfConfigRes.data);
+            }
         } catch (error) {
             console.error('Failed to fetch system metrics:', error);
-            // On failure to fetch health, we might simulate a 'down' state for the API
             setHealthData(prev => prev ? { ...prev, services: { ...prev.services, backend: { status: 'down' } } } as any : null);
         } finally {
             setLoading(false);
             if (isManualRefresh) {
-                setTimeout(() => setRefreshing(false), 500); // small delay for UX so spinner is visible
+                setTimeout(() => setRefreshing(false), 500);
             }
         }
     }, []);
@@ -79,18 +95,15 @@ const SystemStatusPage = () => {
     useEffect(() => {
         fetchData();
 
-        // 1. Initial Snapshot (if socket connects after component mounts)
         const handleSnapshot = (data: { maintenance: { enabled: boolean }, health: SystemHealthResponse }) => {
             setIsMaintenance(data.maintenance.enabled);
             setHealthData(data.health);
         };
 
-        // 2. Periodic Metrics (Heartbeat)
         const handleMetricsUpdate = (data: SystemHealthResponse) => {
             setHealthData(data);
         };
 
-        // 3. Global Maintenance Toggle
         const handleMaintenanceUpdate = (data: { enabled: boolean }) => {
             setIsMaintenance(data.enabled);
         };
@@ -142,6 +155,34 @@ const SystemStatusPage = () => {
         }
     };
 
+    const handleUpdateSfConfig = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSavingSfConfig(true);
+
+        try {
+            await systemApi.updateSalesforceConfig(sfConfig);
+            Swal.fire({
+                title: 'Configuration Saved!',
+                text: 'Salesforce credentials have been updated. The microservice will automatically refresh on its next sync cycle.',
+                icon: 'success',
+                timer: 3000,
+                showConfirmButton: false,
+                background: '#1e293b',
+                color: '#fff'
+            });
+        } catch (error: any) {
+            Swal.fire({
+                title: 'Update Failed',
+                text: error.response?.data?.message || 'Could not update Salesforce credentials.',
+                icon: 'error',
+                background: '#1e293b',
+                color: '#fff'
+            });
+        } finally {
+            setIsSavingSfConfig(false);
+        }
+    };
+
     if (roleLoading) return null;
     if (!isAuthorized) return <Navigate to="/restricted" replace />;
 
@@ -173,7 +214,7 @@ const SystemStatusPage = () => {
 
             <AnimatePresence>
                 <div className={styles.grid} key="system-metrics-grid">
-
+                    {/* ... (Existing Cards: Backend, Database, WebSockets, Salesforce Engine, Resources, Traffic) ... */}
                     {/* Backend API Card */}
                     <m.div
                         initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0 }}
@@ -336,39 +377,118 @@ const SystemStatusPage = () => {
                             </div>
                         </div>
                     </m.div>
-
                 </div>
 
-                {/* System Controls Section */}
-                <m.div
-                    key="global-system-controls"
-                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
-                    className={styles.card}
-                >
-                    <div className={styles.cardHeader}>
-                        <div className={styles.cardHeaderLeft}>
-                            <div className={`${styles.iconBox} ${styles.iconControl}`}><BiWrench /></div>
-                            <div className={styles.cardTitleArea}>
-                                <h3>Global System Controls</h3>
-                                <p className={styles.subtitleText}>Manage application-wide states</p>
+                <div className={styles.grid}>
+                    {/* System Controls Card */}
+                    <m.div
+                        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
+                        className={styles.card}
+                    >
+                        <div className={styles.cardHeader}>
+                            <div className={styles.cardHeaderLeft}>
+                                <div className={`${styles.iconBox} ${styles.iconControl}`}><BiWrench /></div>
+                                <div className={styles.cardTitleArea}>
+                                    <h3>Global System Controls</h3>
+                                    <p className={styles.subtitleText}>Manage application-wide states</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div className={styles.controlArea}>
-                        <p className={styles.controlsDescription}>
-                            Maintenance Mode immediately blocks all non-administrative users and APIs. Active users will be forced to a standby screen until the lock is lifted.
-                        </p>
-                        <button
-                            onClick={handleToggleMaintenance}
-                            className={`${styles.toggleBtn} ${isMaintenance ? styles.btnDisable : styles.btnEnable}`}
-                        >
-                            {isMaintenance ? <BiLockOpenAlt size={24} /> : <BiLockAlt size={24} />}
-                            <span>{isMaintenance ? 'Lift Maintenance Lock' : 'Engage Maintenance Lock'}</span>
-                        </button>
-                    </div>
-                </m.div>
+                        <div className={styles.controlArea}>
+                            <p className={styles.controlsDescription}>
+                                Maintenance Mode immediately blocks all non-administrative users and APIs. Active users will be forced to a standby screen until the lock is lifted.
+                            </p>
+                            <button
+                                onClick={handleToggleMaintenance}
+                                className={`${styles.toggleBtn} ${isMaintenance ? styles.btnDisable : styles.btnEnable}`}
+                            >
+                                {isMaintenance ? <BiLockOpenAlt size={24} /> : <BiLockAlt size={24} />}
+                                <span>{isMaintenance ? 'Lift Maintenance Lock' : 'Engage Maintenance Lock'}</span>
+                            </button>
+                        </div>
+                    </m.div>
 
+                    {/* Salesforce Credentials Card */}
+                    <m.div
+                        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}
+                        className={styles.card}
+                    >
+                        <div className={styles.cardHeader}>
+                            <div className={styles.cardHeaderLeft}>
+                                <div className={`${styles.iconBox} ${styles.iconSalesforce}`}><BiCloud /></div>
+                                <div className={styles.cardTitleArea}>
+                                    <h3>Salesforce Integration Config</h3>
+                                    <p className={styles.subtitleText}>Update volatile credentials for the microservice</p>
+                                </div>
+                            </div>
+                            <button 
+                                className={styles.visibilityToggle}
+                                onClick={() => setShowTokens(!showTokens)}
+                                title={showTokens ? "Hide sensitive data" : "Show sensitive data"}
+                                style={{ position: 'static' }}
+                            >
+                                {showTokens ? <BiHide size={24} /> : <BiShow size={24} />}
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleUpdateSfConfig}>
+                            <div className={styles.formGrid}>
+                                <div className={styles.formGroup}>
+                                    <label>AURA_TOKEN</label>
+                                    <textarea 
+                                        className={`${styles.inputField} ${styles.textareaField} ${!showTokens ? styles.maskedText : ''}`}
+                                        value={sfConfig.auraToken}
+                                        onChange={(e) => setSfConfig({ ...sfConfig, auraToken: e.target.value })}
+                                        placeholder="Paste aura token here..."
+                                        spellCheck={false}
+                                    />
+                                </div>
+                                <div className={styles.formGroup}>
+                                    <label>COOKIE</label>
+                                    <textarea 
+                                        className={`${styles.inputField} ${styles.textareaField} ${!showTokens ? styles.maskedText : ''}`}
+                                        value={sfConfig.cookie}
+                                        onChange={(e) => setSfConfig({ ...sfConfig, cookie: e.target.value })}
+                                        placeholder="Paste browser cookies here..."
+                                        spellCheck={false}
+                                    />
+                                </div>
+                                <div className={styles.formGroup}>
+                                    <label>AURA_CONTEXT</label>
+                                    <textarea 
+                                        className={`${styles.inputField} ${styles.textareaField} ${!showTokens ? styles.maskedText : ''}`}
+                                        value={sfConfig.auraContext}
+                                        onChange={(e) => setSfConfig({ ...sfConfig, auraContext: e.target.value })}
+                                        placeholder='{"mode":"PROD", ...}'
+                                        spellCheck={false}
+                                    />
+                                </div>
+                                <div className={styles.formGroup}>
+                                    <label>X_SFDC_Page_Scope_Id</label>
+                                    <input 
+                                        className={styles.inputField}
+                                        value={sfConfig.sfdcPageScopeId}
+                                        onChange={(e) => setSfConfig({ ...sfConfig, sfdcPageScopeId: e.target.value })}
+                                        placeholder="e.g. 174042..."
+                                        spellCheck={false}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className={styles.formFooter}>
+                                <button 
+                                    type="submit" 
+                                    className={styles.saveBtn}
+                                    disabled={isSavingSfConfig}
+                                >
+                                    <BiSave size={20} className={isSavingSfConfig ? styles.spinIcon : ''} />
+                                    <span>{isSavingSfConfig ? 'Updating...' : 'Save Credentials'}</span>
+                                </button>
+                            </div>
+                        </form>
+                    </m.div>
+                </div>
             </AnimatePresence>
         </div>
     );

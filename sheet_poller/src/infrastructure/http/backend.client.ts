@@ -14,7 +14,7 @@ export class BackendClient {
 
   constructor() {
     this.axiosInstance = axios.create({
-      baseURL: BACKEND_CONFIG.WEBHOOK_URL,
+      baseURL: BACKEND_CONFIG.WEBHOOK_URL_FORM,
       headers: {
         'Content-Type': 'application/json',
       },

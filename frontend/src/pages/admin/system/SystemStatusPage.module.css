@@ -308,3 +308,118 @@
     color: #94a3b8;
     gap: 1rem;
 }
+
+/* Salesforce Credentials Form Styles */
+.formGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.formGroup label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.inputField {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    color: #f1f5f9;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.inputField:focus {
+    outline: none;
+    border-color: #6366f1;
+    background: rgba(15, 23, 42, 0.8);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+}
+
+.textareaField {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.formFooter {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.saveBtn {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    color: white;
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.saveBtn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+}
+
+.saveBtn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.saveBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    filter: grayscale(0.5);
+}
+
+.passwordInputContainer {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.passwordInputContainer input {
+    width: 100%;
+}
+
+.visibilityToggle {
+    position: absolute;
+    right: 1rem;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem;
+    transition: color 0.2s ease;
+}
+
+.visibilityToggle:hover {
+    color: #f1f5f9;
+}
+
+.maskedText {
+    -webkit-text-security: disc;
+    text-security: disc; /* Support for future browsers */
+}

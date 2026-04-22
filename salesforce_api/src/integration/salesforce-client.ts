@@ -1,13 +1,10 @@
 import axios from 'axios';
 import {
     SALESFORCE_URL,
-    AURA_TOKEN,
-    AURA_CONTEXT,
-    COOKIE,
-    X_SFDC_Page_Scope_Id,
     REPORT_ID,
     ALLOWED_CASE_TYPES
 } from '../config/env.js';
+import { credentialsManager } from '../config/salesforce-credentials.js';
 import { formatToTalabatEmail } from '../utils/formatters.js';
 import { Logger } from '../core/logger.js';
 
@@ -101,21 +98,22 @@ class SalesforceClient {
                     await new Promise(resolve => setTimeout(resolve, 3000 * attempt));
                 }
 
+                const creds = credentialsManager.getCredentials();
                 const messageObj = JSON.parse(JSON.stringify(this.messageTemplate));
                 messageObj.actions[0].id = Date.now() + ";a";
                 const finalMessage = JSON.stringify(messageObj);
 
                 const body =
                     `message=${encodeURIComponent(finalMessage)}` +
-                    `&aura.context=${encodeURIComponent(AURA_CONTEXT || '')}` +
-                    `&aura.token=${encodeURIComponent(AURA_TOKEN || '')}`;
+                    `&aura.context=${encodeURIComponent(creds.auraContext || '')}` +
+                    `&aura.token=${encodeURIComponent(creds.auraToken || '')}`;
 
                 const response = await axios.post(SALESFORCE_URL || '', body, {
                     headers: {
                         "Content-Type": "application/x-www-form-urlencoded",
-                        "Cookie": COOKIE || '',
+                        "Cookie": creds.cookie || '',
                         "X-Requested-With": "XMLHttpRequest",
-                        "X-SFDC-Page-Scope-Id": X_SFDC_Page_Scope_Id || ''
+                        "X-SFDC-Page-Scope-Id": creds.sfdcPageScopeId || ''
                     },
                     timeout: 15000 // 15s timeout for large reports
                 });
@@ -126,12 +124,31 @@ class SalesforceClient {
                 }
 
                 if (!responseData?.actions?.[0]?.returnValue) {
+                    // This is the classic SF session expiration indicator
+                    this.logger.warn('⚠️ Salesforce session might be expired (no returnValue). Triggering lazy refresh...');
+                    await credentialsManager.refresh();
+                    
+                    // After refresh, if this was the first attempt, retry immediately once without counting as a full retry
+                    if (attempt === 1) {
+                        this.logger.info('Retrying immediately with new credentials...');
+                        return this.fetchOpenCasesReport(retries - 1); // Recursive call with one less retry
+                    }
                     throw new Error("Invalid response format. Maybe session expired?");
                 }
 
                 return this.parseReportData(responseData.actions[0].returnValue);
             } catch (err: any) {
                 const status = err.response?.status;
+                
+                // Handle HTTP 401 Unauthorized specifically
+                if (status === 401) {
+                    this.logger.warn('⚠️ Received HTTP 401 from Salesforce. Triggering lazy refresh...');
+                    await credentialsManager.refresh();
+                    if (attempt === 1) {
+                        return this.fetchOpenCasesReport(retries - 1);
+                    }
+                }
+
                 this.logger.error(`❌ Attempt ${attempt} failed: ${status || err.message}`);
 
                 if (attempt === retries) {
