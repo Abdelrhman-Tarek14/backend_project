@@ -2,6 +2,8 @@
 /node_modules
 /dist
 /output
+/envs
+/backup
 # Environment variables
 .env
 .env.*
@@ -64,3 +66,7 @@ build/Release
 
 # dotenv ocean file
 .env.test
+
+# SSL Certificates
+nginx/ssl/*.crt
+nginx/ssl/*.key

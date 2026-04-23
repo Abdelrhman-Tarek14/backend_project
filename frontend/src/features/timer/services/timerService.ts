@@ -49,7 +49,7 @@ const formatCaseData = (item: any, specificAssignment?: any): FormattedCase => {
 const flattenAssignments = (items: any[]): FormattedCase[] => {
     return items.flatMap(item => {
         if (item.assignments && Array.isArray(item.assignments) && item.assignments.length > 0) {
-            return item.assignments.map(assignment => formatCaseData(item, assignment));
+            return item.assignments.map((assignment: any) => formatCaseData(item, assignment));
         }
         return [formatCaseData(item)];
     });

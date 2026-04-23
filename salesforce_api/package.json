@@ -1,14 +1,11 @@
 {
   "name": "salesforce-api-worker",
   "version": "1.0.0",
-  "type": "module",
-  "main": "dist/index.js",
+  "main": "dist/main.js",
   "scripts": {
-    "dev": "nodemon --ignore data/ --watch src --ext ts,json --exec \"node --import @swc-node/register/esm-register src/index.ts\"",
-    "build:swc": "swc . -d dist --ignore node_modules,dist,data",
-    "typecheck": "tsc --noEmit",
-    "build": "npm run typecheck && npm run build:swc",
-    "start": "node dist/index.js",
+    "dev": "nodemon --ignore data/ --watch src --ext ts,json --exec \"ts-node src/main.ts\"",
+    "build": "tsc",
+    "start": "node dist/main.js",
     "clear": "node -e \"require('fs').rmSync('data/state.json', {force:true})\"",
     "lint": "eslint 'src/**/*.{ts,tsx}'"
   },
@@ -19,9 +16,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@swc-node/register": "^1.11.1",
-    "@swc/cli": "^0.8.1",
-    "@swc/core": "^1.15.30",
     "@types/axios": "^0.14.4",
     "@types/dotenv": "^8.2.3",
     "@types/node": "^25.6.0",

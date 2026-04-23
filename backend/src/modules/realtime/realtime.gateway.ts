@@ -56,7 +56,7 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
       const providedApiKey = apiKeyHead || apiKeyAuth;
 
       if (providedApiKey) {
-        const sfSecret = this.configService.get<string>('salesforceWebhookSecret');
+        const sfSecret = this.configService.get<string>('integrations.salesforceWebhookSecret');
         if (providedApiKey === sfSecret) {
           client.data.role = 'SERVICE';
           client.data.serviceName = 'salesforce';

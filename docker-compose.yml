@@ -7,7 +7,10 @@ services:
     container_name: eta-backend
     restart: unless-stopped
     env_file:
-      - ./.env
+      - path: ./backend/.env
+        required: true
+      - path: ./backend/.env.development
+        required: false
     environment:
       - NODE_ENV=production
     expose:
@@ -29,7 +32,10 @@ services:
     container_name: eta-sf-api
     restart: unless-stopped
     env_file:
-      - ./.env
+      - path: ./salesforce_api/.env
+        required: true
+      - path: ./salesforce_api/.env.development
+        required: false
     environment:
       - NODE_ENV=production
     depends_on:
@@ -52,12 +58,15 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - VITE_API_URL=${VITE_API_URL}
-        - VITE_SOCKET_URL=${VITE_SOCKET_URL}
+        - VITE_API_URL=https://10.20.13.82/api
+        - VITE_SOCKET_URL=https://10.20.13.82
     container_name: eta-frontend
     restart: unless-stopped
     env_file:
-      - ./.env
+      - path: ./frontend/.env
+        required: true
+      - path: ./frontend/.env.development
+        required: false
     networks:
       - internal
 
@@ -69,20 +78,13 @@ services:
     ports:
       - "80:80"
       - "443:443"
-    env_file:
-      - ./.env
     environment:
-      - DOMAIN=${DOMAIN:-localhost}
-      - SSL_CERT_PATH=${SSL_CERT_PATH}
-      - SSL_KEY_PATH=${SSL_KEY_PATH}
+      - DOMAIN=10.20.13.82
+      - SSL_CERT_PATH=/etc/nginx/ssl/certificate.crt
+      - SSL_KEY_PATH=/etc/nginx/ssl/private.key
     volumes:
-      - ./backend/nginx/nginx.conf.template:/etc/nginx/nginx.conf.template:ro
-      - ./ssl:/etc/nginx/ssl:ro
-    command: >
-      sh -c "envsubst '$$DOMAIN $$SSL_CERT_PATH $$SSL_KEY_PATH'
-      < /etc/nginx/nginx.conf.template
-      > /etc/nginx/nginx.conf
-      && nginx -g 'daemon off;'"
+      - ./nginx/nginx.conf.template:/etc/nginx/templates/nginx.conf.template:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
     depends_on:
       app:
         condition: service_healthy
@@ -99,7 +101,10 @@ services:
     container_name: eta-sheet-poller
     restart: unless-stopped
     env_file:
-      - ./.env
+      - path: ./sheet_poller/.env
+        required: true
+      - path: ./sheet_poller/.env.development
+        required: false
     environment:
       - NODE_ENV=production
     depends_on:

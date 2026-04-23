@@ -38,7 +38,7 @@ export class AuthController {
     @Request() req: any,
     @Res() res: Response,
   ) {
-    const frontendUrl = this.configService.getOrThrow<string>('FRONTEND_URL');
+    const frontendUrl = this.configService.getOrThrow<string>('frontendUrl');
     try {
       const tokens = await this.authService.validateGoogleUser(req.user);
       this.setCookies(res, tokens);
@@ -59,7 +59,7 @@ export class AuthController {
     @Body() body: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const isLocalAuthEnabled = this.configService.get<boolean>('enableLocalAuth');
+    const isLocalAuthEnabled = this.configService.get<boolean>('auth.enableLocalAuth');
     if (!isLocalAuthEnabled) {
       throw new ForbiddenException('Local authentication is completely disabled in this environment.');
     }

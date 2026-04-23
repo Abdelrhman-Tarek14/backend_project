@@ -2,8 +2,8 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 import { configSchema } from './schema.js';
 
-const envPath = process.env.NODE_ENV === 'production' ? '.env' : '.env.development';
-dotenv.config({ path: path.resolve(process.cwd(), envPath) });
+dotenv.config({ path: path.resolve(process.cwd(), '.env.development') });
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 const parsed = configSchema.safeParse(process.env);
 

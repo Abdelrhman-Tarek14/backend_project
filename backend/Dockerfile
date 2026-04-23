@@ -6,7 +6,7 @@ WORKDIR /app
 # Install dependencies first for better caching
 COPY package*.json ./
 COPY prisma ./prisma/
-RUN npm ci
+RUN npm install
 
 # Copy source and build
 COPY . .
@@ -20,7 +20,7 @@ WORKDIR /app
 
 COPY package*.json ./
 COPY prisma ./prisma/
-RUN npm ci --omit=dev && npm cache clean --force
+RUN npm install --omit=dev && npm cache clean --force
 RUN npx prisma generate
 
 # ── Stage 3: Runner (Production Image) ──

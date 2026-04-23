@@ -24,7 +24,7 @@ RUN mkdir -p /app/data && chown -R node:node /app/data
 
 # Install production dependencies only
 COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
+RUN npm install --omit=dev && npm cache clean --force
 
 # Copy compiled code from builder
 COPY --from=builder --chown=node:node /app/dist ./dist

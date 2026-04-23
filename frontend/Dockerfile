@@ -12,7 +12,7 @@ ENV VITE_SOCKET_URL=$VITE_SOCKET_URL
 
 # Caching dependencies
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 
 # Copy source and build
 COPY . .

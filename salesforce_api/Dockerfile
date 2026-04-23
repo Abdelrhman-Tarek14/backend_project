@@ -4,7 +4,7 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 
 COPY . .
 RUN npm run build
@@ -15,7 +15,7 @@ FROM node:22-alpine AS prod-deps
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+RUN npm install --omit=dev && npm cache clean --force
 
 # ── Stage 3: Runner ──
 FROM node:22-alpine AS runner
@@ -34,4 +34,4 @@ USER node
 ENV NODE_ENV=production
 
 # SIGTERM handling
-CMD ["node", "dist/index.js"]
+CMD ["node", "dist/main.js"]

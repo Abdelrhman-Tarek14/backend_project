@@ -2,9 +2,8 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 import { configSchema } from './schema.js';
 
-// Force load .env.development in non-production environments
-const envPath = process.env.NODE_ENV === 'production' ? '.env' : '.env.development';
-dotenv.config({ path: path.resolve(process.cwd(), envPath), quiet: false });
+dotenv.config({ path: path.resolve(process.cwd(), '.env.development') });
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 const parsedEnv = configSchema.safeParse(process.env);
 

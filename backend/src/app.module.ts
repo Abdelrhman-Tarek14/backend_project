@@ -12,7 +12,7 @@ import { AppService } from './app.service';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { LeaderboardModule } from './modules/leaderboard/leaderboard.module';
 import configuration from './config/configuration';
-import { envValidationSchema } from './common/validation/env.validation';
+import { validate } from './common/validation/env.validation';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { SystemModule } from './modules/system/system.module';
 import { MaintenanceGuard } from './common/guards/maintenance.guard';
@@ -22,16 +22,11 @@ import { MaintenanceGuard } from './common/guards/maintenance.guard';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: [
-        '.env.production',
-        '.env',
         '.env.development',
+        '.env',
       ],
       load: [configuration],
-      validationSchema: envValidationSchema,
-      validationOptions: {
-        allowUnknown: true,
-        abortEarly: false,
-      },
+      validate,
     }),
     ThrottlerModule.forRoot([
       {

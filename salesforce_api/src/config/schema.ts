@@ -8,7 +8,7 @@ export const configSchema = z.object({
     COOKIE: z.string().optional(),
     X_SFDC_Page_Scope_Id: z.string().optional(),
     
-    BACKEND_URL: z.string().url('BACKEND_URL must be a valid URL'),
+    BACKEND_URL: z.string().url('BACKEND_URL must be a valid URL').optional(),
     INTERNAL_BACKEND_URL: z.string().url().optional(), // Fallback handled in logic
     SALESFORCE_WEBHOOK_SECRET: z.string().min(1, 'SALESFORCE_WEBHOOK_SECRET is required'),
     

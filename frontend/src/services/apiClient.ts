@@ -100,6 +100,9 @@ apiClient.interceptors.response.use(
             isRefreshing = true;
 
             try {
+                if (!csrfToken) {
+                    await fetchCsrfToken();
+                }
                 let headers = csrfToken ? { 'x-csrf-token': csrfToken } : {};
                 
                 try {

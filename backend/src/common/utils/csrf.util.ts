@@ -14,7 +14,8 @@ export const initializeDoubleCsrf = (configService: ConfigService) => {
     // their own CSRF token bound to their session, instead of a shared static string.
     // Falls back to req.ip for unauthenticated requests (e.g. fetching CSRF before login).
     getSessionIdentifier: (req) => {
-      const sessionId = (req as any).cookies?.['access_token'];
+      // Use refresh_token as it's more stable across short access_token expirations.
+      const sessionId = (req as any).cookies?.['refresh_token'] || (req as any).cookies?.['access_token'];
       return sessionId || req.ip || 'anonymous';
     },
     // Plain cookie name (no __Host- prefix) — __Host- requires the cookie to be sent

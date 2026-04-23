@@ -31,7 +31,6 @@ const itemVariants: Variants = {
 
 export interface SortableItemProps {
     id: string | number;
-    index?: number;
     shouldAnimate?: boolean;
     children: ReactNode | ((listeners: ReturnType<typeof useSortable>['listeners']) => ReactNode);
 }
@@ -40,7 +39,7 @@ export interface SortableItemProps {
  * Optimized SortableItem component.
  * Uses CSS transforms for dragging performance and Framer Motion only for entry animations.
  */
-export const SortableItem = React.memo(({ id, children, index = 0, shouldAnimate = true }: SortableItemProps) => {
+export const SortableItem = React.memo(({ id, children, shouldAnimate = true }: SortableItemProps) => {
     const {
         attributes,
         listeners,

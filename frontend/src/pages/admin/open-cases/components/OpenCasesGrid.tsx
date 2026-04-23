@@ -24,10 +24,10 @@ export const OpenCasesGrid: React.FC<OpenCasesGridProps> = ({
     return (
         <SortableContext id="main-container" items={sortableItemIds} strategy={rectSortingStrategy} disabled={!isDragEnabled}>
             <div className={styles.grid}>
-                {cases.map((c, index) => {
+                {cases.map((c) => {
                     const id = getSafeId(c);
                     return (
-                        <SortableItem key={id} id={id} index={index} shouldAnimate={shouldAnimate}>
+                        <SortableItem key={id} id={id} shouldAnimate={shouldAnimate}>
                             {(dragListeners) => (
                                 <CaseCard data={c} isOpen={true} dragHandleProps={dragListeners} tick={tick} />
                             )}

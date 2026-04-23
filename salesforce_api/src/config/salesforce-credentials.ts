@@ -33,7 +33,9 @@ class SalesforceCredentialsManager {
         timeout: 5000
       });
 
-      const data = response.data;
+      const raw = response.data;
+      // Backend wraps all responses in { statusCode, message, data: {...} } via TransformInterceptor
+      const data = raw?.data ?? raw;
       
       // Basic validation
       if (!data.auraToken || !data.cookie) {
