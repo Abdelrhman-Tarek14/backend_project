@@ -11,7 +11,7 @@ interface RawBodyRequest extends Request {
 export class WebhookSecurityGuard implements CanActivate {
   private readonly logger = new Logger(WebhookSecurityGuard.name);
 
-  constructor(private configService: ConfigService) {}
+  constructor(private configService: ConfigService) { }
 
   private normalizeIp(ip: string): string {
     return ip.startsWith('::ffff:') ? ip.slice(7) : ip;

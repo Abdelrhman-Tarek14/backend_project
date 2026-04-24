@@ -4,6 +4,7 @@
 /output
 /envs
 /backup
+/deploy
 # Environment variables
 .env
 .env.*

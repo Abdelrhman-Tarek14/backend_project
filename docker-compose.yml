@@ -13,6 +13,7 @@ services:
         required: false
     environment:
       - NODE_ENV=production
+    command: sh -c "npx prisma db push --accept-data-loss && node dist/main"
     expose:
       - "3000"
     networks:

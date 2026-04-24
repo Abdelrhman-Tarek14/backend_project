@@ -20,6 +20,7 @@ WORKDIR /app
 
 COPY package*.json ./
 COPY prisma ./prisma/
+COPY prisma.config.ts ./
 RUN npm install --omit=dev && npm cache clean --force
 RUN npx prisma generate
 
@@ -35,6 +36,7 @@ COPY --from=prod-deps --chown=node:node /app/node_modules ./node_modules
 COPY --from=prod-deps --chown=node:node /app/prisma ./prisma
 COPY --from=builder --chown=node:node /app/dist ./dist
 COPY --from=builder --chown=node:node /app/package.json ./package.json
+COPY --from=builder --chown=node:node /app/prisma.config.ts ./prisma.config.ts
 
 # Security: Switch to non-root user
 USER node
