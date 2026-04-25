@@ -3,6 +3,7 @@ import { SystemService } from './system.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { InternalApiKeyGuard } from '../auth/guards/internal-api-key.guard';
+import { HybridAuthGuard } from '../auth/guards/hybrid-auth.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { MANAGEMENT_ROLES } from '../../common/constants/roles.constants';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
@@ -40,9 +41,9 @@ export class SystemController {
   }
 
   @Public()
-  @UseGuards(InternalApiKeyGuard)
+  @UseGuards(HybridAuthGuard)
   @Get('config/salesforce')
-  @ApiOperation({ summary: 'Get Salesforce credentials (Internal only)' })
+  @ApiOperation({ summary: 'Get Salesforce credentials (Admin or Internal API Key)' })
   async getSalesforceConfig() {
     return this.systemService.getSalesforceConfig();
   }

@@ -123,14 +123,20 @@ export class SystemService implements OnModuleInit {
 
     if (!config) {
       return {
-        auraToken: '',
-        cookie: '',
-        auraContext: '',
-        sfdcPageScopeId: '',
+        data: {
+          auraToken: '',
+          cookie: '',
+          auraContext: '',
+          sfdcPageScopeId: '',
+        },
+        updatedAt: null,
       };
     }
 
-    return config.value;
+    return {
+      data: config.value,
+      updatedAt: config.updatedAt,
+    };
   }
 
   async updateSalesforceConfig(payload: any) {

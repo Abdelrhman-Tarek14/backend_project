@@ -1,0 +1,437 @@
+.container {
+  padding: 2rem;
+  /* max-width: 1600px; */
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: 3rem;
+  text-align: center;
+}
+
+.header h1 {
+  font-size: 2.5rem;
+  background: linear-gradient(135deg, #fff 0%, #a5a5a5 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 0.5rem;
+}
+
+.header p {
+  color: #888;
+  font-size: 1.1rem;
+}
+
+/* Public Actions Bar */
+.actionsBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 3rem;
+  gap: 2rem;
+}
+
+.searchWrapper {
+  position: relative;
+  flex: 1;
+  max-width: 500px;
+}
+
+.searchWrapper svg {
+  position: absolute;
+  left: 1.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+  font-size: 1.2rem;
+}
+
+.publicSearch {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 0.85rem 1rem 0.85rem 3.2rem;
+  color: #fff;
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.collapseAllBtn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #ccc;
+  padding: 0.85rem 1.5rem;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all 0.2s;
+}
+
+.globalActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.refreshIconBtn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #818cf8;
+  padding: 0.85rem;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  font-size: 1.4rem;
+}
+
+.refreshIconBtn:hover:not(:disabled) {
+  background: rgba(129, 140, 248, 0.1);
+  border-color: rgba(129, 140, 248, 0.3);
+  color: #a5b4fc;
+}
+
+.refreshIconBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.refreshBtnInline {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.spinIcon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Category Groups */
+.categorySection {
+  /* margin-bottom: 2rem; */
+  background: rgba(255, 255, 255, 0.01);
+  border-radius: 20px;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.categoryTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 1.4rem;
+  color: #fff;
+  cursor: pointer;
+  user-select: none;
+}
+
+.categoryTitleLeft {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.collapseIcon {
+  color: #555;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.collapsed .collapseIcon {
+  transform: rotate(-180deg);
+}
+
+.collapsibleContent {
+  max-height: 2000px;
+  opacity: 1;
+  /* overflow: hidden; */
+  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+  margin-top: 1.5rem;
+}
+
+.contentCollapsed {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+  pointer-events: none;
+}
+
+/* Links Grid */
+.linksGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.2rem;
+}
+
+/* Link Card */
+.card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1.25rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  height: 120px;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 3px;
+  background: var(--category-color);
+  opacity: 0.8;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--category-color);
+}
+
+.cardTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+  text-wrap-mode: nowrap;
+  transition: all 0.2s ease;
+}
+
+.card:hover .cardTitleHiddenOnHover {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+/* Multi-country Squares */
+.multiCountryContainer {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+}
+
+.defaultInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #888;
+  transition: opacity 0.2s;
+  position: absolute;
+  bottom: 0;
+}
+
+.countrySquares {
+  position: absolute;
+  top: -10px; left: 0; width: 100%; height: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: center;
+  gap: 8px;
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.9);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover .defaultInfo {
+  opacity: 0;
+}
+
+.card:hover .countrySquares {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+}
+
+.countrySquare {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.countrySquare:hover {
+  background: var(--category-color);
+  color: #000;
+  transform: scale(1.15) translateY(-2px);
+  border-color: transparent;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+/* Direct Link Button */
+.directLink {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem;
+  border-radius: 8px;
+  background: var(--category-color);
+  color: #000;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: opacity 0.2s;
+}
+
+.directLink:hover {
+  opacity: 0.9;
+}
+
+/* =========================================
+   ADMIN PANEL STYLES (Restored & Isolated)
+   ========================================= */
+.adminContainer {
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 2rem;
+  width: 100%;
+  margin-top: 2rem;
+}
+
+.adminHeader {
+  display: flex !important;
+  flex-direction: row !important; /* Ensure it stays a row */
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 2.5rem;
+  gap: 2rem;
+}
+
+.adminSearchBar {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 0.85rem 1rem 0.85rem 3rem;
+  color: #fff;
+  width: 100%;
+}
+
+.adminTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.adminTable th {
+  padding: 1.2rem 1rem;
+  text-align: left;
+  color: #888;
+  font-weight: 500;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.adminTable td {
+  padding: 1.2rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  color: #ccc;
+}
+
+.badge {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badgeAvailable { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+.badgeUnavailable { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+
+.pill {
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  color: #fff;
+}
+
+@media (max-width: 1024px) {
+  .adminHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* Custom Premium Checkbox */
+.customCheckbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 5px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+}
+
+.customCheckbox:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.customCheckbox:checked {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+}
+
+.customCheckbox:checked::after {
+  content: '✓';
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.customCheckbox:focus {
+  outline: none;
+}
+

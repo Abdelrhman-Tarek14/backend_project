@@ -1,6 +1,6 @@
 .container {
-    padding: 2rem;
-    max-width: 1400px;
+    padding: 1rem;
+    /* max-width: 1400px; */
     margin: 0 auto;
     font-family: 'Inter', system-ui, sans-serif;
 }
@@ -68,8 +68,8 @@
 
 .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1rem;
     margin-bottom: 2rem;
 }
 
@@ -133,6 +133,15 @@
     font-size: 0.85rem;
     color: #94a3b8;
     margin: 0;
+}
+
+.lastUpdatedText {
+    display: inline-block;
+    margin-left: 8px;
+    color: #6366f1;
+    font-weight: 600;
+    font-size: 0.75rem;
+    opacity: 0.8;
 }
 
 /* Status Indicator */
@@ -421,5 +430,4 @@
 
 .maskedText {
     -webkit-text-security: disc;
-    text-security: disc; /* Support for future browsers */
 }

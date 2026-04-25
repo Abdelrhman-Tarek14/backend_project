@@ -1,0 +1,160 @@
+{
+    "resources": {
+        "forms": {
+            "eta_form": {
+                "title": "ETA Form",
+                "url": "https://docs.google.com/forms/d/e/1FAIpQLScPTPZefAuASuRKBMt-k5_k3kTan6XsxI6cKsgh9zNgXPOFYQ/viewform?pli=1&pli=1",
+                "is_available": true
+            },
+            "mds_form": {
+                "title": "MDS Form",
+                "url": "https://docs.google.com/forms/d/e/1FAIpQLSd359hnMwSgiK8mdepEu0_2j2LlHHYBFyPdxsXW_lLzqd5k3g/viewform",
+                "is_available": true
+            },
+            "salesforce_offline_issue": {
+                "title": "Salesforce Offline Issue Form",
+                "url": "https://docs.google.com/forms/d/e/1FAIpQLSf6B29ZtEiebz8yvoAKLD83--xTV2GgghAGz1G_YteGMiwDlw/viewform",
+                "is_available": true
+            },
+            "oman_images": {
+                "title": "Oman Images",
+                "url": "https://n8n.srv1380389.hstgr.cloud/form/188caabb-a3ad-4215-a624-c57650d4211c",
+                "is_available": true
+            },
+            "oman_images_fixing": {
+                "title": "Oman Images (Fixing Errors)",
+                "url": "https://n8n.srv1380389.hstgr.cloud/form/f04818ed-901a-452b-beb7-effbd670c5a4",
+                "is_available": true
+            },
+            "oman_form_issue": {
+                "title": "Oman Form Issue",
+                "url": "https://docs.google.com/forms/d/e/1FAIpQLScUo6DBjIpDNRG8rgLI-zf-7FCgo9nV0saa_RxooFJIzNmK9w/viewform",
+                "is_available": true
+            }
+        },
+        "sheets": {
+            "areas_das_tgo_logistics": {
+                "title": "Areas - DAS TGO Logistics",
+                "url": "https://docs.google.com/spreadsheets/d/1woPX0o3fBaBhdgQAUNpGDKnrlsXUPxaq2hfhCWdqOQs/edit?gid=0#gid=0",
+                "is_available": true
+            },
+            "areas_arabic_names": {
+                "title": "Areas - Arabic areas name",
+                "url": "https://docs.google.com/spreadsheets/d/1aPv8WcAJ4Rf7X8OuhdQVC7JPWuZfR7YsLDTEs5h-C1g/edit?gid=0#gid=0",
+                "is_available": true
+            },
+            "areas_cluster_heads": {
+                "title": "Areas - Cluster Heads",
+                "url": "https://docs.google.com/spreadsheets/d/1Z9Jb1z-h7HoVHko5t9s1HUpTtJNDEHeMHvLhwYKf-uw/edit?gid=0#gid=0",
+                "is_available": true
+            },
+            "tmp_values_limit": {
+                "title": "TMP Values Limit",
+                "url": "https://drive.google.com/file/d/1U8ajfzELcOBfgeOMNgKtn6RsfP4BaJYd/view",
+                "is_available": true
+            },
+            "terminology_gcc": {
+                "title": "Terminology GCC",
+                "url": "https://docs.google.com/spreadsheets/d/1fTEfUOs_VsupPKuICEON6mbVE1-nOcYref0pQ2o7NRk/edit?gid=1946074003#gid=1946074003",
+                "is_available": true
+            },
+            "terminology_egy": {
+                "title": "Terminology Egy",
+                "url": "https://docs.google.com/spreadsheets/d/1p2XVui2lwopLq_iopOZYBbwNL4H-uxBGylrDiZ-dWJo/edit?gid=223153829#gid=223153829",
+                "is_available": true
+            },
+            "forbidden_items": {
+                "title": "Forbidden Items",
+                "url": "https://docs.google.com/spreadsheets/d/1OjapMRK2dP2y_eoR_H4lmhwVFZRNAP6maHmpfagxx-M/edit?gid=0#gid=0",
+                "is_available": true
+            },
+            "acceptable_ad_words": {
+                "title": "Acceptable Ad Words",
+                "url": "https://docs.google.com/spreadsheets/d/1FFrIxQzE_plDYcJZwUVoFmo3YGVbPCAp7ypPSrRP0rI/edit?gid=0#gid=0",
+                "is_available": true
+            },
+            "allergy_causes": {
+                "title": "Allergy Causes",
+                "url": "https://docs.google.com/spreadsheets/d/1PAReSum46eHZGhxDqD0Z7xtfL2TBHOpGtHBg9UALQ6Y/edit?gid=0#gid=0",
+                "is_available": true
+            },
+            "description_library": {
+                "title": "Description Library",
+                "url": "https://docs.google.com/spreadsheets/d/16Bm6wq2JHfqtDv06nyGXkEfKH5lj8KF0cKnwFXYwxwY/edit?gid=367422593#gid=367422593",
+                "is_available": true
+            },
+            "check_duplication": {
+                "title": "Check Duplication",
+                "url": "https://docs.google.com/spreadsheets/d/1X8yHuH9lBF4F9Bq1I7NTlKLYxvPP_APw/edit?usp=sharing&ouid=112338209964144125581&rtpof=true&sd=true",
+                "is_available": true
+            }
+        },
+        "websites": {
+            "salesforce": {
+                "title": "Salesforce",
+                "url": "https://deliveryhero.lightning.force.com/lightning/o/Case/list?filterName=My_Open_Cases_donotdelete",
+                "is_available": true
+            },
+            "calabrio": {
+                "title": "Calabrio",
+                "url": "https://mtaeno01.teleopticloud.com/web/mytime#Schedule",
+                "is_available": true
+            },
+            "playvox": {
+                "title": "Playvox",
+                "url": "https://dhbrightskies.playvox.com/quality/evaluations",
+                "is_available": true
+            },
+            "ops_portal": {
+                "title": "OpsPortal",
+                "is_multi_country": true,
+                "urls": {
+                    "egypt": "https://portal.talabat.com/eg/",
+                    "uae": "https://portal.talabat.com/ae/",
+                    "kuwait": "https://portal.talabat.com/kw/",
+                    "qatar": "https://portal.talabat.com/qa/",
+                    "bahrain": "https://portal.talabat.com/bh/",
+                    "oman": "https://portal.talabat.com/om/",
+                    "jordan": "https://portal.talabat.com/jo/"
+                },
+                "is_available": true
+            },
+            "das": {
+                "title": "DAS",
+                "is_multi_country": true,
+                "urls": {
+                    "egypt": "https://eg.me.logisticsbackoffice.com/dashboard/deliveryareas/restaurants",
+                    "uae": "https://ae.me.logisticsbackoffice.com/dashboard/deliveryareas/restaurants",
+                    "kuwait": "https://kw.me.logisticsbackoffice.com/dashboard/deliveryareas/restaurants",
+                    "qatar": "https://qa.me.logisticsbackoffice.com/dashboard/deliveryareas/restaurants",
+                    "bahrain": "https://bh.me.logisticsbackoffice.com/dashboard/deliveryareas/restaurants",
+                    "oman": "https://om.me.logisticsbackoffice.com/dashboard/deliveryareas/restaurants",
+                    "jordan": "https://jo.me.logisticsbackoffice.com/dashboard/deliveryareas/restaurants"
+                },
+                "is_available": true
+            },
+            "sufra": {
+                "title": "Sufra",
+                "url": "https://data.talabat.com/ss/tools/project-sufra/ocr-menu-upload",
+                "is_available": true
+            },
+            "knowledge_base": {
+                "title": "knowledge base",
+                "url": "https://talabat.knowledgeowl.com/home",
+                "is_available": true
+            }
+        },
+        "drive": {
+            "cover_images": {
+                "title": "Cover Images",
+                "url": "https://drive.google.com/drive/folders/10i4L5ytmA7og6vfY333GhnUIojVdpGwT",
+                "is_available": true
+            },
+            "soft_drinks_logs": {
+                "title": "Soft Drinks logs",
+                "url": "https://drive.google.com/drive/folders/1MUhh9pRVMzj5lLE6k1vdIZ1Qks7PPdva",
+                "is_available": true
+            }
+        }
+    }
+}

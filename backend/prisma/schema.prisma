@@ -26,6 +26,13 @@ enum AssignmentStatus {
   CLOSED
 }
 
+enum LinkCategory {
+  FORMS
+  SHEETS
+  WEBSITES
+  DRIVE
+}
+
 // =======================
 // 1. Users Table
 // =======================
@@ -198,4 +205,23 @@ model SystemConfig {
   updatedAt DateTime @updatedAt
 
   @@index([key])
+}
+
+// =======================
+// 9. Important Links Table
+// =======================
+model ImportantLink {
+  id             String       @id @default(uuid())
+  key            String       @unique
+  category       LinkCategory
+  title          String
+  isAvailable    Boolean      @default(true)
+  isMultiCountry Boolean      @default(false)
+  url            String?
+  urls           Json?
+  
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([category])
 }

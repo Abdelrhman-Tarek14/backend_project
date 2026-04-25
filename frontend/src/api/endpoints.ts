@@ -23,6 +23,12 @@ export const API_ENDPOINTS = {
     LEADERBOARD: {
         GET: '/leaderboard',
     },
+    IMPORTANT_LINKS: {
+        BASE: '/important-links',
+        IMPORT: '/important-links/import',
+        BULK_UPDATE: '/important-links/bulk-update',
+        BY_ID: (id: string) => `/important-links/${id}` as const,
+    },
 } as const;
 
 export type ApiEndpoints = typeof API_ENDPOINTS;

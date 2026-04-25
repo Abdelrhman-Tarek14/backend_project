@@ -8,7 +8,9 @@ import {
     BiChevronLeft,
     BiChevronRight,
     BiShieldQuarter,
-    BiGroup
+    BiGroup,
+    BiLink,
+    BiEdit
 } from 'react-icons/bi';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { useUserRole } from '../../hooks/useUserRole';
@@ -77,6 +79,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                                     isCollapsed={isCollapsed}
                                 />
                             )}
+                            <SidebarLink
+                                to="/admin/links"
+                                icon={<BiEdit size={22} />}
+                                label="Manage Links"
+                                isCollapsed={isCollapsed}
+                            />
                             <div className={styles.navDivider} />
                         </>
                     )}
@@ -86,6 +94,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                         label="Timer"
                         isCollapsed={isCollapsed}
                         id="tour-nav-timer"
+                    />
+                    <SidebarLink
+                        to="/links"
+                        icon={<BiLink size={22} />}
+                        label="Important Links"
+                        isCollapsed={isCollapsed}
                     />
                 </div>
 

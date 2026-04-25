@@ -62,6 +62,7 @@ const SystemStatusPage = () => {
         auraContext: '',
         sfdcPageScopeId: ''
     });
+    const [sfConfigUpdatedAt, setSfConfigUpdatedAt] = useState<string | null>(null);
     const [showTokens, setShowTokens] = useState(false);
     const [isSavingSfConfig, setIsSavingSfConfig] = useState(false);
 
@@ -71,19 +72,34 @@ const SystemStatusPage = () => {
     const fetchData = useCallback(async (isManualRefresh = false) => {
         if (isManualRefresh) setRefreshing(true);
         try {
-            const [maintenanceRes, healthRes, sfConfigRes] = await Promise.all([
+            // Use individual try-catch or Promise.allSettled to be more resilient
+            const [maintenanceRes, healthRes, sfConfigRes] = await Promise.allSettled([
                 systemApi.getMaintenanceStatus(),
                 systemApi.getSystemHealth(),
                 systemApi.getSalesforceConfig()
             ]);
-            setIsMaintenance(maintenanceRes.data.enabled);
-            setHealthData(healthRes.data);
-            if (sfConfigRes.data) {
-                setSfConfig(sfConfigRes.data);
+
+            // Handle Maintenance Status
+            if (maintenanceRes.status === 'fulfilled') {
+                setIsMaintenance(maintenanceRes.value.data.enabled);
+            }
+
+            // Handle System Health
+            if (healthRes.status === 'fulfilled') {
+                setHealthData(healthRes.value.data);
+            } else {
+                console.error('Health fetch failed:', healthRes.reason);
+                setHealthData(prev => prev ? { ...prev, services: { ...prev.services, backend: { status: 'down' } } } as any : null);
+            }
+
+            // Handle Salesforce Config
+            if (sfConfigRes.status === 'fulfilled' && sfConfigRes.value.data) {
+                const { data, updatedAt } = sfConfigRes.value.data;
+                setSfConfig(data);
+                setSfConfigUpdatedAt(updatedAt);
             }
         } catch (error) {
             console.error('Failed to fetch system metrics:', error);
-            setHealthData(prev => prev ? { ...prev, services: { ...prev.services, backend: { status: 'down' } } } as any : null);
         } finally {
             setLoading(false);
             if (isManualRefresh) {
@@ -161,6 +177,7 @@ const SystemStatusPage = () => {
 
         try {
             await systemApi.updateSalesforceConfig(sfConfig);
+            setSfConfigUpdatedAt(new Date().toISOString());
             Swal.fire({
                 title: 'Configuration Saved!',
                 text: 'Salesforce credentials have been updated. The microservice will automatically refresh on its next sync cycle.',
@@ -419,7 +436,14 @@ const SystemStatusPage = () => {
                                 <div className={`${styles.iconBox} ${styles.iconSalesforce}`}><BiCloud /></div>
                                 <div className={styles.cardTitleArea}>
                                     <h3>Salesforce Integration Config</h3>
-                                    <p className={styles.subtitleText}>Update volatile credentials for the microservice</p>
+                                    <p className={styles.subtitleText}>
+                                        Update volatile credentials for the microservice 
+                                        {sfConfigUpdatedAt && (
+                                            <span className={styles.lastUpdatedText}>
+                                                (Last updated: {formatTime(sfConfigUpdatedAt)})
+                                            </span>
+                                        )}
+                                    </p>
                                 </div>
                             </div>
                             <button 
@@ -467,7 +491,8 @@ const SystemStatusPage = () => {
                                 <div className={styles.formGroup}>
                                     <label>X_SFDC_Page_Scope_Id</label>
                                     <input 
-                                        className={styles.inputField}
+                                        type={showTokens ? 'text' : 'password'}
+                                        className={`${styles.inputField} ${!showTokens ? styles.maskedText : ''}`}
                                         value={sfConfig.sfdcPageScopeId}
                                         onChange={(e) => setSfConfig({ ...sfConfig, sfdcPageScopeId: e.target.value })}
                                         placeholder="e.g. 174042..."

@@ -100,18 +100,21 @@ apiClient.interceptors.response.use(
             isRefreshing = true;
 
             try {
+                // Ensure we have a CSRF token before refreshing
                 if (!csrfToken) {
                     await fetchCsrfToken();
                 }
+                
                 let headers = csrfToken ? { 'x-csrf-token': csrfToken } : {};
                 
                 try {
+                    // Call refresh endpoint
                     await axios.post(`${baseURL}${API_ENDPOINTS.AUTH.REFRESH}`, {}, { 
                         withCredentials: true,
                         headers
                     });
                 } catch (refreshErr: any) {
-                    // If refresh fails with 403 due to CSRF, fetch a fresh CSRF token and try once more
+                    // If refresh fails with 403 (CSRF issue), get a new CSRF and try refresh one more time
                     if (refreshErr.response?.status === 403) {
                         await fetchCsrfToken();
                         headers = csrfToken ? { 'x-csrf-token': csrfToken } : {};
@@ -124,13 +127,26 @@ apiClient.interceptors.response.use(
                     }
                 }
                 
+                // Get fresh CSRF after successful refresh
                 await fetchCsrfToken();
+                
+                // Slightly longer delay (300ms) to ensure browser cookies are fully settled 
+                // especially when multiple concurrent requests are waiting in the queue.
+                await new Promise(resolve => setTimeout(resolve, 300));
+                
                 processQueue(null, csrfToken);
+                
+                // Ensure the retried request has the latest CSRF token
+                if (csrfToken) {
+                    originalRequest.headers['x-csrf-token'] = csrfToken;
+                }
+                
                 return apiClient(originalRequest);
-            } catch (refreshError) {
+            } catch (refreshError: any) {
                 processQueue(refreshError, null);
-                console.error('Session expired. Please log in again.');
-                // Prevent infinite redirect loop if already on login page
+                
+                // Only redirect to login if it's truly a 401/403 failure on the refresh itself
+                console.error('Session expired or refresh failed.');
                 if (window.location.pathname !== '/login') {
                     window.location.href = '/login';
                 }

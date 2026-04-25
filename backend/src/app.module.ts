@@ -16,6 +16,7 @@ import { validate } from './common/validation/env.validation';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { SystemModule } from './modules/system/system.module';
 import { MaintenanceGuard } from './common/guards/maintenance.guard';
+import { ImportantLinksModule } from './modules/important-links/important-links.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { MaintenanceGuard } from './common/guards/maintenance.guard';
     LeaderboardModule,
     EventEmitterModule.forRoot(),
     SystemModule,
+    ImportantLinksModule,
   ],
   controllers: [AppController],
   providers: [

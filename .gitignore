@@ -5,6 +5,7 @@
 /envs
 /backup
 /deploy
+/.vscode
 # Environment variables
 .env
 .env.*

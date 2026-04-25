@@ -5,6 +5,7 @@ import { lazy, Suspense } from 'react';
 const OpenCasesPage = lazy(() => import('../open-cases/OpenCasesPage'));
 const SystemStatusPage = lazy(() => import('../system/SystemStatusPage'));
 const UsersManagementPage = lazy(() => import('../users/UsersManagementPage'));
+const AdminImportantLinksPage = lazy(() => import('../important-links/AdminImportantLinksPage'));
 
 const AdminPageLoading = () => (
     <div style={{ padding: '2rem', textAlign: 'center', color: '#888' }}>
@@ -21,6 +22,7 @@ export default function AdminRoutes() {
                     <Route path="open-cases" element={<OpenCasesPage />} />
                     <Route path="system-status" element={<SystemStatusPage />} />
                     <Route path="users" element={<UsersManagementPage />} />
+                    <Route path="links" element={<AdminImportantLinksPage />} />
                 </Route>
             </Routes>
         </Suspense>

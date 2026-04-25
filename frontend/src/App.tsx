@@ -12,6 +12,7 @@ import { UserProvider } from './context/UserContext';
 import { TimerPiP } from './features/timer/components/TimerPiP';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { TimerPage } from './pages/TimerPage';
+import ImportantLinksPage from './pages/ImportantLinksPage';
 import { useUserRole } from './hooks/useUserRole';
 import { MaintenancePage } from './pages/MaintenancePage';
 import { systemApi } from './api/systemApi';
@@ -186,6 +187,14 @@ function AppContent() {
                         <Suspense fallback={<PageLoading />}>
                           <PageWrapper>
                             <TimerPage />
+                          </PageWrapper>
+                        </Suspense>
+                      } />
+
+                      <Route path="/links" element={
+                        <Suspense fallback={<PageLoading />}>
+                          <PageWrapper>
+                            <ImportantLinksPage />
                           </PageWrapper>
                         </Suspense>
                       } />
