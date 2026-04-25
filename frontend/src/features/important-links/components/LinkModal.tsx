@@ -1,8 +1,20 @@
 import React, { useState, useEffect } from 'react';
+import { m, AnimatePresence } from 'framer-motion';
 import type { ImportantLink, UpdateLinkDto } from '../types';
-import styles from '../styles/ImportantLinks.module.css';
+import styles from '../styles/LinkModal.module.css';
 import { importantLinksApi } from '../api/importantLinksApi';
 import Swal from 'sweetalert2';
+import { BiSave, BiLinkAlt, BiCodeAlt } from 'react-icons/bi';
+
+const DEFAULT_COUNTRY_URLS = {
+  "uae": "https://",
+  "oman": "https://",
+  "egypt": "https://",
+  "qatar": "https://",
+  "jordan": "https://",
+  "kuwait": "https://",
+  "bahrain": "https://"
+};
 
 interface LinkModalProps {
   link: ImportantLink | null;
@@ -13,6 +25,7 @@ interface LinkModalProps {
 
 export const LinkModal: React.FC<LinkModalProps> = ({ link, isOpen, onClose, onRefresh }) => {
   const [formData, setFormData] = useState<UpdateLinkDto>({});
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (link) {
@@ -26,101 +39,143 @@ export const LinkModal: React.FC<LinkModalProps> = ({ link, isOpen, onClose, onR
     }
   }, [link]);
 
-  if (!isOpen || !link) return null;
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!link) return;
+
+    setIsSaving(true);
     try {
       await importantLinksApi.updateLink(link.id, formData);
-      Swal.fire('Success', 'Link updated successfully', 'success');
+      Swal.fire({
+        title: 'Success!',
+        text: 'Link updated successfully',
+        icon: 'success',
+        background: '#1e293b',
+        color: '#fff',
+        confirmButtonColor: '#6366f1'
+      });
       onRefresh();
       onClose();
     } catch (error) {
-      Swal.fire('Error', 'Failed to update link', 'error');
+      Swal.fire({
+        title: 'Error',
+        text: 'Failed to update link',
+        icon: 'error',
+        background: '#1e293b',
+        color: '#fff'
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
   return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center',
-      alignItems: 'center', zIndex: 2000, backdropFilter: 'blur(5px)'
-    }}>
-      <div style={{
-        background: '#1a1a1a', padding: '2rem', borderRadius: '16px',
-        width: '100%', maxWidth: '500px', border: '1px solid rgba(255,255,255,0.1)'
-      }}>
-        <h2 style={{ marginBottom: '1.5rem', color: '#fff' }}>Edit Link</h2>
-        
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#888' }}>Title</label>
-            <input 
-              className={styles.searchBar} 
-              style={{ maxWidth: '100%' }}
-              value={formData.title}
-              onChange={(e) => setFormData({...formData, title: e.target.value})}
-            />
-          </div>
+    <AnimatePresence>
+      {isOpen && link && (
+        <div className={styles.overlay}>
+          <m.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            className={styles.modalContent}
+          >
+            <h2 className={styles.modalTitle}>Edit Link</h2>
 
-          <div style={{ display: 'flex', gap: '2rem' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-              <input 
-                type="checkbox" 
-                checked={formData.is_available}
-                onChange={(e) => setFormData({...formData, is_available: e.target.checked})}
-              /> Available
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-              <input 
-                type="checkbox" 
-                checked={formData.is_multi_country}
-                onChange={(e) => setFormData({...formData, is_multi_country: e.target.checked})}
-              /> Multi-country
-            </label>
-          </div>
+            <form onSubmit={handleSubmit} className={styles.form}>
+              <div className={styles.formGroup}>
+                <label>Title</label>
+                <input
+                  className={styles.inputField}
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="Enter link title..."
+                  required
+                />
+              </div>
 
-          {!formData.is_multi_country ? (
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', color: '#888' }}>URL</label>
-              <input 
-                className={styles.searchBar} 
-                style={{ maxWidth: '100%' }}
-                value={formData.url}
-                onChange={(e) => setFormData({...formData, url: e.target.value})}
-              />
-            </div>
-          ) : (
-            <div>
-               <label style={{ display: 'block', marginBottom: '0.5rem', color: '#888' }}>Country URLs (JSON Format)</label>
-               <textarea 
-                 className={styles.searchBar} 
-                 style={{ maxWidth: '100%', height: '100px', fontFamily: 'monospace' }}
-                 value={JSON.stringify(formData.urls, null, 2)}
-                 onChange={(e) => {
-                    try {
-                      const parsed = JSON.parse(e.target.value);
-                      setFormData({...formData, urls: parsed});
-                    } catch(err) { /* invalid json while typing */ }
-                 }}
-               />
-            </div>
-          )}
+              <div className={styles.checkboxRow}>
+                <label className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    className={styles.customCheckbox}
+                    checked={formData.is_available}
+                    onChange={(e) => setFormData({ ...formData, is_available: e.target.checked })}
+                  />
+                  Available
+                </label>
+                <label className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    className={styles.customCheckbox}
+                    checked={formData.is_multi_country}
+                    onChange={(e) => {
+                      const isChecked = e.target.checked;
+                      const updates: any = { is_multi_country: isChecked };
 
-          <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-            <button type="submit" className={styles.directLink} style={{ flex: 1, border: 'none', cursor: 'pointer' }}>
-              Save Changes
-            </button>
-            <button 
-              type="button" 
-              onClick={onClose}
-              style={{ flex: 1, background: 'rgba(255,255,255,0.05)', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer' }}
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+                      // If enabling multi-country and URLs are empty or just {}, pre-fill with template
+                      if (isChecked && (!formData.urls || Object.keys(formData.urls).length === 0)) {
+                        updates.urls = DEFAULT_COUNTRY_URLS;
+                      }
+
+                      setFormData({ ...formData, ...updates });
+                    }}
+                  />
+                  Multi-country
+                </label>
+              </div>
+
+              {!formData.is_multi_country ? (
+                <div className={styles.formGroup}>
+                  <label><BiLinkAlt /> Direct URL</label>
+                  <input
+                    className={styles.inputField}
+                    value={formData.url}
+                    onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                    placeholder="https://docs.google.com/..."
+                    required={!formData.is_multi_country}
+                  />
+                </div>
+              ) : (
+                <div className={styles.formGroup}>
+                  <label><BiCodeAlt /> Country URLs (JSON)</label>
+                  <textarea
+                    className={`${styles.inputField} ${styles.textareaField}`}
+                    value={JSON.stringify(formData.urls, null, 2)}
+                    onChange={(e) => {
+                      try {
+                        const parsed = JSON.parse(e.target.value);
+                        setFormData({ ...formData, urls: parsed });
+                      } catch (err) { /* invalid json while typing */ }
+                    }}
+                    placeholder='{"EG": "https://...", "UAE": "https://..."}'
+                  />
+                </div>
+              )}
+
+              <div className={styles.modalFooter}>
+                <button
+                  type="submit"
+                  className={styles.saveBtn}
+                  disabled={isSaving}
+                >
+                  <m.div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                    <BiSave size={20} />
+                    {isSaving ? 'Saving...' : 'Save Changes'}
+                  </m.div>
+                </button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className={styles.cancelBtn}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </m.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 };
+

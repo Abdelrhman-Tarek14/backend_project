@@ -18,6 +18,7 @@ import { MaintenancePage } from './pages/MaintenancePage';
 import { systemApi } from './api/systemApi';
 import socketService from './services/socket';
 import { RestrictedPage } from './pages/RestrictedPage';
+import { NotFoundPage } from './pages/NotFoundPage';
 import { ROLES } from './constants/roles';
 
 const AdminRoutes = lazy(() => import('./pages/admin/routes/AdminRoutes'));
@@ -213,7 +214,7 @@ function AppContent() {
                         )
                       } />
 
-                      <Route path="*" element={<Navigate to={isAdminLevel ? "/admin/open-cases" : "/timer"} replace />} />
+                      <Route path="*" element={<NotFoundPage />} />
                     </Routes>
                   </AnimatePresence>
                 </main>

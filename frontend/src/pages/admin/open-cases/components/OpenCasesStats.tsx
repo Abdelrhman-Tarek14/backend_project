@@ -27,13 +27,6 @@ export const OpenCasesStats: React.FC<OpenCasesStatsProps> = ({
     return (
         <div className={styles.filterTabs}>
             <button
-                className={`${styles.tabBtn} ${filterTab === 'on-time' ? styles.active : ''}`}
-                onClick={() => onTabChange('on-time')}
-            >
-                On Time <span className={`${styles.tabCount} ${filterTab !== 'on-time' && counts.onTime > 0 ? styles.countOnTime : ''}`}>{counts.onTime}</span>
-            </button>
-
-            <button
                 className={`${styles.tabBtn} ${filterTab === 'exceeded' ? styles.active : ''}`}
                 onClick={() => onTabChange('exceeded')}
             >
@@ -46,6 +39,14 @@ export const OpenCasesStats: React.FC<OpenCasesStatsProps> = ({
             >
                 Near Exceeded <span className={`${styles.tabCount} ${filterTab !== 'near-exceeded' && counts.nearExceeded > 0 ? styles.countNear : ''}`}>{counts.nearExceeded}</span>
             </button>
+
+            <button
+                className={`${styles.tabBtn} ${filterTab === 'on-time' ? styles.active : ''}`}
+                onClick={() => onTabChange('on-time')}
+            >
+                On Time <span className={`${styles.tabCount} ${filterTab !== 'on-time' && counts.onTime > 0 ? styles.countOnTime : ''}`}>{counts.onTime}</span>
+            </button>
+
 
             <button
                 className={`${styles.tabBtn} ${filterTab === 'waiting-eta' ? styles.active : ''}`}
