@@ -1,3 +1,4 @@
+#.\deploy\save_images.ps1
 # Create deployment directories
 New-Item -ItemType Directory -Force -Path ".\deploy\images"
 New-Item -ItemType Directory -Force -Path ".\deploy\configs"

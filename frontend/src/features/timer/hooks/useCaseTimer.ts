@@ -3,10 +3,10 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 export interface TimerCaseData {
     case_number?: string | number;
     start_date?: string;
-    start_time?: string;
+    start_time?: string | null;
     eta?: number | string | null;
     assignmentId?: string | number;
-    timestamp?: string;
+    timestamp?: string | null;
     [key: string]: any;
 }
 
