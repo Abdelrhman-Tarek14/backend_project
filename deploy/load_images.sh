@@ -14,7 +14,19 @@ for f in *.tar; do
 done
 
 echo "--- STEP 2: Setting up Configs ---"
-mkdir -p "$PROJECT_DIR/backend" "$PROJECT_DIR/salesforce_api" "$PROJECT_DIR/sheet_poller/data" "$PROJECT_DIR/frontend"
+mkdir -p "$PROJECT_DIR/backend" "$PROJECT_DIR/salesforce_api/data" "$PROJECT_DIR/sheet_poller/data" "$PROJECT_DIR/frontend"
+
+# Initialize empty state files if they don't exist
+[ ! -f "$PROJECT_DIR/salesforce_api/data/state.json" ] && echo "{}" > "$PROJECT_DIR/salesforce_api/data/state.json"
+[ ! -f "$PROJECT_DIR/sheet_poller/data/cursor.json" ] && echo "{}" > "$PROJECT_DIR/sheet_poller/data/cursor.json"
+
+# Fix permissions to allow Docker containers to write to these volumes
+chmod -R 777 "$PROJECT_DIR/salesforce_api/data"
+chmod -R 777 "$PROJECT_DIR/sheet_poller/data"
+
+# Fix line endings for all config files (Windows CRLF to Linux LF)
+find "$SCRIPT_DIR/configs" -type f -exec sed -i 's/\r$//' {} +
+
 cp -r "$SCRIPT_DIR/configs/"* "$PROJECT_DIR/"
 
 # Move and rename .env files to their correct locations

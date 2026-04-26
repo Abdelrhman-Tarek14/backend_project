@@ -2,7 +2,7 @@
 types_hash_max_size 2048;
 client_max_body_size 10M;
 
-include       /etc/nginx/mime.types;
+# include       /etc/nginx/mime.types; # Already in main config
 # default_type  application/octet-stream; # Already in main config
 
 # ── Logging ──

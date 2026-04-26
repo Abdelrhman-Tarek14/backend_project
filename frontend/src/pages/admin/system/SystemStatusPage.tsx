@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
-import { 
-    BiServer, BiData, BiCloud, BiRefresh, BiWrench, BiLockAlt, 
-    BiLockOpenAlt, BiStats, BiPulse, BiSave, BiShow, BiHide 
+import {
+    BiServer, BiData, BiCloud, BiRefresh, BiWrench, BiLockAlt,
+    BiLockOpenAlt, BiStats, BiPulse, BiSave, BiShow, BiHide
 } from 'react-icons/bi';
 import { TbApi } from 'react-icons/tb';
 import { systemApi } from '../../../api/systemApi';
@@ -39,7 +39,7 @@ const formatTime = (isoString?: string | null) => {
 const StatusBadge = ({ status }: { status?: 'operational' | 'down' | 'degraded' | 'live' }) => {
     const isLive = status === 'live';
     const statusClass = isLive ? styles.live : styles[status || 'down'];
-    
+
     return (
         <div className={`${styles.statusBadge} ${statusClass}`}>
             <div className={styles.statusDot} />
@@ -333,7 +333,7 @@ const SystemStatusPage = () => {
                     </m.div>
 
                     {/* Server Resources Card */}
-                    <m.div 
+                    <m.div
                         initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4 }}
                         className={`${styles.card} ${healthData && healthData.memoryUsageMB > 800 ? styles.degraded : styles.operational}`}
                     >
@@ -353,11 +353,10 @@ const SystemStatusPage = () => {
                                 <span className={styles.metricValue}>{formatMemory(healthData?.memoryUsageMB || 0)}</span>
                             </div>
                             <div className={styles.progressBarContainer}>
-                                <div 
-                                    className={`${styles.progressBar} ${
-                                        (healthData?.memoryUsageMB || 0) > 800 ? styles.progressCritical : 
-                                        (healthData?.memoryUsageMB || 0) > 500 ? styles.progressWarning : styles.progressNormal
-                                    }`}
+                                <div
+                                    className={`${styles.progressBar} ${(healthData?.memoryUsageMB || 0) > 800 ? styles.progressCritical :
+                                            (healthData?.memoryUsageMB || 0) > 500 ? styles.progressWarning : styles.progressNormal
+                                        }`}
                                     style={{ width: `${Math.min(((healthData?.memoryUsageMB || 0) / 1024) * 100, 100)}%` }}
                                 />
                             </div>
@@ -369,7 +368,7 @@ const SystemStatusPage = () => {
                     </m.div>
 
                     {/* Live Traffic Card */}
-                    <m.div 
+                    <m.div
                         initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.5 }}
                         className={`${styles.card} ${styles.live}`}
                     >
@@ -388,7 +387,7 @@ const SystemStatusPage = () => {
                                 <span className={styles.metricLabel}>Connected Agents</span>
                                 <span className={styles.metricValue}>{healthData?.activeUsers || 0}</span>
                             </div>
-                             <div className={styles.metricRow}>
+                            <div className={styles.metricRow}>
                                 <span className={styles.metricLabel}>Socket State</span>
                                 <span className={styles.metricValue}>Streaming</span>
                             </div>
@@ -437,7 +436,7 @@ const SystemStatusPage = () => {
                                 <div className={styles.cardTitleArea}>
                                     <h3>Salesforce Integration Config</h3>
                                     <p className={styles.subtitleText}>
-                                        Update volatile credentials for the microservice 
+                                        Update volatile credentials for the microservice
                                         {sfConfigUpdatedAt && (
                                             <span className={styles.lastUpdatedText}>
                                                 (Last updated: {formatTime(sfConfigUpdatedAt)})
@@ -446,7 +445,7 @@ const SystemStatusPage = () => {
                                     </p>
                                 </div>
                             </div>
-                            <button 
+                            <button
                                 className={styles.visibilityToggle}
                                 onClick={() => setShowTokens(!showTokens)}
                                 title={showTokens ? "Hide sensitive data" : "Show sensitive data"}
@@ -460,7 +459,7 @@ const SystemStatusPage = () => {
                             <div className={styles.formGrid}>
                                 <div className={styles.formGroup}>
                                     <label>AURA_TOKEN</label>
-                                    <textarea 
+                                    <textarea
                                         className={`${styles.inputField} ${styles.textareaField} ${!showTokens ? styles.maskedText : ''}`}
                                         value={sfConfig.auraToken}
                                         onChange={(e) => setSfConfig({ ...sfConfig, auraToken: e.target.value })}
@@ -470,7 +469,7 @@ const SystemStatusPage = () => {
                                 </div>
                                 <div className={styles.formGroup}>
                                     <label>COOKIE</label>
-                                    <textarea 
+                                    <textarea
                                         className={`${styles.inputField} ${styles.textareaField} ${!showTokens ? styles.maskedText : ''}`}
                                         value={sfConfig.cookie}
                                         onChange={(e) => setSfConfig({ ...sfConfig, cookie: e.target.value })}
@@ -480,7 +479,7 @@ const SystemStatusPage = () => {
                                 </div>
                                 <div className={styles.formGroup}>
                                     <label>AURA_CONTEXT</label>
-                                    <textarea 
+                                    <textarea
                                         className={`${styles.inputField} ${styles.textareaField} ${!showTokens ? styles.maskedText : ''}`}
                                         value={sfConfig.auraContext}
                                         onChange={(e) => setSfConfig({ ...sfConfig, auraContext: e.target.value })}
@@ -490,7 +489,7 @@ const SystemStatusPage = () => {
                                 </div>
                                 <div className={styles.formGroup}>
                                     <label>X_SFDC_Page_Scope_Id</label>
-                                    <input 
+                                    <input
                                         type={showTokens ? 'text' : 'password'}
                                         className={`${styles.inputField} ${!showTokens ? styles.maskedText : ''}`}
                                         value={sfConfig.sfdcPageScopeId}
@@ -502,8 +501,8 @@ const SystemStatusPage = () => {
                             </div>
 
                             <div className={styles.formFooter}>
-                                <button 
-                                    type="submit" 
+                                <button
+                                    type="submit"
                                     className={styles.saveBtn}
                                     disabled={isSavingSfConfig}
                                 >

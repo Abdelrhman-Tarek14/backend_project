@@ -35,7 +35,13 @@ class SalesforceCredentialsManager {
 
       const raw = response.data;
       // Backend wraps all responses in { statusCode, message, data: {...} } via TransformInterceptor
-      const data = raw?.data ?? raw;
+      // If our service returned { data, updatedAt }, then it's now in raw.data.data
+      let data = raw?.data ?? raw;
+      
+      // If we see another 'data' property inside, it means we have the { data: credentials, updatedAt } structure
+      if (data && data.data && data.updatedAt) {
+        data = data.data;
+      }
       
       // Basic validation
       if (!data.auraToken || !data.cookie) {

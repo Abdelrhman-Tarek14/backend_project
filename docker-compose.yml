@@ -43,7 +43,7 @@ services:
       app:
         condition: service_healthy
     volumes:
-      - sf-data:/app/data
+      - ./salesforce_api/data:/app/data
     networks:
       - internal
     healthcheck:
@@ -120,6 +120,4 @@ networks:
   internal:
     driver: bridge
 
-volumes:
-  sf-data:
-    driver: local
+# Networks are internal only
