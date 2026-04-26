@@ -4,8 +4,8 @@ import { useAuth } from '../features/auth/hooks/useAuth';
 import { timerService } from '../features/timer/services/timerService';
 import { EtaCalculator } from '../features/timer/components/EtaCalculator';
 import { ActiveCase } from '../features/timer/components/ActiveCase';
-import { usePiP } from '../context/PiPContext';
-import { BiWindows, BiCheckCircle } from 'react-icons/bi';
+
+import {  BiCheckCircle } from 'react-icons/bi';
 
 export interface TimerCase {
     id?: string | number;
@@ -24,7 +24,7 @@ export interface TimerCase {
 
 export function TimerPage() {
     const { user } = useAuth();
-    const { openPiP } = usePiP();
+
 
     const [activeCases, setActiveCases] = useState<TimerCase[]>([]);
     const [showToast, setShowToast] = useState<boolean>(false);
@@ -60,15 +60,6 @@ export function TimerPage() {
                 </p>
             </div>
 
-            {/* Float Mode Button */}
-            <div className={styles.floatBtnWrapper}>
-                <button
-                    onClick={() => openPiP('TIMER_PAGE', { width: 240, height: 170 })}
-                    className={styles.floatBtn}
-                >
-                    <BiWindows /> Float Mode
-                </button>
-            </div>
 
             {/* Active Case Section */}
             <div className={styles.activeCaseContainer}>

@@ -1,19 +1,31 @@
 import React from 'react';
 import styles from './ActiveCase.module.css';
-import { BiHash, BiCategory } from 'react-icons/bi';
+import { BiHash, BiCategory, BiLinkExternal, BiWindows } from 'react-icons/bi';
 import { useCaseTimer } from '../hooks/useCaseTimer';
 import type { TimerCaseData } from '../hooks/useCaseTimer';
+import { usePiP } from '../../../context/PiPContext';
 
 export interface ActiveCaseProps {
     caseData: TimerCaseData;
 }
 
 export const ActiveCase: React.FC<ActiveCaseProps> = ({ caseData }) => {
+    const { openPiP } = usePiP();
     const {
         case_number,
         case_type,
         eta,
+        ownerEmail
     } = caseData;
+
+    const handleOpenForm = () => {
+        const formUrl = "https://docs.google.com/forms/d/e/1FAIpQLScPTPZefAuASuRKBMt-k5_k3kTan6XsxI6cKsgh9zNgXPOFYQ/viewform";
+        const caseEntry = "entry.1432700205";
+        const emailEntry = "entry.757853534";
+        
+        const finalUrl = `${formUrl}?${caseEntry}=${case_number}&${emailEntry}=${encodeURIComponent(ownerEmail || '')}`;
+        window.open(finalUrl, "_blank");
+    };
 
     const {
         timeLeft,
@@ -22,7 +34,8 @@ export const ActiveCase: React.FC<ActiveCaseProps> = ({ caseData }) => {
         endTime,
         formatTime,
         isExceeded,
-        isScheduled
+        isScheduled,
+        isWaitingEta
     } = useCaseTimer(caseData);
 
     // Removed forced loading state to allow rendering fallback --:-- if start time is missing
@@ -41,9 +54,29 @@ export const ActiveCase: React.FC<ActiveCaseProps> = ({ caseData }) => {
                         <span>{case_number}</span>
                     </div>
                 </div>
-                <div className={styles.caseType}>
-                    <BiCategory className={styles.icon} />
-                    <span>{case_type}</span>
+                <div className={styles.headerRight}>
+                    {isWaitingEta && (
+                        <button 
+                            className={styles.formBtn} 
+                            onClick={handleOpenForm}
+                            title="Open ETA Form"
+                        >
+                            <BiLinkExternal />
+                            <span>ETA Form</span>
+                        </button>
+                    )}
+                    <button 
+                        className={styles.floatBtn} 
+                        onClick={() => openPiP('TIMER_PAGE', { width: 240, height: 170 }, caseData)}
+                        title="Open Float Mode"
+                    >
+                        <BiWindows />
+                        <span>Float Mode</span>
+                    </button>
+                    <div className={styles.caseType}>
+                        <BiCategory className={styles.icon} />
+                        <span>{case_type}</span>
+                    </div>
                 </div>
             </div>
 

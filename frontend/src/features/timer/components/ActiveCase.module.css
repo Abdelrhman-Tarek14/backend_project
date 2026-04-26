@@ -28,6 +28,12 @@
     gap: 1rem;
 }
 
+.headerRight {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 .caseInfo {
     display: flex;
     align-items: center;
@@ -67,6 +73,63 @@
 
 .icon {
     font-size: 1.1em;
+}
+
+.formBtn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(79, 172, 254, 0.3);
+}
+
+.formBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(79, 172, 254, 0.4);
+    filter: brightness(1.1);
+}
+
+.formBtn:active {
+    transform: translateY(0);
+}
+
+.formBtn svg,
+.floatBtn svg {
+    font-size: 1.1rem;
+}
+
+.floatBtn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(17, 153, 142, 0.3);
+}
+
+.floatBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(17, 153, 142, 0.4);
+    filter: brightness(1.1);
+}
+
+.floatBtn:active {
+    transform: translateY(0);
 }
 
 /* Timer Section */

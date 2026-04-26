@@ -1,6 +1,6 @@
 .container {
-    padding: 0;
-    max-width: 1000px;
+    padding: 1rem;
+    max-width: 1050px;
     margin: 0 auto;
     text-align: center;
     color: var(--color-text-main);
@@ -51,8 +51,8 @@
 .activeCaseContainer {
     margin-bottom: 2rem;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+    gap: .5rem;
     width: 100%;
 }
 
@@ -69,7 +69,8 @@
     justify-content: center;
     align-items: center;
     color: var(--color-text-muted);
-    grid-column: 1 / -1; /* spans full width if grid is active */
+    grid-column: 1 / -1;
+    /* spans full width if grid is active */
 }
 
 .emptyIcon {
@@ -83,35 +84,39 @@
 }
 
 .z {
-  position: absolute;
-  font-size: 32px;
-  font-weight: 800;
-  color: var(--color-primary);
-  opacity: 0;
+    position: absolute;
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--color-primary);
+    opacity: 0;
 }
 
 .z1 {
-  animation: swayUpToRight 2s ease-out infinite;
+    animation: swayUpToRight 2s ease-out infinite;
 }
+
 .z2 {
-  animation: swayUpToRight 2s ease-out 0.5s infinite;
+    animation: swayUpToRight 2s ease-out 0.5s infinite;
 }
+
 .z3 {
-  animation: swayUpToRight 2s ease-out 1s infinite;
+    animation: swayUpToRight 2s ease-out 1s infinite;
 }
+
 .z4 {
-  animation: swayUpToRight 2s ease-out 1.5s infinite;
+    animation: swayUpToRight 2s ease-out 1.5s infinite;
 }
 
 @keyframes swayUpToRight {
-  0% {
-    transform: translate(0, 0) rotate(0deg);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(40px, -60px) rotate(30deg);
-    opacity: 0;
-  }
+    0% {
+        transform: translate(0, 0) rotate(0deg);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translate(40px, -60px) rotate(30deg);
+        opacity: 0;
+    }
 }
 
 .emptyActiveCase h3 {

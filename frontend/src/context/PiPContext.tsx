@@ -10,7 +10,8 @@ export interface PiPContextType {
     isOpen: boolean;
     viewMode: string | null;
     pipWindow: Window | null;
-    openPiP: (mode: string, options?: PiPOptions) => Promise<void>;
+    pipData: any | null;
+    openPiP: (mode: string, options?: PiPOptions, data?: any) => Promise<void>;
     closePiP: () => void;
 }
 
@@ -40,6 +41,7 @@ export const PiPProvider: React.FC<PiPProviderProps> = ({ children }) => {
     const [isOpen, setIsOpen] = useState<boolean>(false);
     const [viewMode, setViewMode] = useState<string | null>(null);
     const [pipWindow, setPipWindow] = useState<Window | null>(null);
+    const [pipData, setPipData] = useState<any | null>(null);
 
     const closePiP = useCallback(() => {
         if (pipWindow) {
@@ -48,9 +50,10 @@ export const PiPProvider: React.FC<PiPProviderProps> = ({ children }) => {
         setIsOpen(false);
         setViewMode(null);
         setPipWindow(null);
+        setPipData(null);
     }, [pipWindow]);
 
-    const openPiP = useCallback(async (mode: string, options: PiPOptions = { width: 400, height: 500 }) => {
+    const openPiP = useCallback(async (mode: string, options: PiPOptions = { width: 400, height: 500 }, data: any = null) => {
         if (!('documentPictureInPicture' in window)) {
             alert("Your browser does not support Picture-in-Picture windows.");
             return;
@@ -64,12 +67,14 @@ export const PiPProvider: React.FC<PiPProviderProps> = ({ children }) => {
 
             setPipWindow(win);
             setViewMode(mode);
+            setPipData(data);
             setIsOpen(true);
 
             win.addEventListener('pagehide', () => {
                 setIsOpen(false);
                 setViewMode(null);
                 setPipWindow(null);
+                setPipData(null);
             });
         } catch (err) {
             console.error("Failed to open PiP window:", err);
@@ -80,9 +85,10 @@ export const PiPProvider: React.FC<PiPProviderProps> = ({ children }) => {
         isOpen,
         viewMode,
         pipWindow,
+        pipData,
         openPiP,
         closePiP
-    }), [isOpen, viewMode, pipWindow, openPiP, closePiP]);
+    }), [isOpen, viewMode, pipWindow, pipData, openPiP, closePiP]);
 
     return (
         <PiPContext.Provider value={value}>

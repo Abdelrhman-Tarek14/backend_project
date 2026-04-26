@@ -29,7 +29,7 @@ const pipReducer = (state: PiPState, action: PiPAction): PiPState => {
 };
 
 export const TimerPiP: React.FC = () => {
-    const { isOpen, pipWindow } = usePiP() as { isOpen: boolean; pipWindow: Window | null; closePiP: () => void };
+    const { isOpen, pipWindow, pipData } = usePiP() as { isOpen: boolean; pipWindow: Window | null; pipData: any | null; closePiP: () => void };
     const { user } = useAuth() as any;
 
     const [state, dispatch] = useReducer(pipReducer, {
@@ -43,10 +43,16 @@ export const TimerPiP: React.FC = () => {
     useEffect(() => {
         if (!user?.email || !isOpen) return;
         const unsub = timerService.subscribeToActiveCases(user.email, (cases) => {
-            dispatch({ type: 'SET_ACTIVE_CASE', payload: cases && cases.length > 0 ? (cases[0] as TimerCaseData) : null });
+            let targetCase: TimerCaseData | null = null;
+            if (pipData?.assignmentId) {
+                targetCase = cases.find(c => c.assignmentId === pipData.assignmentId) || (cases.length > 0 ? cases[0] : null);
+            } else {
+                targetCase = cases && cases.length > 0 ? (cases[0] as TimerCaseData) : null;
+            }
+            dispatch({ type: 'SET_ACTIVE_CASE', payload: targetCase });
         });
         return () => unsub();
-    }, [user, isOpen]);
+    }, [user, isOpen, pipData]);
 
     useEffect(() => {
         if (!isOpen || !pipWindow) {
